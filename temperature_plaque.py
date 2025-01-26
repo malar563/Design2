@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-
+#changement
 
 class Plaque:
     def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_t=1, T_ambiante=25, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=0):
