@@ -18,7 +18,7 @@ class Plaque:
         self.points_chauffants = []
 
     def show(self):
-        plt.imshow(self.grille, cmap="bwr", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+        plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
         plt.colorbar()
         plt.show()
     
