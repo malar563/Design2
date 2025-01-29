@@ -61,11 +61,12 @@ class Plaque:
         self.grille[:, 0] = 50    # Bord gauche
         self.grille[:, -1] = 50
 
-        # Création d'une matrice N qui détermine le nombre de surfaces adjacentes à l'air
-        mat_N = 2*np.ones(self.dim)
+        # Création d'une m
+        # Matrice N qui détermine le nombre de surfaces adjacentes à l'air
+        mat_N = 2 * np.ones((int(self.dim[0] / self.dx), int(self.dim[1] / self.dx)))
 
         # Mettre les 3 sur les côtés
-        mat_trois = 3*np.ones(self.dim)
+        mat_trois = 3*np.ones((int(self.dim[0] / self.dx), int(self.dim[1] / self.dx)))
         mat = np.vstack([mat_trois[1], mat_N[2:], mat_trois[-1]])
         mat[:, 0] = mat_trois[:, 0]
         mat[:, -1] = mat_trois[:, -1]
@@ -73,10 +74,10 @@ class Plaque:
         # Coin coin time
         len_x = self.dim[0]
         len_y = self.dim[1]
-        mat[0][0] = 4
-        mat[0][len_y-1] = 4
-        mat[len_x-1][0] = 4
-        mat[len_x-1][len_y-1] = 4
+        mat[0,0] = 4
+        mat[0,-1] = 4
+        mat[-1,0] = 4
+        mat[-1, -1] = 4
 
         # Convection (mettre *2 car rentre de 2 côtés?)
         convection = self.dt * self.h * (self.T_amb - self.grille) / (self.rho * self.cp * self.e)
