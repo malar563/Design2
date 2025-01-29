@@ -19,7 +19,7 @@ class Plaque:
         self.grille = self.T_amb * np.ones(self.dim)  # dimensions est maintenant un tuple (100, 1)
         self.points_chauffants = []
 
-    def show(self, nb_iterations=20):
+    def show(self, nb_iterations=5):
         plt.ion()
         for i in range(nb_iterations):
             self.iteration()
@@ -45,6 +45,14 @@ class Plaque:
         """
         Calcule la température dans chaque case de la grille pour l'itération suivante.
         """
+
+        # matriceN
+        mat_N = 2*np.ones(self.dim)
+        mat_trois = 3*np.ones(self.dim)
+        mat = np.vstack([mat_trois[1], mat_N[2:], mat_trois[-1]])
+        mat[:, 0] = mat_trois[:, 0]
+        mat[:, -1] = mat_trois[:, -1]
+        print(mat)
 
         # Création d'une matrice batard
         T_betex = np.zeros(self.grille.shape[1])
@@ -72,8 +80,6 @@ class Plaque:
         remplacement_grille = nouvelle_grille[1:-1]
         nouvelle_grille = np.vstack([cotes_grille_gauche, remplacement_grille, cotes_grille_droite])
 
-        print(self.grille)
-
         # Mise à jour de la grille
         self.grille = nouvelle_grille
 
@@ -81,6 +87,6 @@ class Plaque:
 
 
 # Instanciation et exécution
-Ma_plaque = Plaque(dimensions=(10, 3), resolution_t=0.01, T_ambiante=20)
+Ma_plaque = Plaque(dimensions=(10, 5), resolution_t=0.01, T_ambiante=20)
 Ma_plaque.iteration()
 Ma_plaque.show()
