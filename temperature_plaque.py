@@ -10,12 +10,13 @@ from tqdm import tqdm
 #double changement
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.0001, resolution_t=1, T_ambiante=25, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20):
+    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.0001, resolution_t=1, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20):
         self.dim = dimensions
         self.e = epaisseur
         self.dx = resolution_x
         # self.dt = resolution_t VA FAIRE DIVERGERR
         self.T_amb = T_ambiante
+        self.T_plaque = T_plaque
         self.rho = densite
         self.cp = cap_calorifique
         self.k = conduc_thermique
@@ -60,25 +61,48 @@ class Plaque:
         self.grille[:, 0] = 50    # Bord gauche
         self.grille[:, -1] = 50
 
-        # # Convection (mettre *2 car rentre de 2 côtés?)
-        # convection = self.h * self.dx**2 * (self.T_amb - self.grille) / (self.rho * self.cp * self.dx**2 * self.e)
+        # Création d'une matrice N qui détermine le nombre de surfaces adjacentes à l'air
+        mat_N = 2*np.ones(self.dim)
 
-        new_grille = self.grille + diffusion #+ convection
+        # Mettre les 3 sur les côtés
+        mat_trois = 3*np.ones(self.dim)
+        mat = np.vstack([mat_trois[1], mat_N[2:], mat_trois[-1]])
+        mat[:, 0] = mat_trois[:, 0]
+        mat[:, -1] = mat_trois[:, -1]
+
+        # Coin coin time
+        len_x = self.dim[0]
+        len_y = self.dim[1]
+        mat[0][0] = 4
+        mat[0][len_y-1] = 4
+        mat[len_x-1][0] = 4
+        mat[len_x-1][len_y-1] = 4
+
+        # Convection (mettre *2 car rentre de 2 côtés?)
+        convection = self.dt * self.h * (self.T_amb - self.grille) / (self.rho * self.cp * self.e)
+
+        new_grille = self.grille + diffusion + convection
         self.grille = new_grille
+        # CF
+        self.grille[0, :] = 50    # Bord haut
+        self.grille[-1, :] = 50   # Bord bas
+        self.grille[:, 0] = 50    # Bord gauche
+        self.grille[:, -1] = 50
+
         return self.grille
     
 
 
 
 
-Ma_plaque = Plaque(T_ambiante=26)
+Ma_plaque = Plaque(T_plaque=5, T_ambiante=62)
 
 Ma_plaque.deposer_T(40, (0.10, 0.04))
 Ma_plaque.deposer_T(12, (0.02, 0.02))
-Ma_plaque.iteration()
-Ma_plaque.show()
-Ma_plaque.iteration()
-Ma_plaque.show()
-for n in tqdm(range(2500)):
+# Ma_plaque.iteration()
+# Ma_plaque.show()
+# Ma_plaque.iteration()
+# Ma_plaque.show()
+for n in tqdm(range(25)):
     Ma_plaque.iteration()
 Ma_plaque.show()
