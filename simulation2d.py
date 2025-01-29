@@ -52,6 +52,14 @@ class Plaque:
         mat = np.vstack([mat_trois[1], mat_N[2:], mat_trois[-1]])
         mat[:, 0] = mat_trois[:, 0]
         mat[:, -1] = mat_trois[:, -1]
+
+        # Coin coin time
+        len_x = self.dim[0]
+        len_y = self.dim[1]
+        mat[0][0] = 4
+        mat[0][len_y-1] = 4
+        mat[len_x-1][0] = 4
+        mat[len_x-1][len_y-1] = 4
         print(mat)
 
         # Création d'une matrice batard
