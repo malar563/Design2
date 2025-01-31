@@ -10,7 +10,7 @@ from tqdm import tqdm
 #double changement
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20):
+    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance = 1.5):
         self.dim = dimensions
         self.e = epaisseur
         self.dx = resolution_x
@@ -21,10 +21,14 @@ class Plaque:
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dx), int(self.dim[1]/self.dx)))
+        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dx), int(self.dim[1]/self.dx))) #Mettre un dy à qqpart ici
         self.points_chauffants = []
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
+        self.P = puissance # En [W]
+        self.actuateur = np.ones((int(0.015/self.dx), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2
+        # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
+        # self.position_actuateur = (self.dim[])
 
 
     def show(self):
@@ -56,6 +60,8 @@ class Plaque:
         
         # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
         # big_grille[1:-1, 1:-1] = copy.copy(self.grille) EST-CE QUE CE SERAIT DES 1 À LA PLACE DES 2?
+        "Section puissance "
+
 
         "Section conduction"
         # conduction cas général
@@ -76,7 +82,7 @@ class Plaque:
             ((self.grille[:,1] -  self.grille[:,0])/self.dx**2))  # Gauche
         # conduction côté droit
         conduction[:,-1] = (self.alpha * self.dt) * (
-            ((np.roll(self.grille[:,0], shift=1) + np.roll(self.grille[:,0], shift=-1) - 2 * self.grille[:,0])/self.dy**2) + # Haut - Bas
+            ((np.roll(self.grille[:,-1], shift=1) + np.roll(self.grille[:,-1], shift=-1) - 2 * self.grille[:,-1])/self.dy**2) + # Haut - Bas
             ((self.grille[:,-2] -  self.grille[:,-1])/self.dx**2))  # Droit
         # conduction coin supérieur gauche
         conduction[0,0] = (self.alpha * self.dt) * (
