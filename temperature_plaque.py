@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5):
+    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = [], position_enregistrement = (0,0)):
         self.dim = dimensions # tuple (y, x)
         self.e = epaisseur
         self.dx = resolution_x
@@ -19,15 +19,22 @@ class Plaque:
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) #Mettre un dy à qqpart ici
-        self.points_chauffants = []
+        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
-        self.P = puissance_actuateur # En [W]
-        # C'est légal?
+        self.P_act = puissance_actuateur # En [W]
         self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
-        T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
+        T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P_act/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
         self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
+        self.perturbations = perturbations
+        self.convertir_perturbations()
+        self.position_enregistrement = (int(position_enregistrement[0]/self.dy), int(position_enregistrement[1]/self.dx))
+        self.rep_echelon = [[0],[self.T_plaque]]
+
+    def convertir_perturbations(self):
+        for i in range(len(self.perturbations)):
+            self.perturbations[i] = (int(self.perturbations[i][0][0]/self.dy), int(self.perturbations[i][0][1]/self.dx)), (self.dt/(self.rho * self.cp)) * self.perturbations[i][1]/(self.dx*self.dy*self.e)
+
     
 
     def place_actuateur(self, T_actuateur):
@@ -133,23 +140,24 @@ class Plaque:
         new_grille = self.grille + conduction + convection
 
         "Section puissance "
-        
-        # print(T_actuateur.shape)
         self.grille = new_grille
         self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
-        # reste à placer cette matrice de température au centre de la grille
 
-        # # CF
-        # self.grille[0, :] = self.T_plaque    # Bord haut LE BORD DU HAUT SAFFICHE EN BAS ET VICE VERSA
-        # self.grille[-1, :] = self.T_plaque  # Bord bas
-        # self.grille[:, 0] = self.T_plaque   # Bord gauche
-        # self.grille[:, -1] = self.T_plaque
+        # Perturbations
+        for perturb in self.perturbations:
+            self.grille[perturb[0][0], perturb[0][1]] += perturb[1]
         
+        self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt)
+        self.rep_echelon[1].append(self.grille[self.position_enregistrement[0], self.position_enregistrement[1]])
+        
+
+
         return self.grille
     
+    def enregistre_rep_echelon(self):
+        np.savetxt("rep_echelon.txt", np.array(self.rep_echelon).T)
 
-
-Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None, puissance_actuateur=1.5)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5, perturbations=[((0.07,0.05), 0.5), ((0.11,0.01), 0.5)]) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -166,6 +174,7 @@ for n in tqdm(range(2000)):
         Ma_plaque.iteration()
 end = time.time()
 print(end-start)
+Ma_plaque.enregistre_rep_echelon()
 Ma_plaque.show()
 print(Ma_plaque.grille.size)
 print(Ma_plaque.grille.shape)
