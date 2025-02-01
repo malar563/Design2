@@ -5,13 +5,11 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from tqdm import tqdm
-#changement
 
-#double changement
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance = 1.5):
-        self.dim = dimensions
+    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5):
+        self.dim = dimensions # tuple (y, x)
         self.e = epaisseur
         self.dx = resolution_x
         self.dy = resolution_y
@@ -21,18 +19,39 @@ class Plaque:
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dx), int(self.dim[1]/self.dx))) #Mettre un dy à qqpart ici
+        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) #Mettre un dy à qqpart ici
         self.points_chauffants = []
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
-        self.P = puissance # En [W]
-        self.actuateur = np.ones((int(0.015/self.dx), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2
-        # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
-        # self.position_actuateur = (self.dim[])
+        self.P = puissance_actuateur # En [W]
+        # C'est légal?
+        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
+        T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
+        self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
+    
+
+    def place_actuateur(self, T_actuateur):
+        # position_actuateur = (0.03/self.dx, 0.015/self.dy) # format (x, y) ici
+        Ly, Lx = self.grille.shape
+        act_dim_y, act_dim_x = self.actuateur.shape
+
+        # Trouver le centre cible
+        ix_centre = int(Lx / 2)  # Centre en x
+        iy_centre = int(Ly * 1 / 8)  # Centre en y
+
+        # Déterminer les indices de début et de fin en soustrayant la moitié de la taille de T_actuateur
+        ix_debut = ix_centre - act_dim_x // 2
+        ix_fin = ix_centre + act_dim_x // 2 + 1  # +1 pour inclure le dernier indice
+        iy_debut = iy_centre - act_dim_y // 2
+        iy_fin = iy_centre + act_dim_y // 2 + 1  # +1 pour inclure le dernier indice
+
+        # self.grille[iy_debut:iy_fin, ix_debut:ix_fin] += T_actuateur # + self.grille[ix_debut:ix_fin, iy_debut:iy_debut]
+        return (iy_debut,iy_fin,ix_debut,ix_fin), T_actuateur
 
 
     def show(self):
-        plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+        plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0])) # LEQUEL EST CORRECT??????
+        # plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[0], 0, 100*self.dim[1]))
         plt.colorbar()
         plt.show()
     
@@ -60,9 +79,7 @@ class Plaque:
         
         # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
         # big_grille[1:-1, 1:-1] = copy.copy(self.grille) EST-CE QUE CE SERAIT DES 1 À LA PLACE DES 2?
-        "Section puissance "
-
-
+        
         "Section conduction"
         # conduction cas général
         conduction = (self.alpha * self.dt) * (
@@ -100,7 +117,6 @@ class Plaque:
         conduction[-1,-1] = (self.alpha * self.dt) * (
             ((self.grille[-2,-1] - self.grille[-1,-1])/self.dy**2) + # Haut
             ((self.grille[-1,-2] -  self.grille[-1,-1])/self.dx**2))  # Gauche
-
         
         "Section convection"
         # convection cas général (2 surfaces exposées)
@@ -114,19 +130,26 @@ class Plaque:
         # Si je ne me trompe pas, la convection sur les coins a déjà été prise en compte...
 
         "Section total"
-        new_grille = self.grille + conduction + convection 
+        new_grille = self.grille + conduction + convection
+
+        "Section puissance "
+        
+        # print(T_actuateur.shape)
         self.grille = new_grille
+        self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
+        # reste à placer cette matrice de température au centre de la grille
+
         # # CF
         # self.grille[0, :] = self.T_plaque    # Bord haut LE BORD DU HAUT SAFFICHE EN BAS ET VICE VERSA
         # self.grille[-1, :] = self.T_plaque  # Bord bas
         # self.grille[:, 0] = self.T_plaque   # Bord gauche
         # self.grille[:, -1] = self.T_plaque
-
+        
         return self.grille
     
 
 
-Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None)
+Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None, puissance_actuateur=1.5)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -135,10 +158,17 @@ Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None)
 # Ma_plaque.iteration()
 # Ma_plaque.show()
 
+
+"ICII"
+start = time.time()
 for n in tqdm(range(2000)):
     for k in range(20): # Vérifie que cette boucle tourne aussi
         Ma_plaque.iteration()
+end = time.time()
+print(end-start)
 Ma_plaque.show()
+print(Ma_plaque.grille.size)
+print(Ma_plaque.grille.shape)
 
 
 
