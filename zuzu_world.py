@@ -134,24 +134,65 @@ class Plaque:
     
 class Interface:
     def __init__(self, dimensions=(0.117, 0.061)):
+        self.inter = tk.Tk()
+        self.frame = ttk.Frame(self.inter, padding=10)
+        self.frame.grid()
+        self.inter.title('Contrôle de la simulation Python')
         self.dim = dimensions
 
-    def show(self):
-        inter = tk.Tk()
-        frame = ttk.Frame(inter, padding=10)
-        frame.grid()
+        # Initier toutes les variables
+        self.T_init_var=tk.IntVar()
+        self.T_amb_var=tk.IntVar()
+        self.T_dep_var=tk.IntVar()
+        self.T_posx_var=tk.IntVar()
+        self.T_posy_var=tk.IntVar()
+
+        # Go go main interface
+        self.main()
+        
+    def main(self):
+        # Température initiale de la plaque
+        ttk.Label(self.frame, text="Température initiale de la plaque [K]").grid(column=0, row=0)
+        ttk.Entry(self.frame, textvariable = self.T_init_var).grid(column=1, row=0)
+
+        # Température ambiante
+        ttk.Label(self.frame, text="Température ambiante [K]").grid(column=0, row=1)
+        ttk.Entry(self.frame, textvariable = self.T_amb_var).grid(column=1, row=1)
 
         # Température déposée
-        T_dep_var=tk.StringVar()
-        ttk.Label(frame, text="Température déposée").grid(column=0, row=0)
-        T_dep_ent = ttk.Entry(frame, textvariable = T_dep_var).grid(column=1, row=0)
-        T_dep = T_dep_var.get()
-        inter.mainloop()
+        ttk.Button(self.inter,text = 'Température déposée', command = self.T_dep).grid(column=0, row=1)
+
+        ttk.Button(self.inter,text = 'OK', command = self.submit).grid(column=2, row=0)
+        self.inter.mainloop()
+        
+    def T_dep(self):
+        self.T_dep_frame = tk.Toplevel()
+        self.T_dep_frame.title('Contrôle de la température déposée')
+        ttk.Button(self.T_dep_frame,text = 'OK', command = self.submit_T_dep).grid(column=2, row=0)
+
+        # Température déposée
+        ttk.Label(self.T_dep_frame, text="Température déposée [K]").grid(column=0, row=0)
+        ttk.Entry(self.T_dep_frame, textvariable = self.T_dep_var).grid(column=1, row=0)
+
+        # Position de la temp
+        ttk.Label(self.T_dep_frame, text="Position en x de la température déposée").grid(column=0, row=1)
+        ttk.Entry(self.T_dep_frame, textvariable = self.T_posx_var).grid(column=1, row=1)
+        ttk.Label(self.T_dep_frame, text="Position en y de la température déposée").grid(column=0, row=2)
+        ttk.Entry(self.T_dep_frame, textvariable = self.T_posy_var).grid(column=1, row=2)
+
+    def submit(self):
+        T_init=self.T_init_var.get()
+        T_amb=self.T_amb_var.get()
+        self.inter.destroy()
+
+    def submit_T_dep(self):
+        T_dep=self.T_dep_var.get()
+        T_pos=(self.T_posx_var.get(), self.T_posy_var.get())
+        self.T_dep_frame.destroy()
 
 Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None)
 
 Inter = Interface()
-Inter.show()
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
