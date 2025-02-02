@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from tqdm import tqdm
+from mpl_toolkits.mplot3d import Axes3D
 #changement
 
 #double changement
@@ -31,16 +32,25 @@ class Plaque:
         # self.position_actuateur = (self.dim[])
 
 
+  
     def show(self):
-        plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
-        plt.colorbar()
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        x = np.linspace(0, self.dim[0], self.grille.shape[0])
+        y = np.linspace(0, self.dim[1], self.grille.shape[1])
+        X, Y = np.meshgrid(x, y)
+        
+        
+        ax.plot_surface(X, Y, self.grille, cmap="inferno", edgecolor='k')
+       
+       
+        ax.set_xlabel('X (cm)')
+        ax.set_ylabel('Y (cm)')
+        ax.set_zlabel('Température (K)')
+        ax.set_title("Température de la plaque")
         plt.show()
-    
-    # def deposer_T(self, T_desiree=30, endroit=(0,0)):
-    #     self.points_chauffants.append((T_desiree, endroit))
-    #     for point in self.points_chauffants:
-    #         self.grille[int(point[1][0]/self.dx), int(point[1][1]/self.dx)] = point[0]
-    #     # Rajouter la possibilité d'un groupe de points chauffants?
+
 
     def iteration(self):
         """
@@ -134,11 +144,7 @@ Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None)
 # Ma_plaque.show()
 # Ma_plaque.iteration()
 # Ma_plaque.show()
-
-for n in tqdm(range(2000)):
-    for k in range(20): # Vérifie que cette boucle tourne aussi
-        Ma_plaque.iteration()
+Ma_plaque.iteration()
 Ma_plaque.show()
-
 
 

@@ -1,0 +1,47 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
+
+# Paramètres de la matrice et de l'animation
+n, m = 5, 5  # Dimensions de la matrice
+frames = 100  # Nombre de frames dans l'animation
+time_step = 0.1  # Temps entre chaque frame
+
+# Créer la figure et l'axe 3D
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Création des coordonnées pour l'affichage 3D
+x = np.arange(n)
+y = np.arange(m)
+x, y = np.meshgrid(x, y)
+
+# Initialisation de la matrice
+matrix = np.random.rand(n, m)
+
+# Créer l'objet de la surface
+surf = ax.plot_surface(x, y, matrix, cmap='viridis', edgecolor='none')
+
+# Ajouter une barre de couleurs
+fig.colorbar(surf, shrink=0.5, aspect=5)
+
+# Paramètres de l'animation
+def update(frame):
+    # Mettre à jour les valeurs de la matrice à chaque frame (par exemple, en modifiant légèrement la matrice)
+    matrix = np.random.rand(n, m)  # Simuler une matrice qui change avec le temps
+    
+    # Mise à jour des données de surface
+    ax.clear()
+    surf = ax.plot_surface(x, y, matrix, cmap='viridis', edgecolor='none')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Valeur')
+    ax.set_title(f'Surface 3D d\'une matrice ( {frame})')
+    return [surf]
+
+# Création de l'animation
+ani = FuncAnimation(fig, update, frames=frames, interval=100, blit=False)
+
+# Affichage de l'animation
+plt.show()
