@@ -60,9 +60,13 @@ class Plaque:
 
 
     def show(self):
-        if not hasattr(self, 'fig'):
+        if not hasattr(self, 'fig') or self.fig is None:
+            # Graphique 3D
+            
+            self.temp = []
             self.fig = plt.figure()
-            self.ax = self.fig.add_subplot(111, projection='3d')
+            self.ax = self.fig.add_subplot(121, projection='3d')
+            self.ax2 = self.fig.add_subplot(122)
             self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
             self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
             self.x, self.y = np.meshgrid(self.y, self.x) 
@@ -73,10 +77,38 @@ class Plaque:
             self.ax.set_title("Température de la plaque après simulation")
             self.fig.colorbar(self.surface, ax=self.ax, shrink=0.5, aspect=5)
             
+            # Graphique 2D
+            self.t = [0] 
+            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(20 * self.dim[0])]]
+            self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
+            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(80 * self.dim[0])]]
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des termistances en fonction du temps ")
+
 
         else:
+            
+            # Graphique 3D
             self.surface.remove()  
             self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
+
+            
+            # Graphique 2D
+            self.t.append(self.t[-1] + self.dt)
+            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(20 * self.dim[0])])
+            self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
+            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(80 * self.dim[0])])
+            self.ax2.clear() 
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des termistances en fonction du temps ")
 
         self.fig.canvas.flush_events()
         plt.pause(0.001) 
