@@ -61,19 +61,15 @@ class Plaque:
     def show(self):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-
-        x = np.linspace(0, self.dim[0], self.grille.shape[0])
-        y = np.linspace(0, self.dim[1], self.grille.shape[1])
-        X, Y = np.meshgrid(x, y)
-        
-        
-        ax.plot_surface(X, Y, self.grille, cmap="inferno", edgecolor='k')
-       
-       
+        x = np.linspace(0, self.dim[0], self.grille.shape[0])  
+        y = np.linspace(0,  self.dim[1], self.grille.shape[1])  
+        x, y = np.meshgrid(x, y) 
+        surface = ax.plot_surface(y, x, self.grille, cmap="inferno", edgecolor='k')  
         ax.set_xlabel('X (cm)')
         ax.set_ylabel('Y (cm)')
         ax.set_zlabel('Température (K)')
-        ax.set_title("Température de la plaque")
+        ax.set_title("Température de la plaque après simulation")
+        fig.colorbar(surface, ax=ax, shrink=0.5, aspect=5)
         plt.show()
 
 
@@ -178,9 +174,10 @@ Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actu
 
 "ICII"
 start = time.time()
-for n in tqdm(range(2000)):
+for n in tqdm(range(200)):
     for k in range(20): # Vérifie que cette boucle tourne aussi
         Ma_plaque.iteration()
+        Ma_plaque.show()
 end = time.time()
 print(end-start)
 Ma_plaque.enregistre_rep_echelon()

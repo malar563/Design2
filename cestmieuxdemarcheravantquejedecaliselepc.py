@@ -5,15 +5,32 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from tqdm import tqdm
-import json
+from mpl_toolkits.mplot3d import Axes3D
 
 # interface
 import tkinter as tk # module de base
 from tkinter import ttk # mettre ça beau
 
+
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance = 1.5):
-        self.dim = dimensions
+    def __init__(
+            self,
+            dimensions=(0.117, 0.061),
+            epaisseur=0.001,
+            resolution_x=0.001,
+            resolution_y=0.001,
+            resolution_t=None,
+            T_plaque=25,
+            T_ambiante=23,
+            densite=2699,
+            cap_calorifique=900,
+            conduc_thermique=237,
+            coef_convection=20,
+            puissance_actuateur = 1.5,
+            perturbations = [],
+            position_enregistrement = (0,0)
+            ):
+        self.dim = dimensions # tuple (y, x)
         self.e = epaisseur
         self.dx = resolution_x
         self.dy = resolution_y
@@ -23,26 +40,92 @@ class Plaque:
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dx), int(self.dim[1]/self.dx))) #Mettre un dy à qqpart ici
-        self.points_chauffants = []
+        self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
-        self.P = puissance # En [W]
-        self.actuateur = np.ones((int(0.015/self.dx), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2
-        # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
-        # self.position_actuateur = (self.dim[])
+        self.P_act = puissance_actuateur # En [W]
+        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
+        T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P_act/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
+        self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
+        self.perturbations = perturbations
+        self.convertir_perturbations()
+        self.position_enregistrement = (int(position_enregistrement[0]/self.dy), int(position_enregistrement[1]/self.dx))
+        self.rep_echelon = [[0],[self.T_plaque]]
+
+    def convertir_perturbations(self):
+        for i in range(len(self.perturbations)):
+            self.perturbations[i] = (int(self.perturbations[i][0][0]/self.dy), int(self.perturbations[i][0][1]/self.dx)), (self.dt/(self.rho * self.cp)) * self.perturbations[i][1]/(self.dx*self.dy*self.e)
+    
+
+    def place_actuateur(self, T_actuateur):
+        # position_actuateur = (0.03/self.dx, 0.015/self.dy) # format (x, y) ici
+        Ly, Lx = self.grille.shape
+        act_dim_y, act_dim_x = self.actuateur.shape
+
+        # Trouver le centre cible
+        ix_centre = int(Lx / 2)  # Centre en x
+        iy_centre = int(Ly * 1 / 8)  # Centre en y
+
+        # Déterminer les indices de début et de fin en soustrayant la moitié de la taille de T_actuateur
+        ix_debut = ix_centre - act_dim_x // 2
+        ix_fin = ix_centre + act_dim_x // 2 + 1  # +1 pour inclure le dernier indice
+        iy_debut = iy_centre - act_dim_y // 2
+        iy_fin = iy_centre + act_dim_y // 2 + 1  # +1 pour inclure le dernier indice
+
+        # self.grille[iy_debut:iy_fin, ix_debut:ix_fin] += T_actuateur # + self.grille[ix_debut:ix_fin, iy_debut:iy_debut]
+        return (iy_debut,iy_fin,ix_debut,ix_fin), T_actuateur
 
 
     def show(self):
-        plt.imshow(self.grille, cmap="gnuplot", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
-        plt.colorbar()
-        plt.show()
-    
-    # def deposer_T(self, T_desiree=30, endroit=(0,0)):
-    #     self.points_chauffants.append((T_desiree, endroit))
-    #     for point in self.points_chauffants:
-    #         self.grille[int(point[1][0]/self.dx), int(point[1][1]/self.dx)] = point[0]
-    #     # Rajouter la possibilité d'un groupe de points chauffants?
+        if not hasattr(self, 'fig') or self.fig is None:
+            # Graphique 3D
+            self.temp = []
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(121, projection='3d')
+            self.ax2 = self.fig.add_subplot(122)
+            self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
+            self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
+            self.x, self.y = np.meshgrid(self.y, self.x) 
+            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
+            self.ax.set_xlabel('x (cm)')
+            self.ax.set_ylabel('y (cm)')
+            self.ax.set_zlabel('Température (K)')
+            self.ax.set_title("Température de la plaque après simulation")
+            # self.fig.colorbar(self.surface, ax=self.ax)
+            
+            # Graphique 2D
+            self.t = [0] 
+            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
+            self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
+            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+        else:
+            # Graphique 3D
+            self.surface.remove()  
+            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
+
+            # Graphique 2D
+            self.t.append(self.t[-1] + self.dt)
+            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
+            self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
+            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
+            self.ax2.clear() 
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+        self.fig.canvas.flush_events()
+        plt.pause(0.001) 
+
 
     def iteration(self):
         """
@@ -56,15 +139,6 @@ class Plaque:
         Returns:
         chambre_nouvelle_petite (numpy.ndarray) : Chambre contenant le potentiel de l'itération suivante.
         """
-        # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
-        # big_grille[1:-1, 1:-1] = copy.copy(self.grille)
-        # diffusion = (self.alpha*self.dt*(big_grille[2:, 1:-1] + big_grille[:-2, 1:-1] + big_grille[1:-1, 2:] +  big_grille[1:-1, :-2] - 4*big_grille[1:-1, 1:-1])/(self.dx**2)) 
-        
-        # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
-        # big_grille[1:-1, 1:-1] = copy.copy(self.grille) EST-CE QUE CE SERAIT DES 1 À LA PLACE DES 2?
-        "Section puissance "
-
-
         "Section conduction"
         # conduction cas général
         conduction = (self.alpha * self.dt) * (
@@ -102,7 +176,6 @@ class Plaque:
         conduction[-1,-1] = (self.alpha * self.dt) * (
             ((self.grille[-2,-1] - self.grille[-1,-1])/self.dy**2) + # Haut
             ((self.grille[-1,-2] -  self.grille[-1,-1])/self.dx**2))  # Gauche
-
         
         "Section convection"
         # convection cas général (2 surfaces exposées)
@@ -116,16 +189,25 @@ class Plaque:
         # Si je ne me trompe pas, la convection sur les coins a déjà été prise en compte...
 
         "Section total"
-        new_grille = self.grille + conduction + convection 
+        new_grille = self.grille + conduction + convection
+
+        "Section puissance "
         self.grille = new_grille
-        # # CF
-        # self.grille[0, :] = self.T_plaque    # Bord haut LE BORD DU HAUT SAFFICHE EN BAS ET VICE VERSA
-        # self.grille[-1, :] = self.T_plaque  # Bord bas
-        # self.grille[:, 0] = self.T_plaque   # Bord gauche
-        # self.grille[:, -1] = self.T_plaque
+        self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
+
+        # Perturbations
+        for perturb in self.perturbations:
+            self.grille[perturb[0][0], perturb[0][1]] += perturb[1]
+        
+        self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt)
+        self.rep_echelon[1].append(self.grille[self.position_enregistrement[0], self.position_enregistrement[1]])
 
         return self.grille
     
+    def enregistre_rep_echelon(self):
+        np.savetxt("rep_echelon.txt", np.array(self.rep_echelon).T)
+
+
 class Interface:
     def __init__(
             self,
@@ -134,13 +216,15 @@ class Interface:
             resolution_x=0.001,
             resolution_y=0.001,
             resolution_t=None,
-            T_plaque=25,
-            T_ambiante=23,
+            T_plaque=25.0,
+            T_ambiante=23.0,
             densite=2699,
-            cap_calorifique=900,
-            conduc_thermique=237,
-            coef_convection=20,
-            puissance = 1.5
+            cap_calorifique=900.0,
+            conduc_thermique=237.0,
+            coef_convection=20.0,
+            puissance_actuateur = 1.50,
+            perturbations = [],  ### ??????
+            position_enregistrement = (0,0) # ?
             ):
         self.inter = tk.Tk()
         self.frame = ttk.Frame(self.inter, padding=10)
@@ -170,29 +254,32 @@ class Interface:
         self.e = epaisseur
         self.dx = resolution_x
         self.dy = resolution_y
-        self.dt = resolution_t ## pas utilisé dans class Plaque
         self.rho = densite
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.T_plaque = T_plaque + 273.15
-        self.T_amb = T_ambiante + 273.15
+        self.T_plaque = T_plaque
+        self.T_amb = T_ambiante
         self.T_depo = 0 # points chauffants??
         self.T_pos = [0, 0] # points chauffants??
-        self.P = puissance
+        self.P = puissance_actuateur
+
+        # Initier variables avec calculs
+        self.alpha = self.k/(self.rho*self.cp)
+        self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
 
         # Go go main interface
         self.main()
         
     def main(self):
         # Température initiale de la plaque
-        ttk.Label(self.frame, text="Température initiale de la plaque [K]").grid(column=0, row=0)
+        ttk.Label(self.frame, text="Température initiale de la plaque [°C]").grid(column=0, row=0)
         T_plaque_entry = ttk.Entry(self.frame, textvariable = self.T_plaque_var)
         T_plaque_entry.grid(column=1, row=0)
         T_plaque_entry.insert(0, self.T_plaque)
 
         # Température ambiante
-        ttk.Label(self.frame, text="Température ambiante [K]").grid(column=0, row=1)
+        ttk.Label(self.frame, text="Température ambiante [°C]").grid(column=0, row=1)
         T_amb_entry = ttk.Entry(self.frame, textvariable = self.T_amb_var)
         T_amb_entry.grid(column=1, row=1)
         T_amb_entry.insert(0, self.T_amb)
@@ -224,11 +311,11 @@ class Interface:
         ttk.Button(self.plaque_frame,text = 'OK', command = self.submit_plaque).grid(column=2, row=0)
 
         # Dimensions de la plaque
-        ttk.Label(self.plaque_frame, text="Longueur en x de la plaque").grid(column=0, row=0)
+        ttk.Label(self.plaque_frame, text="Longueur en x de la plaque [m]").grid(column=0, row=0)
         dimx_entry = ttk.Entry(self.plaque_frame, textvariable = self.dimx_var)
         dimx_entry.grid(column=1, row=0)
         dimx_entry.insert(0, self.dim[0])
-        ttk.Label(self.plaque_frame, text="Longueur en y de la plaque").grid(column=0, row=1)
+        ttk.Label(self.plaque_frame, text="Longueur en y de la plaque [m]").grid(column=0, row=1)
         dimy_entry = ttk.Entry(self.plaque_frame, textvariable = self.dimy_var)
         dimy_entry.grid(column=1, row=1)
         dimy_entry.insert(0, self.dim[1])
@@ -326,10 +413,14 @@ class Interface:
             cap_calorifique=self.cp,
             conduc_thermique=self.k,
             coef_convection=self.h,
-            puissance=self.P
+            puissance_actuateur=self.P
             )
-        #Ma_plaque.show()
-        self.inter.destroy()
+        plt.ion()
+        start = time.time()
+        for n in tqdm(range(100)):
+            Ma_plaque.show()
+            for k in range(20): # Vérifie que cette boucle tourne aussi
+                Ma_plaque.iteration()
 
     def submit_plaque(self):
         self.dim=(self.dimx_var.get(), self.dimy_var.get())
@@ -353,9 +444,7 @@ class Interface:
         self.T_pos=(self.T_posx_var.get(), self.T_posy_var.get())
         self.T_dep_frame.destroy()
 
-#Ma_plaque = Plaque(T_plaque=64, T_ambiante=5, resolution_t=None)
-
-Inter = Interface()
+# Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5, perturbations=[((0.07,0.05), 0.5), ((0.11,0.01), 0.5)]) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -364,11 +453,21 @@ Inter = Interface()
 # Ma_plaque.iteration()
 # Ma_plaque.show()
 
-# for n in tqdm(range(2000)):
+
+"ICII"
+# plt.ion()
+# start = time.time()
+# for n in tqdm(range(200)):
+#     Ma_plaque.show()
 #     for k in range(20): # Vérifie que cette boucle tourne aussi
 #         Ma_plaque.iteration()
-#Ma_plaque.show()
+        
+        
+Inter= Interface()
 
+# end = time.time()
+# print(end-start)
+# Ma_plaque.enregistre_rep_echelon()
 
-
-
+# print(Ma_plaque.grille.size)
+# print(Ma_plaque.grille.shape)
