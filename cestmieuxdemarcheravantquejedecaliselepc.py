@@ -101,7 +101,7 @@ class Plaque:
 
             
             # Graphique 2D
-            self.t.append(self.t[-1] + self.dt)
+            self.t.append(self.t[-1] + 100*self.dt)
             self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
             self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
             self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
@@ -410,9 +410,9 @@ class Interface:
             )
         plt.ion()
         start = time.time()
-        for n in tqdm(range(10)):
+        for n in tqdm(range(100)):
             Ma_plaque.show()
-            for k in range(20): # Vérifie que cette boucle tourne aussi
+            for k in range(100): # Vérifie que cette boucle tourne aussi
                 Ma_plaque.iteration()
 
     def submit_plaque(self):
