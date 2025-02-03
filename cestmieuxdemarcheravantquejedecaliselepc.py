@@ -417,10 +417,9 @@ class Interface:
             )
         plt.ion()
         start = time.time()
-        for n in tqdm(range(100)):
+        for n in tqdm(range(10000)):
             Ma_plaque.show()
-            for k in range(20): # Vérifie que cette boucle tourne aussi
-                Ma_plaque.iteration()
+            Ma_plaque.iteration()
 
     def submit_plaque(self):
         self.dim=(self.dimx_var.get(), self.dimy_var.get())
