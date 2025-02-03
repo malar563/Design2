@@ -37,7 +37,6 @@ class Plaque:
         for i in range(len(self.perturbations)):
             self.perturbations[i] = (int(self.perturbations[i][0][0]/self.dy), int(self.perturbations[i][0][1]/self.dx)), (self.dt/(self.rho * self.cp)) * self.perturbations[i][1]/(self.dx*self.dy*self.e)
 
-    
 
     def place_actuateur(self, T_actuateur):
         # position_actuateur = (0.03/self.dx, 0.015/self.dy) # format (x, y) ici
