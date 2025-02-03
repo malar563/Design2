@@ -78,19 +78,19 @@ class Plaque:
             self.ax.set_ylabel('Y (cm)')
             self.ax.set_zlabel('Température (K)')
             self.ax.set_title("Température de la plaque après simulation")
-            self.fig.colorbar(self.surface, ax=self.ax, shrink=0.5, aspect=5)
+            # self.fig.colorbar(self.surface, ax=self.ax)
             
             # Graphique 2D
             self.t = [0] 
-            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(20 * self.dim[0])]]
+            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
             self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
-            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(80 * self.dim[0])]]
+            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
             self.ax2.plot(self.t, self.temp1, color='b')
             self.ax2.plot(self.t, self.temp2, color='g')
             self.ax2.plot(self.t, self.temp3, color='r')
             self.ax2.set_xlabel('t (s)')
             self.ax2.set_ylabel('T (K)')
-            self.ax2.set_title("Température des termistances en fonction du temps ")
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
 
 
         else:
@@ -102,16 +102,16 @@ class Plaque:
             
             # Graphique 2D
             self.t.append(self.t[-1] + self.dt)
-            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(20 * self.dim[0])])
+            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
             self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
-            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(80 * self.dim[0])])
+            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
             self.ax2.clear() 
             self.ax2.plot(self.t, self.temp1, color='b')
             self.ax2.plot(self.t, self.temp2, color='g')
             self.ax2.plot(self.t, self.temp3, color='r')
             self.ax2.set_xlabel('t (s)')
             self.ax2.set_ylabel('T (K)')
-            self.ax2.set_title("Température des termistances en fonction du temps ")
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
 
         self.fig.canvas.flush_events()
         plt.pause(0.001) 
@@ -214,13 +214,13 @@ class Interface:
             resolution_x=0.001,
             resolution_y=0.001,
             resolution_t=None,
-            T_plaque=25,
-            T_ambiante=23,
+            T_plaque=25.0,
+            T_ambiante=23.0,
             densite=2699,
-            cap_calorifique=900,
-            conduc_thermique=237,
-            coef_convection=20,
-            puissance_actuateur = 1.5
+            cap_calorifique=900.0,
+            conduc_thermique=237.0,
+            coef_convection=20.0,
+            puissance_actuateur = 1.50
             ):
         self.inter = tk.Tk()
         self.frame = ttk.Frame(self.inter, padding=10)
@@ -255,8 +255,8 @@ class Interface:
         self.cp = cap_calorifique
         self.k = conduc_thermique
         self.h = coef_convection
-        self.T_plaque = T_plaque + 273.15
-        self.T_amb = T_ambiante + 273.15
+        self.T_plaque = T_plaque
+        self.T_amb = T_ambiante
         self.T_depo = 0 # points chauffants??
         self.T_pos = [0, 0] # points chauffants??
         self.P = puissance_actuateur
@@ -266,13 +266,13 @@ class Interface:
         
     def main(self):
         # Température initiale de la plaque
-        ttk.Label(self.frame, text="Température initiale de la plaque [K]").grid(column=0, row=0)
+        ttk.Label(self.frame, text="Température initiale de la plaque [C]").grid(column=0, row=0)
         T_plaque_entry = ttk.Entry(self.frame, textvariable = self.T_plaque_var)
         T_plaque_entry.grid(column=1, row=0)
         T_plaque_entry.insert(0, self.T_plaque)
 
         # Température ambiante
-        ttk.Label(self.frame, text="Température ambiante [K]").grid(column=0, row=1)
+        ttk.Label(self.frame, text="Température ambiante [C]").grid(column=0, row=1)
         T_amb_entry = ttk.Entry(self.frame, textvariable = self.T_amb_var)
         T_amb_entry.grid(column=1, row=1)
         T_amb_entry.insert(0, self.T_amb)
@@ -410,11 +410,10 @@ class Interface:
             )
         plt.ion()
         start = time.time()
-        for n in tqdm(range(200)):
+        for n in tqdm(range(10)):
             Ma_plaque.show()
             for k in range(20): # Vérifie que cette boucle tourne aussi
                 Ma_plaque.iteration()
-        self.inter.destroy()
 
     def submit_plaque(self):
         self.dim=(self.dimx_var.get(), self.dimy_var.get())
