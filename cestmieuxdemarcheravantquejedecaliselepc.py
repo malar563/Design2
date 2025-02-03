@@ -111,7 +111,7 @@ class Plaque:
             self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
 
             # Graphique 2D
-            self.t.append(self.t[-1] + 100*self.dt)
+            self.t.append(self.t[-1] + 85*self.dt)
             self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
             self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
             self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
@@ -419,7 +419,7 @@ class Interface:
         start = time.time()
         for n in tqdm(range(100)):
             Ma_plaque.show()
-            for k in range(100): # Vérifie que cette boucle tourne aussi
+            for k in range(85): # Vérifie que cette boucle tourne aussi
                 Ma_plaque.iteration()
 
     def submit_plaque(self):
