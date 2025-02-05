@@ -13,6 +13,7 @@ dataMatrix1 = readmatrix(filename1);
 dataMatrix2 = readmatrix(filename2);
 dataMatrix3 = readmatrix(filename3);
 
+% passer de 
 % passer de volt à température % conversion de marde % mettre en K
 dataMatrix1(:,2) = dataMatrix1(:,2) * 5;
 dataMatrix2(:,2) = dataMatrix2(:,2) * 2;
@@ -38,3 +39,4 @@ plot(temps2,temp2, 'LineWidth', 1.5)
 
 plot(temps3,temp3, 'LineWidth', 1.5) 
 hold off
+legend("À l'actuateur", "Au milieu", "Au laser")
