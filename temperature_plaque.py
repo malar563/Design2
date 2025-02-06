@@ -10,8 +10,10 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = [], position_enregistrement = (0,0)):
+    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = []):
         self.dim = dimensions # tuple (y, x)
+        # TEMPS TOTAL
+        # NOMBRE DITÉRATION TEMPORELLE
         self.e = epaisseur
         self.dx = resolution_x
         self.dy = resolution_y
@@ -23,15 +25,14 @@ class Plaque:
         self.h = coef_convection
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
         self.alpha = self.k/(self.rho*self.cp)
-        self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t
+        self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t # 8 ALPHA PLUTÔT QUE 4 ALPHA
         self.P_act = puissance_actuateur # En [W]
         self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
         T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P_act/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
         self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
         self.perturbations = perturbations
         self.convertir_perturbations()
-        self.position_enregistrement = (int(position_enregistrement[0]/self.dy), int(position_enregistrement[1]/self.dx))
-        self.rep_echelon = [[0],[self.T_plaque]]
+        self.rep_echelon = [[0],[0],[self.T_plaque], [self.T_plaque], [self.T_plaque]]
 
     def convertir_perturbations(self):
         for i in range(len(self.perturbations)):
@@ -59,18 +60,54 @@ class Plaque:
 
 
     def show(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        x = np.linspace(0, self.dim[0], self.grille.shape[0])  
-        y = np.linspace(0,  self.dim[1], self.grille.shape[1])  
-        x, y = np.meshgrid(x, y) 
-        surface = ax.plot_surface(y, x, self.grille, cmap="inferno", edgecolor='k')  
-        ax.set_xlabel('X (cm)')
-        ax.set_ylabel('Y (cm)')
-        ax.set_zlabel('Température (K)')
-        ax.set_title("Température de la plaque après simulation")
-        fig.colorbar(surface, ax=ax, shrink=0.5, aspect=5)
-        plt.show()
+        if not hasattr(self, 'fig') or self.fig is None:
+            # Graphique 3D
+            self.temp = []
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(121, projection='3d')
+            self.ax2 = self.fig.add_subplot(122)
+            self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
+            self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
+            self.x, self.y = np.meshgrid(self.y, self.x) 
+            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
+            self.ax.set_xlabel('x (cm)')
+            self.ax.set_ylabel('y (cm)')
+            self.ax.set_zlabel('Température (K)')
+            self.ax.set_title("Température de la plaque après simulation")
+            # self.fig.colorbar(self.surface, ax=self.ax)
+            
+            # Graphique 2D
+            self.t = [0] 
+            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
+            self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
+            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+        else:
+            # Graphique 3D
+            self.surface.remove()  
+            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
+
+            # Graphique 2D
+            self.t.append(self.t[-1] + 85*self.dt)
+            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
+            self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
+            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
+            self.ax2.clear() 
+            self.ax2.plot(self.t, self.temp1, color='b')
+            self.ax2.plot(self.t, self.temp2, color='g')
+            self.ax2.plot(self.t, self.temp3, color='r')
+            self.ax2.set_xlabel('t (s)')
+            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+        self.fig.canvas.flush_events()
+        plt.pause(0.001) 
 
 
     def iteration(self):
@@ -152,17 +189,23 @@ class Plaque:
         for perturb in self.perturbations:
             self.grille[perturb[0][0], perturb[0][1]] += perturb[1]
         
+        # Position d'enregistrement donc des thermistances
+        pos_thermi1 = (int(0.015/self.dy), int(0.03/self.dx)) # En (x=3, y=1,5) cm
+        pos_thermi2 = (int(0.06/self.dy), int(0.03/self.dx)) # En (x=3, y=6) cm
+        pos_thermi3 = (int(0.104/self.dy), int(0.03/self.dx)) # En (x=3, y=(11,6-1,2)) cm
         self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt)
-        self.rep_echelon[1].append(self.grille[self.position_enregistrement[0], self.position_enregistrement[1]])
-        
-
+        self.rep_echelon[1].append(self.P_act)
+        self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]])
+        self.rep_echelon[3].append(self.grille[pos_thermi2[0], pos_thermi2[1]])
+        self.rep_echelon[4].append(self.grille[pos_thermi3[0], pos_thermi2[1]])
 
         return self.grille
     
+
     def enregistre_rep_echelon(self):
         np.savetxt("rep_echelon.txt", np.array(self.rep_echelon).T)
 
-Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5, perturbations=[((0.07,0.05), 0.5), ((0.11,0.01), 0.5)]) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -174,8 +217,8 @@ Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actu
 
 "ICII"
 start = time.time()
-for n in tqdm(range(200)):
-    for k in range(20): # Vérifie que cette boucle tourne aussi
+for n in tqdm(range(20)):
+    for k in range(20): 
         Ma_plaque.iteration()
         Ma_plaque.show()
 end = time.time()
