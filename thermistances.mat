@@ -1,6 +1,6 @@
-% "faux_csv.csv" est un fichier temps-voltage
-% j'assume qu'il correspond à une thermistance
-% sera à modifier pour 3 thermistances 
+% "faux_csv.csv" est un fichier temps-temperature
+% j'assume qu'il correspond  une thermistance
+% sera  modifier pour 3 thermistances 
 % 1ere thermistance est la + proche de l'actuateur
 
 % nom du fichier
@@ -13,13 +13,7 @@ dataMatrix1 = readmatrix(filename1);
 dataMatrix2 = readmatrix(filename2);
 dataMatrix3 = readmatrix(filename3);
 
-% passer de 
-% passer de volt à température % conversion de marde % mettre en K
-dataMatrix1(:,2) = dataMatrix1(:,2) * 5;
-dataMatrix2(:,2) = dataMatrix2(:,2) * 2;
-dataMatrix3(:,2) = dataMatrix3(:,2) * 1;
-
-% Plot temps (x) - température (y)
+% Plot temps (x) - temprature (y)
 temps1 = dataMatrix1(:,1); % temps = 1ere colonne
 temp1 = dataMatrix1(:,2); % temp = 2e colonne
 temps2 = dataMatrix2(:,1); % temps = 1ere colonne
@@ -31,7 +25,7 @@ figure;
 plot(temps1, temp1, 'LineWidth', 1.5);
 xlabel('t (s)');
 ylabel('T (K)');
-title('Température des thermistances en fonction du temps');
+title('Temprature des thermistances en fonction du temps');
 grid on;
 
 hold on;
@@ -39,4 +33,4 @@ plot(temps2,temp2, 'LineWidth', 1.5)
 
 plot(temps3,temp3, 'LineWidth', 1.5) 
 hold off
-legend("À l'actuateur", "Au milieu", "Au laser")
+legend(" l'actuateur", "Au milieu", "Au laser")
