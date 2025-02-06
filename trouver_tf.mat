@@ -1,0 +1,30 @@
+% Charger les donn�es
+data = readmatrix('nouveau.csv'); 
+
+% Extraction des colonnes
+t = data(:,1); % Temps en secondes
+u = data(:,2); % Signal d'entr�e (volts)
+y = data(:,3); % Signal de sortie (volts)
+
+% Soustraction des points d'op�ration (premier point comme r�f�rence)
+% u_id = u - u(1);
+% y_id = y - y(1);
+
+% Visualisation des donn�es corrig�es
+figure(2);
+subplot(2,1,1);
+plot(t, u, 'o');
+ylabel('u_{id}');
+xlabel('t (s)');
+
+subplot(2,1,2);
+plot(t, y, 'o');
+ylabel('y_{id}');
+xlabel('t (s)');
+
+% Établir la forme de la fonction de transfert # integrale ?
+Ts = 0.1; % frequence
+Z = 0; % zeros
+P = 1; % poles
+R = 0; % retard
+G = tfest(u,y,P,Z,R,'Ts',Ts)
