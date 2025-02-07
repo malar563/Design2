@@ -6,6 +6,7 @@ import time
 import copy
 from tqdm import tqdm
 from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
 #changement
 
 
@@ -202,8 +203,11 @@ class Plaque:
         return self.grille
     
 
+    
     def enregistre_rep_echelon(self):
-        np.savetxt("rep_echelon.txt", np.array(self.rep_echelon).T)
+        df = pd.DataFrame(np.array(self.rep_echelon).T)
+        df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
+        
 
 Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5) # TUPLE (Y, X)
 
@@ -217,10 +221,10 @@ Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actu
 
 "ICII"
 start = time.time()
-for n in tqdm(range(20)):
+for n in tqdm(range(1000)):
     for k in range(20): 
         Ma_plaque.iteration()
-        Ma_plaque.show()
+        # Ma_plaque.show()
 end = time.time()
 print(end-start)
 Ma_plaque.enregistre_rep_echelon()
