@@ -28,3 +28,33 @@ Z = 0; % zeros
 P = 1; % poles
 R = 0; % retard
 G = tfest(u,y,P,Z,R,'Ts',Ts)
+
+
+
+% Version marylise
+
+% Charger les donnes
+rep_ech = readmatrix('output.csv');
+
+% Extraction des colonnes
+t = rep_ech(2:end,1);
+u = rep_ech(2:end,2); % Signal d'entre (volts)
+y = rep_ech(2:end,3); % Signal de sortie (volts)
+
+% Soustraction des points d'opration (premier point comme rfrence)
+u_id = u - u(1);
+y_id = y - y(1);
+
+figure;
+syst = tf(tf1.Numerator, tf1.Denominator);
+step(1.5 * syst); % Trac� de la r�ponse � un �chelon
+hold on;
+plot(t, y_id, 'o');
+hold off;
+title('R�ponse � un �chelon du mod�le discret');
+xlabel('Temps (s)');
+ylabel('Amplitude');
+grid on;
+
+
+
