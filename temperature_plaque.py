@@ -111,7 +111,7 @@ class Plaque:
     #     self.fig.canvas.flush_events()
     #     plt.pause(0.001)
     def show(self):
-        plt.imshow(self.grille, cmap=plt.cm.jet, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))#plt.cm.jet
+        plt.imshow(self.grille, cmap="inferno", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))#plt.cm.jet
         plt.colorbar()
         plt.show()
 
