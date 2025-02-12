@@ -1,38 +1,3 @@
-% Charger les donn�es
-data = readmatrix('nouveau.csv'); 
-
-% Extraction des colonnes
-t = data(:,1); % Temps en secondes
-u = data(:,2); % Signal d'entr�e (volts)
-y = data(:,3); % Signal de sortie (volts)
-
-% Soustraction des points d'op�ration (premier point comme r�f�rence)
-% u_id = u - u(1);
-% y_id = y - y(1);
-
-% Visualisation des donn�es corrig�es
-figure(2);
-subplot(2,1,1);
-plot(t, u, 'o');
-ylabel('u_{id}');
-xlabel('t (s)');
-
-subplot(2,1,2);
-plot(t, y, 'o');
-ylabel('y_{id}');
-xlabel('t (s)');
-
-% Établir la forme de la fonction de transfert # integrale ?
-Ts = 0.1; % frequence
-Z = 0; % zeros
-P = 1; % poles
-R = 0; % retard
-G = tfest(u,y,P,Z,R,'Ts',Ts)
-
-
-
-% Version marylise
-
 % Charger les donnes
 rep_ech = readmatrix('output.csv');
 
@@ -40,21 +5,37 @@ rep_ech = readmatrix('output.csv');
 t = rep_ech(2:end,1);
 u = rep_ech(2:end,2); % Signal d'entre (volts)
 y = rep_ech(2:end,3); % Signal de sortie (volts)
+f = 0.00256234177215189850; % frequence d'echantillonage
 
 % Soustraction des points d'opration (premier point comme rfrence)
 u_id = u - u(1);
 y_id = y - y(1);
 
+tf1 = c2p2z;
+disp(tf1)
+
+% convertir en discret
+tf_d = c2d(tf1,f,'zoh');
 figure;
+
+% First subplot for syst
+subplot(2,1,1);
 syst = tf(tf1.Numerator, tf1.Denominator);
-step(1.5 * syst); % Trac� de la r�ponse � un �chelon
+step(2 * syst);
 hold on;
-plot(t, y_id, 'o');
-hold off;
-title('R�ponse � un �chelon du mod�le discret');
+plot(t, y_id, 'o', 'MarkerSize',1, 'Color','r');
+grid on;
+title('Réponse à un échelon du modèle continu');
 xlabel('Temps (s)');
 ylabel('Amplitude');
+
+% Second subplot for syst2
+subplot(2,1,2);
+syst2 = tf(tf_d.Numerator, tf_d.Denominator, f);
+step(2 * syst2);
+hold on;
+plot(t, y_id, 'o', 'MarkerSize',1, 'Color','r');
 grid on;
-
-
-
+title('Réponse à un échelon du modèle discret');
+xlabel('Temps (s)');
+ylabel('Amplitude');
