@@ -11,7 +11,7 @@ import pandas as pd
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.117, 0.061), epaisseur=0.001, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = []):
+    def __init__(self, dimensions=(0.116, 0.06), epaisseur=0.001, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = []):
         self.dim = dimensions # tuple (y, x)
         # TEMPS TOTAL
         # NOMBRE DITÉRATION TEMPORELLE
@@ -60,55 +60,60 @@ class Plaque:
 
 
 
-    def show(self):
-        if not hasattr(self, 'fig') or self.fig is None:
-            # Graphique 3D
-            self.temp = []
-            self.fig = plt.figure()
-            self.ax = self.fig.add_subplot(121, projection='3d')
-            self.ax2 = self.fig.add_subplot(122)
-            self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
-            self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
-            self.x, self.y = np.meshgrid(self.y, self.x) 
-            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
-            self.ax.set_xlabel('x (cm)')
-            self.ax.set_ylabel('y (cm)')
-            self.ax.set_zlabel('Température (K)')
-            self.ax.set_title("Température de la plaque après simulation")
-            # self.fig.colorbar(self.surface, ax=self.ax)
+    # def show(self):
+    #     
+    #     if not hasattr(self, 'fig') or self.fig is None:
+    #         # Graphique 3D
+    #         self.temp = []
+    #         self.fig = plt.figure()
+    #         self.ax = self.fig.add_subplot(121, projection='3d')
+    #         self.ax2 = self.fig.add_subplot(122)
+    #         self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
+    #         self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
+    #         self.x, self.y = np.meshgrid(self.y, self.x) 
+    #         self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
+    #         self.ax.set_xlabel('x (cm)')
+    #         self.ax.set_ylabel('y (cm)')
+    #         self.ax.set_zlabel('Température (K)')
+    #         self.ax.set_title("Température de la plaque après simulation")
+    #         # self.fig.colorbar(self.surface, ax=self.ax)
             
-            # Graphique 2D
-            self.t = [0] 
-            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
-            self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
-            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
-            self.ax2.plot(self.t, self.temp1, color='b')
-            self.ax2.plot(self.t, self.temp2, color='g')
-            self.ax2.plot(self.t, self.temp3, color='r')
-            self.ax2.set_xlabel('t (s)')
-            self.ax2.set_ylabel('T (K)')
-            self.ax2.set_title("Température des thermistances en fonction du temps ")
+    #         # Graphique 2D
+    #         self.t = [0] 
+    #         self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
+    #         self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
+    #         self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
+    #         self.ax2.plot(self.t, self.temp1, color='b')
+    #         self.ax2.plot(self.t, self.temp2, color='g')
+    #         self.ax2.plot(self.t, self.temp3, color='r')
+    #         self.ax2.set_xlabel('t (s)')
+    #         self.ax2.set_ylabel('T (K)')
+    #         self.ax2.set_title("Température des thermistances en fonction du temps ")
 
-        else:
-            # Graphique 3D
-            self.surface.remove()  
-            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
+    #     else:
+    #         # Graphique 3D
+    #         self.surface.remove()  
+    #         self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
 
-            # Graphique 2D
-            self.t.append(self.t[-1] + 85*self.dt)
-            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
-            self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
-            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
-            self.ax2.clear() 
-            self.ax2.plot(self.t, self.temp1, color='b')
-            self.ax2.plot(self.t, self.temp2, color='g')
-            self.ax2.plot(self.t, self.temp3, color='r')
-            self.ax2.set_xlabel('t (s)')
-            self.ax2.set_ylabel('T (K)')
-            self.ax2.set_title("Température des thermistances en fonction du temps ")
+    #         # Graphique 2D
+    #         self.t.append(self.t[-1] + 85*self.dt)
+    #         self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
+    #         self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
+    #         self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
+    #         self.ax2.clear() 
+    #         self.ax2.plot(self.t, self.temp1, color='b')
+    #         self.ax2.plot(self.t, self.temp2, color='g')
+    #         self.ax2.plot(self.t, self.temp3, color='r')
+    #         self.ax2.set_xlabel('t (s)')
+    #         self.ax2.set_ylabel('T (K)')
+    #         self.ax2.set_title("Température des thermistances en fonction du temps ")
 
-        self.fig.canvas.flush_events()
-        plt.pause(0.001) 
+    #     self.fig.canvas.flush_events()
+    #     plt.pause(0.001)
+    def show(self):
+        plt.imshow(self.grille, cmap=plt.cm.jet, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))#plt.cm.jet
+        plt.colorbar()
+        plt.show()
 
 
     def iteration(self):
@@ -123,12 +128,6 @@ class Plaque:
         Returns:
         chambre_nouvelle_petite (numpy.ndarray) : Chambre contenant le potentiel de l'itération suivante.
         """
-        # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
-        # big_grille[1:-1, 1:-1] = copy.copy(self.grille)
-        # diffusion = (self.alpha*self.dt*(big_grille[2:, 1:-1] + big_grille[:-2, 1:-1] + big_grille[1:-1, 2:] +  big_grille[1:-1, :-2] - 4*big_grille[1:-1, 1:-1])/(self.dx**2)) 
-        
-        # big_grille = np.zeros((self.grille.shape[0]+2, self.grille.shape[1]+2))
-        # big_grille[1:-1, 1:-1] = copy.copy(self.grille) EST-CE QUE CE SERAIT DES 1 À LA PLACE DES 2?
         
         "Section conduction"
         # conduction cas général
@@ -179,6 +178,7 @@ class Plaque:
         convection[:,-1] =  convection[:,-1] + (self.dt * self.h * (self.T_amb - self.grille[:,-1]) / (self.rho * self.cp * self.dx)) # aire_side/volume : dy*e s'annule laissant dx
         # Si je ne me trompe pas, la convection sur les coins a déjà été prise en compte...
 
+
         "Section total"
         new_grille = self.grille + conduction + convection
 
@@ -209,7 +209,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=0) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -221,7 +221,7 @@ Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actu
 
 "ICII"
 start = time.time()
-for n in tqdm(range(10000)):
+for n in tqdm(range(1000)):
     for k in range(20): 
         Ma_plaque.iteration()
         # Ma_plaque.show()
