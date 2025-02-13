@@ -209,7 +209,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=35, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
+#Ma_plaque = Plaque(T_plaque=35, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -220,17 +220,17 @@ Ma_plaque = Plaque(T_plaque=35, T_ambiante=21, resolution_t=None, puissance_actu
 
 
 "ICII"
-start = time.time()
-for n in tqdm(range(10000)):
-    for k in range(50): 
-        Ma_plaque.iteration()
-        # Ma_plaque.show()
-end = time.time()
-print(end-start)
-Ma_plaque.enregistre_rep_echelon()
-Ma_plaque.show()
-print(Ma_plaque.grille.size)
-print(Ma_plaque.grille.shape)
+# start = time.time()
+# for n in tqdm(range(10000)):
+#     for k in range(50): 
+#         Ma_plaque.iteration()
+#         # Ma_plaque.show()
+# end = time.time()
+# print(end-start)
+# Ma_plaque.enregistre_rep_echelon()
+# Ma_plaque.show()
+# print(Ma_plaque.grille.size)
+# print(Ma_plaque.grille.shape)
 
 
 

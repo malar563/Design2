@@ -1,11 +1,10 @@
 import os
 from tqdm import tqdm
-from mpl_toolkits.mplot3d import Axes3D
 import json
 from datetime import datetime
 import tkinter as tk # module de base
 from tkinter import ttk # mettre ça beau
-import temperature_plaque
+import mega_simulation
 
 
 class Interface:
@@ -42,7 +41,6 @@ class Interface:
             "T_amb": self.T_amb, "T_depo": 0, "T_posx": 0, "T_posy": 0, "P": self.P
         }.items()}
 
-
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
         if self.dt is None:
@@ -51,31 +49,35 @@ class Interface:
         # Go go main interface
         self.main()
     
+
     def lire_json(self):
-        # Rassembler les jsons
-        json_files = [f for f in os.listdir() if f.endswith('.json')]
+        """ Charge les données depuis le fichier JSON le plus récent ou utilise les valeurs par défaut. """
+        
+        # Trouver les fichiers JSON
+        json_files = sorted(
+            (f for f in os.listdir() if f.endswith('.json')),
+            key=os.path.getmtime,
+            reverse=True
+        )
+
+        # Si aucun fichier n'est trouvé, utiliser les valeurs par défaut
         if not json_files:
             print("Aucun fichier JSON trouvé. Valeurs par défaut utilisées.")
-            self.json_de_base()
-            self.data_lu = self.data
+            self.data_lu = self.json_de_base()
             return
-        
-        # Mettre en ordre
-        json_files.sort(key=lambda x: x.split('.')[::-1], reverse=True)
-        self.nom_json = json_files[0]
 
-        # lire
+        # Charger le fichier JSON le plus récent
+        self.nom_json = json_files[0]
         try:
-            with open(self.nom_json, mode="r") as file:
+            with open(self.nom_json, "r", encoding="utf-8") as file:
                 self.data_lu = json.load(file)
-        except json.JSONDecodeError:
-            print(f"Erreur de décodage dans le fichier {self.nom_json}. Valeurs par défaut utilisées.")
-            self.json_de_base()
-            self.data_lu = self.data
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Erreur lors de la lecture du fichier {self.nom_json}: {e}\nValeurs par défaut utilisées.")
+            self.data_lu = self.json_de_base()
 
 
     def json_de_base(self):
-        self.data = {
+        return {
             "dimensions": [0.117,0.061],
             "epaisseur": 0.001,
             "resolution_x": 0.001,
@@ -90,13 +92,13 @@ class Interface:
             "puissance_actuateur": 1.5
         }
 
+
     def entry(self, parent, texte, var, row):
         ttk.Label(parent, text=texte).grid(column=0, row=row)
         entry = ttk.Entry(parent, textvariable=self.variables[var])
         entry.grid(column=1, row=row)
-        entry.delete(0, "end")
-        entry.insert(0, self.variables[var].get())
         return entry
+
 
     def main(self):
         # Température initiale de la plaque
@@ -175,22 +177,18 @@ class Interface:
         self.entry(self.T_dep_frame, "Température déposée [K]", "T_depo", 0)
 
         # Position de la temp
-        self.entry(self.T_dep_frame, "Position en x de la température déposée", "posx", 1)
-        self.entry(self.T_dep_frame, "Position en y de la température déposée", "posy", 2)
+        self.entry(self.T_dep_frame, "Position en x de la température déposée", "T_posx", 1)
+        self.entry(self.T_dep_frame, "Position en y de la température déposée", "T_posy", 2)
 
 
     def sauvegarder_json(self):
         # Avoir la date dans le format 'dd.mm'
-        current_date = datetime.now().strftime('%d.%m')
-
-        extension = '.json'
-        i = 1
-        new_nom = f'{current_date}.{i}{extension}'
+        current_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        new_nom = f'{current_date}.json'
         
-        # Regarde si fichier existe déjà, si oui ajoute 1 au nombre final
+        # Regarde si fichier existe déjà, fait nouveau fichier
         while os.path.exists(new_nom):
-            i += 1
-            new_nom = f'{current_date}.{i}{extension}'
+            new_nom = f'{current_date}.json'
         
         # Sauvegarder
         with open(new_nom, 'w') as f:
@@ -219,7 +217,7 @@ class Interface:
             "puissance_actuateur": self.P
         }
         self.sauvegarder_json()
-        self.Ma_plaque = temperature_plaque.Plaque(
+        self.Ma_plaque = mega_simulation.Plaque(
             dimensions=(self.dim[0], self.dim[1]),
             epaisseur=self.e,
             resolution_x=self.dx,
@@ -233,21 +231,27 @@ class Interface:
             coef_convection=self.h,
             puissance_actuateur=self.P
             )
+        for n in tqdm(range(1000)):
+            for k in range(50): 
+                self.Ma_plaque.iteration()
+        self.Ma_plaque.enregistre_rep_echelon()
 
 
     def graphique(self):
         self.submit()
         #plt.ion()
         #start = time.time()
-        for n in tqdm(range(10)):
+        for n in tqdm(range(1000)):
             self.Ma_plaque.show()
             for k in range(85): # Vérifie que cette boucle tourne aussi
                 self.Ma_plaque.iteration()
+
 
     def submit_plaque(self):
         self.dim=(self.variables["dimx"].get(), self.variables["dimy"].get())
         self.e=self.variables["e"].get()
         self.plaque_frame.destroy()
+
 
     def submit_mat(self):
         self.rho=self.variables["rho"].get()
@@ -255,11 +259,13 @@ class Interface:
         self.k=self.variables["k"].get()
         self.mat_frame.destroy()
     
+
     def submit_reso(self):
         self.dx=self.variables["dx"].get()
         self.dy=self.variables["dy"].get()
         self.dt=self.variables["dt"].get()
         self.reso_frame.destroy()
+
 
     def submit_T_dep(self):
         self.T_depo=self.variables["T_depo"].get()
