@@ -141,7 +141,7 @@ class Plaque:
         # conduction rangée du bas
         conduction[-1,:] = (self.alpha * self.dt) * (
             ((self.grille[-2,:] -  self.grille[-1,:])/self.dy**2) +  # Bas
-            ((np.roll(self.grille[0,:], shift=1) + np.roll(self.grille[0,:], shift=-1) - 2 * self.grille[0,:])/self.dx**2)) # Gauche - Droite
+            ((np.roll(self.grille[-1,:], shift=1) + np.roll(self.grille[-1,:], shift=-1) - 2 * self.grille[-1,:])/self.dx**2)) # Gauche - Droite
         # conduction côté gauche
         conduction[:,0] = (self.alpha * self.dt) * (
             ((np.roll(self.grille[:,0], shift=1) + np.roll(self.grille[:,0], shift=-1) - 2 * self.grille[:,0])/self.dy**2) + # Haut - Bas
@@ -176,7 +176,7 @@ class Plaque:
         # convection gauche et droite (cas général + 1 surface)
         convection[:,0] =  convection[:,0] + (self.dt * self.h * (self.T_amb - self.grille[:,0]) / (self.rho * self.cp * self.dx)) # aire_side/volume : dy*e s'annule laissant dx
         convection[:,-1] =  convection[:,-1] + (self.dt * self.h * (self.T_amb - self.grille[:,-1]) / (self.rho * self.cp * self.dx)) # aire_side/volume : dy*e s'annule laissant dx
-        # Si je ne me trompe pas, la convection sur les coins a déjà été prise en compte...
+
 
 
         "Section total"
@@ -209,7 +209,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=0) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1.5) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -221,8 +221,8 @@ Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actu
 
 "ICII"
 start = time.time()
-for n in tqdm(range(1000)):
-    for k in range(20): 
+for n in tqdm(range(10000)):
+    for k in range(50): 
         Ma_plaque.iteration()
         # Ma_plaque.show()
 end = time.time()

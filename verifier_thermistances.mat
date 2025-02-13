@@ -1,0 +1,32 @@
+% "faux_csv.csv" est un fichier temps-temperature
+% j'assume qu'il correspond  une thermistance
+% sera  modifier pour 3 thermistances 
+% 1ere thermistance est la + proche de l'actuateur
+
+% nom du fichier
+filename1 = 'faux_csv.csv';
+
+
+% mettre en matrice
+dataMatrix1 = readmatrix(filename1);
+
+
+% Plot temps (x) - temprature (y)
+temps = dataMatrix1(:,1); % temps = 1ere colonne
+temp1 = dataMatrix1(:,2); % temp = 2e colonne
+temp2 = dataMatrix1(:,3); % temp = 2e colonne
+temp3 = dataMatrix1(:,4); % temp = 2e colonne
+
+figure;
+plot(temps1, temp1, 'LineWidth', 1.5);
+xlabel('t (s)');
+ylabel('T (K)');
+title('Température des thermistances en fonction du temps');
+grid on;
+
+hold on;
+plot(temps,temp2, 'LineWidth', 1.5)
+
+plot(temps,temp3, 'LineWidth', 1.5) 
+hold off
+legend(" l'actuateur", "Au milieu", "Au laser")
