@@ -11,7 +11,7 @@ import pandas as pd
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.116, 0.06), epaisseur=0.001, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=20, puissance_actuateur = 1.5, perturbations = []):
+    def __init__(self, dimensions=(0.116, 0.06), epaisseur=0.001, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=8, puissance_actuateur = 1.5, perturbations = []):
         self.dim = dimensions # tuple (y, x)
         # TEMPS TOTAL
         # NOMBRE DITÉRATION TEMPORELLE
