@@ -11,7 +11,7 @@ import pandas as pd
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.116, 0.06), epaisseur=0.001, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=8, puissance_actuateur = 1.5, perturbations = []):
+    def __init__(self, dimensions=(0.116, 0.06), epaisseur=0.001, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2699, cap_calorifique=900, conduc_thermique=237, coef_convection=8.4, puissance_actuateur = 1.5, perturbations = []):
         self.dim = dimensions # tuple (y, x)
         # TEMPS TOTAL
         # NOMBRE DITÉRATION TEMPORELLE
@@ -209,7 +209,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-#Ma_plaque = Plaque(T_plaque=35, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -220,17 +220,17 @@ class Plaque:
 
 
 "ICII"
-# start = time.time()
-# for n in tqdm(range(10000)):
-#     for k in range(50): 
-#         Ma_plaque.iteration()
-#         # Ma_plaque.show()
-# end = time.time()
-# print(end-start)
-# Ma_plaque.enregistre_rep_echelon()
-# Ma_plaque.show()
-# print(Ma_plaque.grille.size)
-# print(Ma_plaque.grille.shape)
+start = time.time()
+for n in tqdm(range(10000)):
+    for k in range(20): 
+        Ma_plaque.iteration()
+        # Ma_plaque.show()
+end = time.time()
+print(end-start)
+Ma_plaque.enregistre_rep_echelon()
+Ma_plaque.show()
+print(Ma_plaque.grille.size)
+print(Ma_plaque.grille.shape)
 
 
 
