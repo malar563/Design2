@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 
 
 fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_test_echelon_vontilateur.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
 
 data = pd.read_csv(fich, sep=';')
@@ -24,6 +25,9 @@ print(column_names)
 plt.plot(data["Temps (s)"],data["T1"])
 plt.plot(data["Temps (s)"],data["T2"])
 plt.plot(data["Temps (s)"],data["T3"])
+# plt.plot(data["Temps"],data["T1"])
+# plt.plot(data["Temps"],data["T2"])
+# plt.plot(data["Temps"],data["T3"])
 plt.show()
 
 

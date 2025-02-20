@@ -229,8 +229,9 @@ end = time.time()
 print(end-start)
 Ma_plaque.enregistre_rep_echelon()
 Ma_plaque.show()
-print(Ma_plaque.grille.size)
-print(Ma_plaque.grille.shape)
+print(Ma_plaque.dt)
+#print(Ma_plaque.grille.size)
+#print(Ma_plaque.grille.shape)
 
 
 
