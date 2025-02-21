@@ -15,9 +15,9 @@ column_names_sim = data_sim.columns
 # print(column_names_sim)
 print(column_names)
 
-plt.plot(data_sim["0"],3*(data_sim["2"]-data_sim["2"][0]),color="red", label="Simulateur")
-plt.plot(data_sim["0"],3*(data_sim["3"]-data_sim["3"][0]),color="red")
-plt.plot(data_sim["0"],3*(data_sim["4"]-data_sim["4"][0]),color="red")
+plt.plot(data_sim["0"],(data_sim["2"]-data_sim["2"][0]),color="red", label="Simulateur")
+plt.plot(data_sim["0"],(data_sim["3"]-data_sim["3"][0]),color="red")
+plt.plot(data_sim["0"],(data_sim["4"]-data_sim["4"][0]),color="red")
 # plt.show()
 
 plt.plot(data["Temps (s)"],data["T1"]-data["T1"][0], color="blue", label="Prototype")

@@ -209,7 +209,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
