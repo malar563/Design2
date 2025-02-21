@@ -6,28 +6,29 @@ from scipy.optimize import curve_fit
 
 fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_test_echelon_vontilateur.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
-# fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
+fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
 
 data = pd.read_csv(fich, sep=';')
-# data_sim = pd.read_csv(fich_sim)
+data_sim = pd.read_csv(fich_sim)
 column_names = data.columns
-# column_names_sim = data_sim.columns
+column_names_sim = data_sim.columns
 # print(column_names_sim)
 print(column_names)
 
-# plt.plot(data_sim["0"],data_sim["2"])
-# plt.plot(data_sim["0"],data_sim["3"])
-# plt.plot(data_sim["0"],data_sim["4"])
-# # plt.plot(t2,Therm_2)
-# # plt.plot(t3,Therm_3)
+plt.plot(data_sim["0"],3*(data_sim["2"]-data_sim["2"][0]),color="red", label="Simulateur")
+plt.plot(data_sim["0"],3*(data_sim["3"]-data_sim["3"][0]),color="red")
+plt.plot(data_sim["0"],3*(data_sim["4"]-data_sim["4"][0]),color="red")
 # plt.show()
 
-plt.plot(data["Temps (s)"],data["T1"])
-plt.plot(data["Temps (s)"],data["T2"])
-plt.plot(data["Temps (s)"],data["T3"])
-# plt.plot(data["Temps"],data["T1"])
-# plt.plot(data["Temps"],data["T2"])
-# plt.plot(data["Temps"],data["T3"])
+plt.plot(data["Temps (s)"],data["T1"]-data["T1"][0], color="blue", label="Prototype")
+plt.plot(data["Temps (s)"],data["T2"]-data["T2"][0], color="blue")
+plt.plot(data["Temps (s)"],data["T3"]-data["T3"][0], color="blue")
+# plt.plot(data["Temps"][6101:]-61,data["T1"][6101:]-data["T1"][6101])
+# plt.plot(data["Temps"][6101:]-61,data["T2"][6101:]-data["T2"][6101])
+# plt.plot(data["Temps"][6101:]-61,data["T3"][6101:]-data["T3"][6101])
+plt.xlabel("Temps (s)")
+plt.ylabel("Variation de température (°C)")
+plt.legend()
 plt.show()
 
 
