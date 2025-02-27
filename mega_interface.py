@@ -13,20 +13,21 @@ class Interface:
         self.frame = ttk.Frame(self.inter, padding=10)
         self.frame.grid()
         self.inter.title('Contrôle de la simulation Python')
+        self.graph = False
 
         # lire json
         self.lire_json()
         
         # Initialisation des variables depuis JSON ou valeurs par défaut (certaines valeurs =! 0)
-        self.dim = self.data_lu.get("dimensions", [0.117, 0.061]) if self.data_lu.get("dimensions", [0.117, 0.061]) != 0 else [0.117, 0.061]
-        self.e = self.data_lu.get("epaisseur", 0.001) if self.data_lu.get("epaisseur", 0.001) != 0 else 0.001
-        self.dx = self.data_lu.get("resolution_x", 0.001) if self.data_lu.get("resolution_x", 0.001) != 0 else 0.001
+        self.dim = self.data_lu.get("dimensions", [0.116,0.0615]) if self.data_lu.get("dimensions", [0.116,0.0615]) != 0 else [0.116,0.0615]
+        self.e = self.data_lu.get("epaisseur", 0.00156) if self.data_lu.get("epaisseur", 0.00156) != 0 else 0.00156
+        self.dx = self.data_lu.get("resolution_x", 0.0015) if self.data_lu.get("resolution_x", 0.0015) != 0 else 0.0015
         self.dy = self.data_lu.get("resolution_y", 0.001) if self.data_lu.get("resolution_y", 0.001) != 0 else 0.001
         self.dt = self.data_lu.get("resolution_t", None)
-        self.rho = self.data_lu.get("densite", 2699) if self.data_lu.get("densite", 2699) != 0 else 2699
-        self.cp = self.data_lu.get("cap_calorifique", 900.0) if self.data_lu.get("cap_calorifique", 900.0) != 0 else 900.0
-        self.k = self.data_lu.get("conduc_thermique", 666.0) if self.data_lu.get("conduc_thermique", 666.0) != 0 else 666.0
-        self.h = self.data_lu.get("coef_convection", 20.0) if self.data_lu.get("coef_convection", 20.0) != 0 else 20.0
+        self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
+        self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
+        self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
+        self.h = self.data_lu.get("coef_convection", 12.2) if self.data_lu.get("coef_convection", 12.2) != 0 else 12.2
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
         self.T_amb = self.data_lu.get("T_ambiante", 23.0) 
         self.T_depo = 0
@@ -78,15 +79,15 @@ class Interface:
 
     def json_de_base(self):
         return {
-            "dimensions": [0.117,0.061],
-            "epaisseur": 0.001,
-            "resolution_x": 0.001,
+            "dimensions": [0.116,0.0615],
+            "epaisseur": 0.00156,
+            "resolution_x": 0.0015,
             "resolution_y": 0.001,
             "resolution_t": None,
-            "densite": 2699,
-            "cap_calorifique": 900,
-            "conduc_thermique": 237,
-            "coef_convection": 20,
+            "densite": 2700,
+            "cap_calorifique": 897,
+            "conduc_thermique": 167,
+            "coef_convection": 12.2,
             "T_plaque": 25,
             "T_ambiante": 23,
             "puissance_actuateur": 1.5
@@ -231,20 +232,21 @@ class Interface:
             coef_convection=self.h,
             puissance_actuateur=self.P
             )
-        for n in tqdm(range(1000)):
-            for k in range(50): 
-                self.Ma_plaque.iteration()
+        if self.graph == False:
+            for n in tqdm(range(1000)):
+                for k in range(50): 
+                    self.Ma_plaque.iteration()
+        else:
+            for n in tqdm(range(1000)):
+                self.Ma_plaque.show()
+                for k in range(85):
+                    self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
 
     def graphique(self):
+        self.graph = True
         self.submit()
-        #plt.ion()
-        #start = time.time()
-        for n in tqdm(range(1000)):
-            self.Ma_plaque.show()
-            for k in range(85): # Vérifie que cette boucle tourne aussi
-                self.Ma_plaque.iteration()
 
 
     def submit_plaque(self):

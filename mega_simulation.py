@@ -13,17 +13,17 @@ from tqdm import tqdm
 class Plaque:
     def __init__(
             self,
-            dimensions=(0.116, 0.06),
-            epaisseur=0.001,
+            dimensions=(0.116, 0.0615),
+            epaisseur=0.00156,
             resolution_x=0.0015,
             resolution_y=0.001,
             resolution_t=None,
             T_plaque=25,
             T_ambiante=23,
-            densite=2699,
-            cap_calorifique=900,
-            conduc_thermique=237,
-            coef_convection=20,
+            densite=2700,
+            cap_calorifique=897,
+            conduc_thermique=167,
+            coef_convection=12.2,
             puissance_actuateur = 1.5,
             perturbations = [] # position_enregistrement
             ):
@@ -43,7 +43,7 @@ class Plaque:
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t # 8 ALPHA PLUTÔT QUE 4 ALPHA
         self.P_act = puissance_actuateur # En [W]
-        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
+        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) 
         T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P_act/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
         self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
         self.perturbations = perturbations
@@ -232,7 +232,7 @@ class Plaque:
         
 
 
-# Ma_plaque = Plaque(T_plaque=35, T_ambiante=21, resolution_t=None, puissance_actuateur=1) # TUPLE (Y, X)
+# Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -245,12 +245,14 @@ class Plaque:
 "ICII"
 # start = time.time()
 # for n in tqdm(range(10000)):
-#     for k in range(50): 
+#     for k in range(20): 
 #         Ma_plaque.iteration()
 #         # Ma_plaque.show()
 # end = time.time()
 # print(end-start)
 # Ma_plaque.enregistre_rep_echelon()
 # Ma_plaque.show()
+# print(Ma_plaque.dt)
+
 # print(Ma_plaque.grille.size)
 # print(Ma_plaque.grille.shape)
