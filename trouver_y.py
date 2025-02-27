@@ -31,6 +31,13 @@ plt.ylabel("Variation de température (°C)")
 plt.legend()
 plt.show()
 
+from scipy.interpolate import CubicSpline
+
+spline_sim0 = CubicSpline(data_sim["0"],(data_sim["2"]-data_sim["2"][0]))
+plt.plot(data["Temps (s)"],(data["T1"]-spline_sim0(data["Temps (s)"]))/spline_sim0(data["Temps (s)"])*100, color="blue", label="erreur")
+plt.legend()
+plt.show()
+
 
 data_filtered1 = data[data["Temps (s)"] > 324]
 data_filtered2 = data[data["Temps (s)"] > 324]
@@ -71,6 +78,7 @@ liste_h = []
 for i, (t, Therm) in enumerate([(t1, Therm_1), (t2, Therm_2), (t3, Therm_3)]):
     params, _ = curve_fit(cooling_law, t, Therm, p0=[15, 100, 280])
     print(params, _)
+    liste_h.append(params[0])
 
     ax1 = plt.subplot(211)
     ax2= plt.subplot(212, sharex=ax1)
@@ -86,8 +94,11 @@ for i, (t, Therm) in enumerate([(t1, Therm_1), (t2, Therm_2), (t3, Therm_3)]):
     ax2.set_xlabel("Temps [s]")
     ax2.set_ylabel("Pourcentage d'écart [%]")
     ax2.legend()
-    plt.show()
+    # plt.show() ENLEVER ICI POUR GRAĤIQUES
 
+moyenne = np.mean(liste_h)
+ecarttyp = 3*np.std(liste_h)
+print(moyenne, "écart-type", ecarttyp)
 
 # def cooling_law2(t, t0, T_air):
 #     #T_air = 20+273.15
@@ -106,5 +117,7 @@ for i, (t, Therm) in enumerate([(t1, Therm_1), (t2, Therm_2), (t3, Therm_3)]):
 # #     plt.plot(t, Therm)
 # #     plt.plot(t, cooling_law2(t, params[0], params[1]))
 # #     plt.show()
+
+
 
 

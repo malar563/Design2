@@ -3,7 +3,6 @@ os.system("git pull")
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import copy
 from tqdm import tqdm
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
@@ -11,7 +10,7 @@ import pandas as pd
 
 
 class Plaque:
-    def __init__(self, dimensions=(0.116, 0.0615), epaisseur=0.00156, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2700, cap_calorifique=897, conduc_thermique=167, coef_convection=8.4, puissance_actuateur = 1.5, perturbations = []):
+    def __init__(self, dimensions=(0.116, 0.0615), epaisseur=0.00156, resolution_x=0.0015, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2700, cap_calorifique=897, conduc_thermique=167, coef_convection=12.2, puissance_actuateur = 1.5, perturbations = []):
         self.dim = dimensions # tuple (y, x)
         # TEMPS TOTAL
         # NOMBRE DITÉRATION TEMPORELLE
@@ -28,7 +27,7 @@ class Plaque:
         self.alpha = self.k/(self.rho*self.cp)
         self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha)) if resolution_t == None else resolution_t # 8 ALPHA PLUTÔT QUE 4 ALPHA
         self.P_act = puissance_actuateur # En [W]
-        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx))) # Grosseur de l'actuateur de 15x15 mm^2 #Mettre un dy à qqpart ici
+        self.actuateur = np.ones((int(0.015/self.dy), int(0.015/self.dx)))
         T_actuateur = (self.dt/(self.rho * self.cp)) * (self.P_act/self.actuateur.size)/(self.dx*self.dy*self.e) # Diviser le 1.5W sur tous les éléments de la matrice ou mettre direct 1.5 partout?
         self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
         self.perturbations = perturbations
@@ -209,7 +208,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=21, T_ambiante=21, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
 
 # Ma_plaque.deposer_T(40, (0.10, 0.04))
 # Ma_plaque.deposer_T(12, (0.02, 0.02))
@@ -232,6 +231,5 @@ Ma_plaque.show()
 print(Ma_plaque.dt)
 #print(Ma_plaque.grille.size)
 #print(Ma_plaque.grille.shape)
-
 
 
