@@ -23,7 +23,7 @@ class Plaque:
             densite=2700,
             cap_calorifique=897,
             conduc_thermique=167,
-            coef_convection=12.2,
+            coef_convection=12,
             puissance_actuateur = 1.5,
             perturbations = [] # position_enregistrement
             ):

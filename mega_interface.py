@@ -27,7 +27,7 @@ class Interface:
         self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
         self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
         self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
-        self.h = self.data_lu.get("coef_convection", 12.2) if self.data_lu.get("coef_convection", 12.2) != 0 else 12.2
+        self.h = self.data_lu.get("coef_convection", 12) if self.data_lu.get("coef_convection", 12) != 0 else 12
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
         self.T_amb = self.data_lu.get("T_ambiante", 23.0) 
         self.T_depo = 0
@@ -87,7 +87,7 @@ class Interface:
             "densite": 2700,
             "cap_calorifique": 897,
             "conduc_thermique": 167,
-            "coef_convection": 12.2,
+            "coef_convection": 12,
             "T_plaque": 25,
             "T_ambiante": 23,
             "puissance_actuateur": 1.5
