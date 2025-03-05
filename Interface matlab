@@ -1,0 +1,112 @@
+classdef Interface_matlab < matlab.apps.AppBase
+
+    
+    properties (Access = public)
+        UIFigure             matlab.ui.Figure
+        StartButton          matlab.ui.control.Button
+        StopButton           matlab.ui.control.Button
+        StatusLabel          matlab.ui.control.Label
+        UIAxes               matlab.ui.control.UIAxes
+        ModelName            string = "simulateur_matlab"; 
+    end
+    
+   
+    properties (Access = private)
+        SimulationTimer timer
+    end
+
+    
+    methods (Access = private)
+        
+        
+        function startSimulation(app)
+            
+            load_system(app.ModelName);
+            
+            set_param('simulateur_matlab/Scope', 'DataLogging', 'on');
+            
+           
+            set_param(app.ModelName, 'SimulationCommand', 'start');
+            app.StatusLabel.Text = "État : En cours";
+            
+           
+            app.SimulationTimer = timer('ExecutionMode', 'fixedSpacing', ...
+                'Period', 0.1, 'TimerFcn', @(~,~)app.updatePlot());
+            start(app.SimulationTimer);
+        end
+        
+        
+        function stopSimulation(app)
+            set_param(app.ModelName, 'SimulationCommand', 'stop');
+            app.StatusLabel.Text = "État : Arrêté";
+            
+            if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
+                stop(app.SimulationTimer);
+                delete(app.SimulationTimer);
+            end
+        end
+        
+       
+        function updatePlot(app)
+           
+            logsout = evalin('base', 'logsout');
+            if isempty(logsout)
+                return;
+            end
+            
+           
+            signal = logsout.get('laser');
+            if isempty(signal)
+                return;
+            end
+            
+            
+            time = signal.Values.Time;
+            data = signal.Values.Data;
+            
+            
+            if isempty(app.UIAxes.Children)
+                plot(app.UIAxes, time, data);
+            else
+                
+                hPlot = app.UIAxes.Children(1);
+                set(hPlot, 'XData', time, 'YData', data);
+            end
+            app.UIAxes.Title.String = 'Oscilloscope Simulé';
+            app.UIAxes.XLabel.String = 'Temps';
+            app.UIAxes.YLabel.String = 'Température';
+            drawnow;
+        end
+     
+    end
+
+    
+    methods (Access = public)
+        
+        
+        function app = Interface_matlab()
+            
+            app.UIFigure = uifigure('Name', 'Contrôle Simulink', 'Position', [100 100 500 350]);
+
+            
+            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', 'Démarrer');
+            app.StartButton.Position = [20 300 100 30];
+            app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
+
+            
+            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', 'Arrêter');
+            app.StopButton.Position = [140 300 100 30];
+            app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
+
+           
+            app.StatusLabel = uilabel(app.UIFigure, 'Text', 'État : Arrêté');
+            app.StatusLabel.Position = [260 300 150 30];
+
+           
+            app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 20 460 260]);
+            title(app.UIAxes, 'Oscilloscope Simulé');
+            xlabel(app.UIAxes, 'Temps');
+            ylabel(app.UIAxes, 'Température');
+        end
+    end
+end
