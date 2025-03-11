@@ -1,40 +1,37 @@
 classdef Interface_matlab < matlab.apps.AppBase
 
-    
     properties (Access = public)
         UIFigure             matlab.ui.Figure
         StartButton          matlab.ui.control.Button
         StopButton           matlab.ui.control.Button
+        InitialTempButton    matlab.ui.control.Button 
+        FinalTempButton      matlab.ui.control.Button 
+        SamplingTimeButton   matlab.ui.control.Button 
+        InitialPowerButton   matlab.ui.control.Button 
+        FinalPowerButton     matlab.ui.control.Button 
+        InitialTimeButton    matlab.ui.control.Button 
         StatusLabel          matlab.ui.control.Label
+        PlaqueLabel          matlab.ui.control.Label
+        ResistanceLabel      matlab.ui.control.Label
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab"; 
+        ModelName            string = "simulateur_matlab_version11"; 
     end
-    
-   
+
     properties (Access = private)
         SimulationTimer timer
     end
 
-    
     methods (Access = private)
-        
-        
         function startSimulation(app)
-            
             load_system(app.ModelName);
-            
             set_param('simulateur_matlab/Scope', 'DataLogging', 'on');
-            
-           
             set_param(app.ModelName, 'SimulationCommand', 'start');
             app.StatusLabel.Text = "État : En cours";
             
-           
             app.SimulationTimer = timer('ExecutionMode', 'fixedSpacing', ...
                 'Period', 0.1, 'TimerFcn', @(~,~)app.updatePlot());
             start(app.SimulationTimer);
         end
-        
         
         function stopSimulation(app)
             set_param(app.ModelName, 'SimulationCommand', 'stop');
@@ -45,35 +42,112 @@ classdef Interface_matlab < matlab.apps.AppBase
                 delete(app.SimulationTimer);
             end
         end
-        
-       
-        function updatePlot(app)
-           
-            logsout = evalin('base', 'logsout');
 
-            
+        function Initialisation(app)
+            initialTemp = 23;
+            assignin('base', 'initialTemp', initialTemp);
+            finalTemp = 25;
+            assignin('base', 'finalTemp', finalTemp);
+            samplingTime = 0.001;
+            assignin('base', 'samplingTime', samplingTime);
+            initialPower = 0;
+            assignin('base', 'initialPower', initialPower);
+            finalPower = 0;
+            assignin('base', 'finalPower', finalPower);
+            initialTime = 0;
+            assignin('base', 'initialPower', initialTime);
+        end
+
+        function set_InitialTemp(app)
+            prompt = {'Entrez la température initiale :'}; 
+            title = 'Température initiale';
+            dims = [1 35];
+            definput = {'23'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                initialTemp = str2double(answer{1});
+                assignin('base', 'initialTemp', initialTemp);
+            end
+        end
+        
+        function set_FinalTemp(app)
+            prompt = {'Entrez la température désirée :'};
+            title = 'Température désirée';
+            dims = [1 35];
+            definput = {'25'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                finalTemp = str2double(answer{1});
+                assignin('base', 'finalTemp', finalTemp);
+            end
+        end
+        
+        function set_SamplingTime(app)
+            prompt = {"Entrez le temps d'échantillonnage :"};
+            title = "Temps d'échantillonnage";
+            dims = [1 35];
+            definput = {'0.001'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                samplingTime = str2double(answer{1});
+                assignin('base', 'samplingTime', samplingTime);
+            end
+        end
+        
+        function set_InitialPower(app)
+            prompt = {'Entrez la puissance initiale :'};
+            title = 'Puissance initiale';
+            dims = [1 35];
+            definput = {'0'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                initialPower = str2double(answer{1});
+                assignin('base', 'initialPower', initialPower);
+            end
+        end
+
+        function set_FinalPower(app)
+            prompt = {'Entrez la puissance finale :'};
+            title = 'Puissance finale';
+            dims = [1 35];
+            definput = {'0'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                finalPower = str2double(answer{1});
+                assignin('base', 'finalPower', finalPower);
+            end
+        end
+
+        function set_InitialTime(app)
+            prompt = {'Entrez le temps de démarrage :'};
+            title = 'Temps de démarrage';
+            dims = [1 35];
+            definput = {'0'};
+            answer = inputdlg(prompt, title, dims, definput);
+            if ~isempty(answer)
+                initialTime = str2double(answer{1});
+                assignin('base', 'initialTime', initialTime);
+            end
+        end
+        
+        function updatePlot(app)
+            logsout = evalin('base', 'logsout');
             if isempty(logsout)
                 return;
             end
             
-           
             signal = logsout.get('laser');
-            if isempty(signal)
-                return;
-            end
-            
             if isempty(signal)
                 disp('Signal laser introuvable');
                 return;
             end
+            
             time = signal.Values.Time;
             data = signal.Values.Data;
-            
             
             if isempty(app.UIAxes.Children)
                 plot(app.UIAxes, time, data);
             else
-                
                 hPlot = app.UIAxes.Children(1);
                 set(hPlot, 'XData', time, 'YData', data);
             end
@@ -82,37 +156,58 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.UIAxes.YLabel.String = 'Température';
             drawnow;
         end
-     
     end
 
-    
     methods (Access = public)
-        
-        
         function app = Interface_matlab()
-            
-            app.UIFigure = uifigure('Name', 'Contrôle Simulink', 'Position', [100 100 500 350]);
+            app.Initialisation()
+            app.UIFigure = uifigure('Name', 'Contrôle Simulink', 'Position', [100 100 800 350]);
 
-            
             app.StartButton = uibutton(app.UIFigure, 'push', 'Text', 'Démarrer');
             app.StartButton.Position = [20 300 100 30];
             app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
 
-            
             app.StopButton = uibutton(app.UIFigure, 'push', 'Text', 'Arrêter');
             app.StopButton.Position = [140 300 100 30];
             app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
-
-           
+            
             app.StatusLabel = uilabel(app.UIFigure, 'Text', 'État : Arrêté');
             app.StatusLabel.Position = [260 300 150 30];
-
-           
-            app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 20 460 260]);
+            
+            app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
             title(app.UIAxes, 'Oscilloscope Simulé');
             xlabel(app.UIAxes, 'Temps');
             ylabel(app.UIAxes, 'Température');
+
+            app.PlaqueLabel = uilabel(app.UIFigure, 'Text', 'Plaque');
+            app.PlaqueLabel.Position = [500 270 140 30];
+         
+            app.InitialTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Température initiale');
+            app.InitialTempButton.Position = [500 230 140 30];
+            app.InitialTempButton.ButtonPushedFcn = @(~,~)app.set_InitialTemp();
+            
+            app.FinalTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Température désirée');
+            app.FinalTempButton.Position = [500 190 140 30];
+            app.FinalTempButton.ButtonPushedFcn = @(~,~)app.set_FinalTemp();
+            
+            app.SamplingTimeButton = uibutton(app.UIFigure, 'push', 'Text', "Temps d'échantillonnage");
+            app.SamplingTimeButton.Position = [500 150 140 30];
+            app.SamplingTimeButton.ButtonPushedFcn = @(~,~)app.set_SamplingTime();
+            
+            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', 'Résistance de perturbation');
+            app.ResistanceLabel.Position = [650 270 150 30];
+            
+            app.InitialPowerButton = uibutton(app.UIFigure, 'push', 'Text', 'Puissance initiale');
+            app.InitialPowerButton.Position = [650 230 140 30];
+            app.InitialPowerButton.ButtonPushedFcn = @(~,~)app.set_InitialPower();
+
+            app.FinalPowerButton = uibutton(app.UIFigure, 'push', 'Text', 'Puissance finale');
+            app.FinalPowerButton.Position = [650 190 140 30];
+            app.FinalPowerButton.ButtonPushedFcn = @(~,~)app.set_FinalPower();
+
+            app.InitialTimeButton = uibutton(app.UIFigure, 'push', 'Text', 'Temps de démarrage');
+            app.InitialTimeButton.Position = [650 150 140 30];
+            app.InitialTimeButton.ButtonPushedFcn = @(~,~)app.set_InitialTime();
         end
     end
 end
-
