@@ -14,7 +14,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version11"; 
+        ModelName            string = "simulateur_matlab_version19"; 
     end
 
     properties (Access = private)
@@ -26,7 +26,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             load_system(app.ModelName);
             set_param('simulateur_matlab/Scope', 'DataLogging', 'on');
             set_param(app.ModelName, 'SimulationCommand', 'start');
-            app.StatusLabel.Text = "État : En cours";
+            app.StatusLabel.Text = "tat : En cours";
             
             app.SimulationTimer = timer('ExecutionMode', 'fixedSpacing', ...
                 'Period', 0.1, 'TimerFcn', @(~,~)app.updatePlot());
@@ -35,7 +35,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         function stopSimulation(app)
             set_param(app.ModelName, 'SimulationCommand', 'stop');
-            app.StatusLabel.Text = "État : Arrêté";
+            app.StatusLabel.Text = "tat : Arrt";
             
             if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
                 stop(app.SimulationTimer);
@@ -48,7 +48,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
             assignin('base', 'finalTemp', finalTemp);
-            samplingTime = 0.001;
+            samplingTime = 4;
             assignin('base', 'samplingTime', samplingTime);
             initialPower = 0;
             assignin('base', 'initialPower', initialPower);
@@ -59,8 +59,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
 
         function set_InitialTemp(app)
-            prompt = {'Entrez la température initiale :'}; 
-            title = 'Température initiale';
+            prompt = {'Entrez la temprature initiale :'}; 
+            title = 'Temprature initiale';
             dims = [1 35];
             definput = {'23'};
             answer = inputdlg(prompt, title, dims, definput);
@@ -71,8 +71,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
         
         function set_FinalTemp(app)
-            prompt = {'Entrez la température désirée :'};
-            title = 'Température désirée';
+            prompt = {'Entrez la temprature dsire :'};
+            title = 'Temprature dsire';
             dims = [1 35];
             definput = {'25'};
             answer = inputdlg(prompt, title, dims, definput);
@@ -83,10 +83,10 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
         
         function set_SamplingTime(app)
-            prompt = {"Entrez le temps d'échantillonnage :"};
-            title = "Temps d'échantillonnage";
+            prompt = {"Entrez le temps d'chantillonnage :"};
+            title = "Temps d'chantillonnage";
             dims = [1 35];
-            definput = {'0.001'};
+            definput = {'4'};
             answer = inputdlg(prompt, title, dims, definput);
             if ~isempty(answer)
                 samplingTime = str2double(answer{1});
@@ -119,8 +119,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
 
         function set_InitialTime(app)
-            prompt = {'Entrez le temps de démarrage :'};
-            title = 'Temps de démarrage';
+            prompt = {'Entrez le temps de dmarrage :'};
+            title = 'Temps de dmarrage';
             dims = [1 35];
             definput = {'0'};
             answer = inputdlg(prompt, title, dims, definput);
@@ -153,7 +153,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             end
             app.UIAxes.Title.String = 'Oscilloscope';
             app.UIAxes.XLabel.String = 'Temps';
-            app.UIAxes.YLabel.String = 'Température';
+            app.UIAxes.YLabel.String = 'Temprature';
             drawnow;
         end
     end
@@ -161,40 +161,40 @@ classdef Interface_matlab < matlab.apps.AppBase
     methods (Access = public)
         function app = Interface_matlab()
             app.Initialisation()
-            app.UIFigure = uifigure('Name', 'Contrôle Simulink', 'Position', [100 100 800 350]);
+            app.UIFigure = uifigure('Name', 'Contrle Simulink', 'Position', [100 100 800 350]);
 
-            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', 'Démarrer');
+            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', 'Dmarrer');
             app.StartButton.Position = [20 300 100 30];
             app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
 
-            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', 'Arrêter');
+            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', 'Arrter');
             app.StopButton.Position = [140 300 100 30];
             app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
             
-            app.StatusLabel = uilabel(app.UIFigure, 'Text', 'État : Arrêté');
+            app.StatusLabel = uilabel(app.UIFigure, 'Text', 'tat : Arrt');
             app.StatusLabel.Position = [260 300 150 30];
             
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
-            title(app.UIAxes, 'Oscilloscope Simulé');
+            title(app.UIAxes, 'Oscilloscope Simul');
             xlabel(app.UIAxes, 'Temps');
-            ylabel(app.UIAxes, 'Température');
+            ylabel(app.UIAxes, 'Temprature');
 
             app.PlaqueLabel = uilabel(app.UIFigure, 'Text', 'Plaque');
             app.PlaqueLabel.Position = [500 270 140 30];
          
-            app.InitialTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Température initiale');
+            app.InitialTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Temprature initiale');
             app.InitialTempButton.Position = [500 230 140 30];
             app.InitialTempButton.ButtonPushedFcn = @(~,~)app.set_InitialTemp();
             
-            app.FinalTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Température désirée');
+            app.FinalTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Temprature dsire');
             app.FinalTempButton.Position = [500 190 140 30];
             app.FinalTempButton.ButtonPushedFcn = @(~,~)app.set_FinalTemp();
             
-            app.SamplingTimeButton = uibutton(app.UIFigure, 'push', 'Text', "Temps d'échantillonnage");
+            app.SamplingTimeButton = uibutton(app.UIFigure, 'push', 'Text', "Temps d'chantillonnage");
             app.SamplingTimeButton.Position = [500 150 140 30];
             app.SamplingTimeButton.ButtonPushedFcn = @(~,~)app.set_SamplingTime();
             
-            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', 'Résistance de perturbation');
+            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', 'Rsistance de perturbation');
             app.ResistanceLabel.Position = [650 270 150 30];
             
             app.InitialPowerButton = uibutton(app.UIFigure, 'push', 'Text', 'Puissance initiale');
@@ -205,7 +205,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.FinalPowerButton.Position = [650 190 140 30];
             app.FinalPowerButton.ButtonPushedFcn = @(~,~)app.set_FinalPower();
 
-            app.InitialTimeButton = uibutton(app.UIFigure, 'push', 'Text', 'Temps de démarrage');
+            app.InitialTimeButton = uibutton(app.UIFigure, 'push', 'Text', 'Temps de dmarrage');
             app.InitialTimeButton.Position = [650 150 140 30];
             app.InitialTimeButton.ButtonPushedFcn = @(~,~)app.set_InitialTime();
         end
