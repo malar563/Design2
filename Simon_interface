@@ -139,10 +139,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             end
         end
         
-        function Graphique(app)
-
-            
-
+       
 
         function updatePlot(app)
             if evalin('base', 'exist("Temperature_simulation", "var")')  
