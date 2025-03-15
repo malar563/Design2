@@ -24,8 +24,9 @@ classdef Interface_matlab < matlab.apps.AppBase
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
         RegulateurLabel      matlab.ui.control.Label
+        GraphiqueButton      matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version21"; 
+        ModelName            string = "simulateur_matlab_version25"; 
     end
 
     properties (Access = private)
@@ -74,8 +75,50 @@ classdef Interface_matlab < matlab.apps.AppBase
             tempsReg = 146.07;
             assignin('base', 'tempsReg', tempsReg);
         end
-
-
+        function Graphique(app)
+           
+           title = 'Graphique';
+           dims = [1 35];
+           definput = {'0'};
+           answer = inputdlg(prompt, title, dims, definput);
+           if ~isempty(answer)
+               initialTime = str2double(answer{1});
+               assignin('base', 'initialTime', initialTime);
+            end
+        end
+        function set_Graphique(app)
+         
+            figGraph = uifigure('Name', 'Interface Graphique - Selection', 'Position', [100 100 600 400]);
+    
+            
+            graphique = {'erreur', 'Regulateur', 'PWM', 'Filtre entree','Filtre sortie', ...
+                        'Temperature thermistance 1',  ...
+                        'Temperature thermistance 2', 'Temperature thermistance 3','TEC', ...
+                        'resistance thermistance 3', 'Temperature thermistance 1 mesuree ', 'Temperature thermistance 2 mesuree'};
+    
+            n = numel(graphique);
+            colone = 3;
+            range = 4;
+            largeur = 140;
+            hauteur = 30;
+            distance_entre_x = 50;
+            distance_entre_y = 20;
+            espaceX = (600 - 2*distance_entre_x - colone*largeur) / (colone - 1);
+            espaceY = (400 - 2*distance_entre_y - range*hauteur) / (range - 1);
+    
+            
+            for i = 1:n
+                col = mod(i-1, colone);
+                row = floor((i-1)/colone);
+                posX = distance_entre_x + col*(largeur + espaceX);
+                posY = 400 - distance_entre_y - row*(hauteur + espaceY) - hauteur;
+       
+                btn = uibutton(figGraph, 'push', 'Text', graphique{i});
+                btn.Position = [posX, posY, largeur, hauteur];
+        
+                btn.ButtonPushedFcn = @(src, event) app.openGraphInterface(i);
+        end
+    end
         function updatePlot(app)
             if evalin('base', 'exist("Temperature_simulation", "var")')  
                 Data = evalin('base', "Temperature_simulation");
@@ -87,9 +130,182 @@ classdef Interface_matlab < matlab.apps.AppBase
                 xlabel(app.UIAxes, 'Temps (s)');
                 ylabel(app.UIAxes, 'Temperature (�C)');
                 grid(app.UIAxes, 'on');
-            end
+                end
         end
-    end    
+   
+
+    function openGraphInterface(app, graphNum)
+        
+        figNewGraph = uifigure('Name', sprintf('Graph Interface %d', graphNum), 'Position', [150 150 500 400]);
+        ax = uiaxes(figNewGraph, 'Position', [50 50 400 300]);
+        
+        
+        switch graphNum
+            case 1
+                if evalin('base', 'exist("erreur", "var")')
+                    erreur = evalin('base', 'erreur');
+                    y = erreur.Data;
+                    x = erreur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, 'Erreur entre la commande et la valeur actuelle');
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Erreur (C)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de l'erreur ne sont pas enregistr sur Matlab ");
+                end
+
+            case 2
+                if evalin('base', 'exist("regulateur", "var")')
+                    regulateur = evalin('base', 'regulateur');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, 'Tension  la sortie du rgulateur');
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Tension (V)');
+                    grid(ax, 'on');
+                else
+                    warning('Les valeurs du regulateur ne sont pas enregistr sur Matlab');
+                end
+            case 3
+                if evalin('base', 'exist("PWM", "var")')
+                    regulateur = evalin('base', 'PWM');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, 'Signal de sortie du PWM');
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Tension (V)');
+                    grid(ax, 'on');
+                else
+                    warning('Les valeurs du PWM ne sont pas enregistr sur Matlab');
+                end
+               
+            case 4
+                if evalin('base', 'exist("ampli_entre", "var")')
+                    regulateur = evalin('base', 'ampli_entre');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Tension  la sortie du filtre d'entr ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Tension (V)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs du filtre d'entr ne sont pas enregistr sur Matlab");
+                end
+            
+            case 5
+                if evalin('base', 'exist("tension3", "var")')
+                    regulateur = evalin('base', 'tension3');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Tension  la sortie du filtre de sortie pour la tmeprature au laser ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Tension (V)');
+                    grid(ax, 'on');
+                else
+                    warning('Les valeurs du filtre de sortie ne sont pas enregistr sur Matlab');
+                end
+            
+            case 6
+                if evalin('base', 'exist("temperature2", "var")')
+                    regulateur = evalin('base', 'temperature2');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Temp�rature � la premi�re thermistance ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Temp�rature (C)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                end
+            case 7
+                if evalin('base', 'exist("temperature1", "var")')
+                    regulateur = evalin('base', 'temperature1');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Temp�rature � la deuxi�me thermistance ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Tension (C )');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                end
+            case 8
+                if evalin('base', 'exist("temperature3", "var")')
+                    regulateur = evalin('base', 'temperature3');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Temp�rature � la troisi�me thermistance ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Temp�rature (C)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                end
+            case 9
+                if evalin('base', 'exist("Puissance", "var")')
+                    regulateur = evalin('base', 'Puissance');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Puissance qui sort du TEC ");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Puissance (W)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la puissance ne sont pas enregistr sur Matlab");
+                end
+            case 10
+                if evalin('base', 'exist("resistance3_entre", "var")')
+                    regulateur = evalin('base', 'resistance3_entre');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "R�sistance de la troisi�me thermistance");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'R�sistance ()');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la r�sistance ne sont pas enregistr sur Matlab");
+                end
+
+            case 11
+                if evalin('base', 'exist("temperature1_sortie", "var")')
+                    regulateur = evalin('base', 'temperature1_sortie');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Temp�rature mesur�e de la themistance 1");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Temp�rature (C)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                end
+            
+            case 12
+                if evalin('base', 'exist("temperature2_sortie", "var")')
+                    regulateur = evalin('base', 'temperature2_sortie');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Temp�rature mesur�e de la themistance 2");
+                    xlabel(ax, 'Temps (s)');
+                    ylabel(ax, 'Temp�rature (C)');
+                    grid(ax, 'on');
+                else
+                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                end
+           end
+        end
+    end 
 
     methods (Access = public)
         function app = Interface_matlab()
@@ -188,6 +404,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.TempsRegField.Value = evalin('base', 'tempsReg');
             app.TempsRegField.ValueChangedFcn = @(src, event) assignin('base', 'tempsReg', src.Value);
             
+            app.GraphiqueButton = uibutton(app.UIFigure,'push', 'text', 'Graphique' );
+            app.GraphiqueButton.Position = [650 110 140 30];
+            app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
         end
     end
 end
