@@ -197,7 +197,7 @@ class Plaque:
         self.rep_echelon[1].append(self.P_act)
         self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]])
         self.rep_echelon[3].append(self.grille[pos_thermi2[0], pos_thermi2[1]])
-        self.rep_echelon[4].append(self.grille[pos_thermi3[0], pos_thermi2[1]])
+        self.rep_echelon[4].append(self.grille[pos_thermi3[0], pos_thermi3[1]])
 
         return self.grille
     

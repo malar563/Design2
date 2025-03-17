@@ -87,8 +87,8 @@ class Interface:
             "cap_calorifique": 897,
             "conduc_thermique": 167,
             "coef_convection": 12,
-            "T_plaque": 25,
-            "T_ambiante": 23,
+            "T_plaque": 23,
+            "T_ambiante": 25,
             "puissance_actuateur": 1.5
         }
 
