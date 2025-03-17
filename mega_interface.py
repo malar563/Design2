@@ -75,7 +75,7 @@ class Interface:
         except (json.JSONDecodeError, IOError) as e:
             print(f"Erreur lors de la lecture du fichier {self.nom_json}: {e}\nValeurs par défaut utilisées.")
             self.data_lu = self.json_de_base()
-
+        print(self.nom_json)
 
     def json_de_base(self):
         return {
