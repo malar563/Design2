@@ -1,0 +1,17 @@
+{
+    "dimensions": [
+        0.116,
+        0.0615
+    ],
+    "epaisseur": 0.00156,
+    "resolution_x": 0.0015,
+    "resolution_y": 0.001,
+    "resolution_t": 0.003625598802395209,
+    "densite": 2700,
+    "cap_calorifique": 897,
+    "conduc_thermique": 167,
+    "coef_convection": 12.0,
+    "T_plaque": 25.0,
+    "T_ambiante": 23.0,
+    "puissance_actuateur": 1.5
+}

@@ -208,7 +208,7 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
-Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3, perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=23, T_ambiante=25, resolution_t=None, puissance_actuateur=1.5) # TUPLE (Y, X) perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]
 
 
 # Ma_plaque.iteration()

@@ -75,7 +75,6 @@ class Interface:
         except (json.JSONDecodeError, IOError) as e:
             print(f"Erreur lors de la lecture du fichier {self.nom_json}: {e}\nValeurs par défaut utilisées.")
             self.data_lu = self.json_de_base()
-        print(self.nom_json)
 
     def json_de_base(self):
         return {
@@ -234,12 +233,12 @@ class Interface:
             )
         if self.graph == False:
             for n in tqdm(range(1000)):
-                for k in range(50): 
+                for k in range(20): 
                     self.Ma_plaque.iteration()
         else:
             for n in tqdm(range(1000)):
                 self.Ma_plaque.show()
-                for k in range(85):
+                for k in range(20):
                     self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
