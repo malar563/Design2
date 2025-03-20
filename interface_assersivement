@@ -1,103 +1,104 @@
 import serial # Communication avec l'Arduino
 import time   # Gestion des pauses et du temps
 import tkinter as tk # Création de l'interface graphique
-from tkinter import ttk 
-import matplotlib.pyplot as plt # Traçage des courbes de température 
+from tkinter import ttk
+import matplotlib.pyplot as plt # Traçage des courbes de température
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from collections import deque # Stockage des données
-
+ 
 class Interface_Arduino():
     def __init__(self, name):
         self.name = name
-
+ 
         # Création de la fenêtre Tkinter
         self.root = tk.Tk() # Crée une fenêtre princiaple Tkinter
-        self.root.title("Interface de Contrôle Arduino") 
-
+        self.root.title("Interface de Contrôle Arduino")
+ 
         # Connexion à l'Arduino
-        self.arduino = serial.Serial(self.name, 115200, timeout=1.0)
+        # self.arduino = serial.Serial(self.name, 115200, timeout=1.0)
         time.sleep(2)  # Pause pour l'initialisation de l'Arduino
-
+ 
         # Données pour le graphique
         self.x_data = deque(maxlen=100) # Stocke au max 100 points sur le graphique
-        self.y_data = deque(maxlen=100) 
+        self.y_data = deque(maxlen=100)
         self.start_time = time.time() # Moment où le programme commence
-
+ 
         # Lancement de l'interface Tkinter
-        initialisation_variables()
-        initialisation_graph()
-        self.root.after(500, update_graph)
+        self.initialisation_variables()
+        self.initialisation_graph()
+        # self.root.after(500, self.update_graph)
         self.root.mainloop()
-
-        def initialisation_variables(self):
-            # Champ pour la consigne
-            tk.Label(self.root, text="Consigne de température (°C) :").pack()
-            self.consigne_entry = ttk.Entry(self.root) # Ajoute un champ de saisie pour entrer la consigne
-            self.consigne_entry.pack()
-
-            # Bouton pour envoyer la consigne
-            send_button = ttk.Button(self.root, text="Envoyer", command=send_consigne) # Déclenche fonction "send_consigne"
-            send_button.pack()
-
-            # Label de statut
-            self.status_label = tk.Label(self.root, text="En attente de consigne...")
-            self.status_label.pack()
-
-            # Bouton "Quitter"
-            quit_button = ttk.Button(self.root, text="Quitter", command=quitter_programme)
-            quit_button.pack()
-
-        def initialisation_graph(self):
-            """
-            Création de la figure Matplotlib
-            """
-            fig, self.ax = plt.subplots()
-            self.canvas = FigureCanvasTkAgg(fig, master=self.root)
-            self.canvas.get_tk_widget().pack()
-
-
-        def send_consigne(self):
-            """
-            Fonction pour envoyer la consigne à l'Arduino
-            """
-            try:
-                consigne = float(self.consigne_entry.get()) # Récupère l'entrée donnée par l'utilisateur 
-                self.arduino.write(f"{consigne}\n".encode())  # Envoi la consigne à l'Arduino (forme chaîne)
-                self.status_label.config(text=f"Consigne envoyée: {consigne}°C") # Met à jour le texte d'état
-            except ValueError:
-                self.status_label.config(text="Entrée invalide !")
-
-
-        def quitter_programme(self):
-            """
-            Fonction pour quitter 
-            """
-            self.arduino.close()  # Ferme la connexion série
-            plt.close('all')  # Ferme toutes les figures Matplotlib
-            self.root.quit() # Quitte Tkinter
-            self.root.destroy() # Détruit la fenêtre
-
-
-        def update_graph(self):
-            """
-            Fonction pour mettre à jour le graphique
-            """
-            line = self.arduino.readline().decode().strip() # Lit une ligne du port série
-            if "T: " in line: # Vérifie si la ligne contient "T: "
-                try:
-                    temp = float(line.split("T: ")[1].strip("|")[0].strip()) # Extrait la température et la convertit (float)
-                    self.x_data.append(time.time() - self.start_time) # Ajoute le temps au deque
-                    self.y_data.append(temp) # Ajoute la température au deque
-
-                    self.ax.clear() # Efface l'ancien tracé
-                    self.ax.plot(self.x_data, self.y_data, '-o', label="Température (°C)")
-                    self.ax.set_xlabel("Temps (s)")
-                    self.ax.set_ylabel("Température (°C)")
-                    self.ax.set_title("Évolution de la température")
-                    self.ax.legend()
-                    self.canvas.draw() # Redessine le graphique
-                except ValueError:
-                    pass  # Ignore les erreurs de conversion
-            self.root.after(500, update_graph)  # Rafraîchit toutes les 500 ms
-
+ 
+    def initialisation_variables(self):
+        # Champ pour la consigne
+        tk.Label(self.root, text="Consigne de température (°C) :").pack()
+        self.consigne_entry = ttk.Entry(self.root) # Ajoute un champ de saisie pour entrer la consigne
+        self.consigne_entry.pack()
+ 
+        # Bouton pour envoyer la consigne
+        send_button = ttk.Button(self.root, text="Envoyer", command=self.send_consigne) # Déclenche fonction "send_consigne"
+        send_button.pack()
+ 
+        # Label de statut
+        self.status_label = tk.Label(self.root, text="En attente de consigne...")
+        self.status_label.pack()
+ 
+        # Bouton "Quitter"
+        quit_button = ttk.Button(self.root, text="Quitter", command=self.quitter_programme)
+        quit_button.pack()
+ 
+    def initialisation_graph(self):
+        """
+        Création de la figure Matplotlib
+        """
+        self.fig, self.ax = plt.subplots()
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+        self.canvas.get_tk_widget().pack()
+ 
+ 
+    def send_consigne(self):
+        """
+        Fonction pour envoyer la consigne à l'Arduino
+        """
+        time.sleep(1)
+        try:
+            consigne = float(self.consigne_entry.get()) # Récupère l'entrée donnée par l'utilisateur
+            # self.arduino.write(f"{consigne}\n".encode())  # Envoi la consigne à l'Arduino (forme chaîne)
+            self.status_label.config(text=f"Consigne envoyée: {consigne}°C") # Met à jour le texte d'état
+        except ValueError:
+            self.status_label.config(text="Entrée invalide !")
+ 
+ 
+    def quitter_programme(self):
+        """
+        Fonction pour quitter
+        """
+        # self.arduino.close()  # Ferme la connexion série
+        plt.close('all')  # Ferme toutes les figures Matplotlib
+        self.root.quit() # Quitte Tkinter
+        self.root.destroy() # Détruit la fenêtre
+ 
+ 
+    # def update_graph(self):
+    #     """
+    #     Fonction pour mettre à jour le graphique
+    #     """
+    #     line = self.arduino.readline().decode().strip() # Lit une ligne du port série
+    #     if "T3: " in line: # Vérifie si la ligne contient "T3: "
+    #         try:
+    #             temp = float(line.split("T3: ")[1].strip("|")[0].strip()) # Extrait la température et la convertit (float)
+    #             self.x_data.append(time.time() - self.start_time) # Ajoute le temps au deque
+    #             self.y_data.append(temp) # Ajoute la température au deque
+ 
+    #             self.ax.clear() # Efface l'ancien tracé
+    #             self.ax.plot(self.x_data, self.y_data, '-o', label="Température (°C)")
+    #             self.ax.set_xlabel("Temps (s)")
+    #             self.ax.set_ylabel("Température (°C)")
+    #             self.ax.set_title("Évolution de la température")
+    #             self.ax.legend()
+    #             self.canvas.draw() # Redessine le graphique
+    #         except ValueError:
+    #             pass  # Ignore les erreurs de conversion
+    #     #self.root.after(500, self.update_graph)  # Rafraîchit toutes les 500 ms
+ 
 Inter_Arduino = Interface_Arduino('COM3') # changer pour 'COM3' si sur Windows sinon '/dev/cu.usbserial-14110'
