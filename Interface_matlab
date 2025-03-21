@@ -28,8 +28,10 @@ classdef Interface_matlab < matlab.apps.AppBase
         RegulateurLabel      matlab.ui.control.Label
         GraphiqueLabel       matlab.ui.control.Label
         GraphiqueButton      matlab.ui.control.Button
+        BoucleLabel          matlab.ui.control.Label
+        BoucleButton         matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version30"; 
+        ModelName            string = "simulateur_matlab_version31"; 
     end
 
     properties (Access = private)
@@ -52,7 +54,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
         
         function stopSimulation(app)
-            % Arrête la simulation lorsque le timer finit????
+            % Arr�te la simulation lorsque le timer finit????
             set_param(app.ModelName, 'SimulationCommand', 'stop');
             app.StatusLabel.Text = "\'Etat : Arr\^et";
             app.StatusLabel.Interpreter = 'latex';
@@ -65,6 +67,9 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
 
         function Initialisation(app)
+            % Initialise en boucle fermée
+            assignin('base', 'boucleouverte', false);
+
             % Initialise les variables du Simulink
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
@@ -138,6 +143,18 @@ classdef Interface_matlab < matlab.apps.AppBase
                 grid(app.UIAxes, 'on');
                 end
         end
+
+    function toggleBoucle(app)
+        if evalin('base', 'boucleouverte') == true
+            assignin('base', 'boucleouverte', false);
+            app.BoucleButton.Text = "fermée";
+            app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
+        else
+            assignin('base', 'boucleouverte', true);
+            app.BoucleButton.Text = "ouverte";
+            app.BoucleButton.BackgroundColor = [1, 1, 0]; % Jaune
+        end
+    end
    
 
     function openGraphInterface(app, graphNum)
@@ -341,13 +358,22 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.StatusLabel.Position = [240 300 150 30];
             app.StatusLabel.Interpreter = 'latex';
 
-            app.GraphiqueLabel = uilabel(app.UIFigure, 'Text', "Graphiques supplémentaires");
+            app.GraphiqueLabel = uilabel(app.UIFigure, 'Text', "Graphiques suppl\'ementaires");
             app.GraphiqueLabel.Position = [390 300 200 30];
             app.GraphiqueLabel.Interpreter = 'latex';
 
             app.GraphiqueButton = uibutton(app.UIFigure,'push', 'Text', "X");
             app.GraphiqueButton.Position = [360 300 30 30];
             app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
+
+            app.BoucleLabel = uilabel(app.UIFigure, 'Text', "La boucle est ");
+            app.BoucleLabel.Position = [600 300 200 30];
+            app.BoucleLabel.Interpreter = 'latex';
+
+            app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "fermée");
+            app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
+            app.BoucleButton.Position = [680 300 60 30];
+            app.BoucleButton.ButtonPushedFcn = @(~,~)app.toggleBoucle();
             
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
             title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
