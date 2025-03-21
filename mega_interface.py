@@ -19,33 +19,35 @@ class Interface:
         self.lire_json()
         
         # Initialisation des variables depuis JSON ou valeurs par défaut (certaines valeurs =! 0)
-        self.dim = self.data_lu.get("dimensions", [0.116,0.0615]) if self.data_lu.get("dimensions", [0.116,0.0615]) != 0 else [0.116,0.0615]
-        self.e = self.data_lu.get("epaisseur", 0.00156) if self.data_lu.get("epaisseur", 0.00156) != 0 else 0.00156
-        self.dx = self.data_lu.get("resolution_x", 0.0015) if self.data_lu.get("resolution_x", 0.0015) != 0 else 0.0015
-        self.dy = self.data_lu.get("resolution_y", 0.001) if self.data_lu.get("resolution_y", 0.001) != 0 else 0.001
+        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) if self.data_lu.get("dimensions", [11.6,6.15]) != 0 else [11.6,6.15]
+        self.e = self.data_lu.get("epaisseur", 0.156) if self.data_lu.get("epaisseur", 0.156) != 0 else 0.156
+        self.dx = self.data_lu.get("resolution_x", 0.15) if self.data_lu.get("resolution_x", 0.15) != 0 else 0.15
+        self.dy = self.data_lu.get("resolution_y", 0.1) if self.data_lu.get("resolution_y", 0.1) != 0 else 0.1
         self.dt = self.data_lu.get("resolution_t", None)
         self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
         self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
         self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
         self.h = self.data_lu.get("coef_convection", 12) if self.data_lu.get("coef_convection", 12) != 0 else 12
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
-        self.T_amb = self.data_lu.get("T_ambiante", 23.0) 
-        self.T_depo = 0
-        self.T_pos = (0,0)
+        self.T_amb = self.data_lu.get("T_ambiante", 23.0)
         self.P = self.data_lu.get("puissance_actuateur", 1.5)
+        self.R_depo = self.data_lu.get("puissance_R", 0)
+        self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
+        self.T_pos = self.data_lu.get("position_puissance", [12,12])
+
+        # Initier variables avec calculs
+        self.alpha = self.k/(self.rho*self.cp)
+        if self.dt is None:
+            self.dt = min((self.dx/100)**2/(4*self.alpha), (self.dy/100)**2/(4*self.alpha))  # À regarder!!
 
         # Initier toutes les entrées 
         self.variables = {key: tk.DoubleVar(value=val) for key, val in {
             "dimx": self.dim[0], "dimy": self.dim[1], "e": self.e, "dx": self.dx,
             "dy": self.dy, "dt": self.dt, "rho": self.rho, "cp": self.cp, 
             "k": self.k, "h": self.h, "T_plaque": self.T_plaque,
-            "T_amb": self.T_amb, "T_depo": 0, "T_posx": 0, "T_posy": 0, "P": self.P
+            "T_amb": self.T_amb, "P": self.P, "R_depo": self.R_depo,
+            "T_depo": self.T_depo, "T_posx": self.T_pos[0], "T_posy": self.T_pos[1]
         }.items()}
-
-        # Initier variables avec calculs
-        self.alpha = self.k/(self.rho*self.cp)
-        if self.dt is None:
-            self.dt = min(self.dx**2/(4*self.alpha), self.dy**2/(4*self.alpha))  # À regarder!!
 
         # Go go main interface
         self.main()
@@ -78,10 +80,10 @@ class Interface:
 
     def json_de_base(self):
         return {
-            "dimensions": [0.116,0.0615],
-            "epaisseur": 0.00156,
-            "resolution_x": 0.0015,
-            "resolution_y": 0.001,
+            "dimensions": [11.6,6.15],
+            "epaisseur": 0.156,
+            "resolution_x": 0.15,
+            "resolution_y": 0.1,
             "resolution_t": None,
             "densite": 2700,
             "cap_calorifique": 897,
@@ -89,7 +91,10 @@ class Interface:
             "coef_convection": 12,
             "T_plaque": 23,
             "T_ambiante": 25,
-            "puissance_actuateur": 1.5
+            "puissance_actuateur": 1.5,
+            "puissance_R": 0,
+            "puissance_ajoutee": 0,
+            "position_puissance": [12,12]
         }
 
 
@@ -116,7 +121,7 @@ class Interface:
         # Boutons pour autres fenêtres
         ttk.Button(self.inter,text = 'Variables de la plaque', command = self.plaque).grid(column=0, row=4)
         ttk.Button(self.inter,text = 'Résolutions de la simulation', command = self.resolution).grid(column=0, row=5)
-        ttk.Button(self.inter,text = 'Température déposée', command = self.T_dep).grid(column=0, row=6)
+        ttk.Button(self.inter,text = 'Puissance déposée', command = self.T_dep).grid(column=0, row=6)
 
         # finish
         ttk.Button(self.inter,text = 'OK', command = self.submit).grid(column=2, row=0)
@@ -130,11 +135,11 @@ class Interface:
         ttk.Button(self.plaque_frame,text = 'OK', command = self.submit_plaque).grid(column=2, row=0)
 
         # Dimensions de la plaque
-        self.entry(self.plaque_frame, "Longueur en x de la plaque [m]", "dimx", 0)
-        self.entry(self.plaque_frame, "Longueur en y de la plaque [m]", "dimy", 1)
+        self.entry(self.plaque_frame, "Longueur en x de la plaque [cm]", "dimx", 0)
+        self.entry(self.plaque_frame, "Longueur en y de la plaque [cm]", "dimy", 1)
 
         # Épaisseur de la plaque
-        self.entry(self.plaque_frame, "Épaisseur de la plaque", "e", 2)
+        self.entry(self.plaque_frame, "Épaisseur de la plaque [cm]", "e", 2)
 
         # Bouton pour autre fenêtre
         ttk.Button(self.plaque_frame,text = 'Paramètres du matériau de la plaque', command = self.mat).grid(column=0, row=3)
@@ -161,24 +166,25 @@ class Interface:
         ttk.Button(self.reso_frame,text = 'OK', command = self.submit_reso).grid(column=2, row=0)
 
         # Résolutions de longueur
-        self.entry(self.reso_frame, "En x", "dx", 0)
-        self.entry(self.reso_frame, "En y", "dy", 1)
+        self.entry(self.reso_frame, "En x [cm]", "dx", 0)
+        self.entry(self.reso_frame, "En y [cm]", "dy", 1)
 
         # Résolution de temps
-        self.entry(self.reso_frame, "Temps", "dt", 2)
+        self.entry(self.reso_frame, "Temps [s]", "dt", 2)
 
 
     def T_dep(self):
         self.T_dep_frame = tk.Toplevel()
-        self.T_dep_frame.title('Contrôle de la température déposée')
+        self.T_dep_frame.title('Contrôle de la puissance déposée')
         ttk.Button(self.T_dep_frame,text = 'OK', command = self.submit_T_dep).grid(column=2, row=0)
 
         # Température déposée
-        self.entry(self.T_dep_frame, "Température déposée [K]", "T_depo", 0)
+        self.entry(self.T_dep_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0)
 
         # Position de la temp
-        self.entry(self.T_dep_frame, "Position en x de la température déposée", "T_posx", 1)
-        self.entry(self.T_dep_frame, "Position en y de la température déposée", "T_posy", 2)
+        self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 2)
+        self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 3)
+        self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 4)
 
 
     def sauvegarder_json(self):
@@ -214,7 +220,10 @@ class Interface:
             "coef_convection": self.h,
             "T_plaque": self.T_plaque,
             "T_ambiante": self.T_amb,
-            "puissance_actuateur": self.P
+            "puissance_actuateur": self.P,
+            "puissance_R": self.R_depo,
+            "puissance_ajoutee": self.T_depo,
+            "position_puissance": [self.T_pos[0], self.T_pos[1]]
         }
         self.sauvegarder_json()
         self.Ma_plaque = mega_simulation.Plaque(
@@ -269,6 +278,7 @@ class Interface:
 
 
     def submit_T_dep(self):
+        self.R_depo=self.variables["R_depo"].get()
         self.T_depo=self.variables["T_depo"].get()
         self.T_pos=(self.variables["T_posx"].get(), self.variables["T_posy"].get())
         self.T_dep_frame.destroy()

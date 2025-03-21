@@ -15,9 +15,9 @@ class Plaque:
         Classe représentant une plaque chauffante utilisée pour modéliser l'évolution de la température.
     
         Attributs principaux :
-        - dimensions : Tuple représentant la longueur et largeur (y, x) de la plaque (mètres)
-        - epaisseur : Épaisseur de la plaque (mètres)
-        - resolution_x, resolution_y : Résolution spatiale de la grille de simulation (mètres)
+        - dimensions : Tuple représentant la longueur et largeur (y, x) de la plaque (centimètres)
+        - epaisseur : Épaisseur de la plaque (centimètres)
+        - resolution_x, resolution_y : Résolution spatiale de la grille de simulation (centimètres)
         - resolution_t : Résolution temporelle (secondes), calculée si non spécifiée pour éviter la divergence de la solution
         - T_plaque : Température initiale de la plaque (Celsius)
         - T_ambiante : Température ambiante (Celsius)
@@ -31,10 +31,10 @@ class Plaque:
 
     def __init__(
             self,
-            dimensions=(0.116, 0.0615),
-            epaisseur=0.00156,
-            resolution_x=0.0015,
-            resolution_y=0.001,
+            dimensions=(11.6, 6.15),
+            epaisseur=0.156,
+            resolution_x=0.15,
+            resolution_y=0.1,
             resolution_t=None,
             T_plaque=25,
             T_ambiante=23,
@@ -46,10 +46,10 @@ class Plaque:
             perturbations = [] # position_enregistrement
             ):
         # Dimensions et propriétés physiques
-        self.dim = dimensions  # (longueur, largeur)
-        self.e = epaisseur  # Épaisseur de la plaque
-        self.dx = resolution_x  # Résolution spatiale en x
-        self.dy = resolution_y  # Résolution spatiale en y
+        self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
+        self.e = epaisseur/100  # Épaisseur de la plaque
+        self.dx = resolution_x/100  # Résolution spatiale en x
+        self.dy = resolution_y/100  # Résolution spatiale en y
         self.T_amb = T_ambiante + 273.15  # Conversion en Kelvin
         self.T_plaque = T_plaque + 273.15  # Conversion en Kelvin
         self.rho = densite  # Masse volumique (kg/m³)
