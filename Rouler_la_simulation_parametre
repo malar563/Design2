@@ -1,0 +1,40 @@
+
+    methods
+        function obj = Rouler_la_simulation_parametre
+            % Initialisation des param�tres dans l'espace de travail
+            obj.Initialisation();
+        end
+        
+        function Initialisation(obj)
+            % On initialise les variables de simulation dans l'espace de travail
+            initialTemp = 25;
+            assignin('base', 'initialTemp', initialTemp);
+            finalTemp = 27;
+            assignin('base', 'finalTemp', finalTemp);
+            samplingTime = 4;
+            assignin('base', 'samplingTime', samplingTime);
+            initialPower = 0;
+            assignin('base', 'initialPower', initialPower);
+            finalPower = 0;
+            assignin('base', 'finalPower', finalPower);
+            initialTime = 0;
+            assignin('base', 'initialTime', initialTime);
+        end
+        
+        function startSimulation(obj)
+            % Chargement et d�marrage du mod�le Simulink
+            load_system(obj.ModelName);
+            set_param(obj.ModelName, 'SimulationCommand', 'start');
+            fprintf('Etat : En cours\n');
+            
+        end
+        
+        function stopSimulation(obj)
+            % Arr�t de la simulation Simulink
+            set_param(obj.ModelName, 'SimulationCommand', 'stop');
+            fprintf('Etat : Arr�t\n');
+            
+        end
+       
+    end
+end
