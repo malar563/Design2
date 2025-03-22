@@ -43,7 +43,9 @@ class Plaque:
             conduc_thermique=167,
             coef_convection=12,
             puissance_actuateur = 1.5,
-            perturbations = [] # position_enregistrement
+            puissance_R = 0,
+            puissance_ajoutee = 0,
+            perturbations = [] # position_enregistrement [y,x]
             ):
         # Dimensions et propriétés physiques
         self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
