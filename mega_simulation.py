@@ -43,21 +43,20 @@ class Plaque:
             conduc_thermique=167,
             coef_convection=12,
             puissance_actuateur = 1.5,
-            puissance_R = 0,
-            puissance_ajoutee = 0,
             perturbations = [] # position_enregistrement [y,x]
             ):
         # Dimensions et propriétés physiques
         self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
-        self.e = epaisseur/100  # Épaisseur de la plaque
-        self.dx = resolution_x/100  # Résolution spatiale en x
-        self.dy = resolution_y/100  # Résolution spatiale en y
+        self.e = epaisseur/100  # Épaisseur de la plaque en m
+        self.dx = resolution_x/100  # Résolution spatiale en x en m
+        self.dy = resolution_y/100  # Résolution spatiale en y en m
         self.T_amb = T_ambiante + 273.15  # Conversion en Kelvin
         self.T_plaque = T_plaque + 273.15  # Conversion en Kelvin
         self.rho = densite  # Masse volumique (kg/m³)
         self.cp = cap_calorifique  # Capacité thermique massique (J/kg.K)
         self.k = conduc_thermique  # Conductivité thermique (W/m.K)
         self.h = coef_convection  # Coefficient de convection (W/m².K)
+
         
         # Initialisation de la grille de température (matrice remplie avec la température initiale)
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
@@ -273,7 +272,6 @@ class Plaque:
         self.grille = new_grille
         
         # Contribution thermique de l'actuateur positionné au bon endroit 
-        
         self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
 
         # Contribution thermique des perturbations positionné au bon endroit
@@ -332,10 +330,10 @@ class Plaque:
 
 "ICII"
 # start = time.time()
-# for n in tqdm(range(10000)):
+# for n in tqdm(range(100)):
 #     for k in range(20): 
 #         Ma_plaque.iteration()
-#         # Ma_plaque.show()
+        # Ma_plaque.show()
 # end = time.time()
 # print(end-start)
 # Ma_plaque.enregistre_rep_echelon()

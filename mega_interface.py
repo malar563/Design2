@@ -34,7 +34,7 @@ class Interface:
         self.R_depo = self.data_lu.get("puissance_R", 0)
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
-        self.T_lon = self.data_lu.get("longueur_puissance", [0,0]) # [y,x]
+        self.T_lon = self.data_lu.get("longueur_puissance", [1,1]) # [y,x]
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -97,7 +97,7 @@ class Interface:
             "puissance_R": 0,
             "puissance_ajoutee": 0,
             "position_puissance": [0,0], # [y,x]
-            "longueur_puissance": [0,0] # [y,x]
+            "longueur_puissance": [1,1] # [y,x]
         }
 
 
@@ -245,18 +245,17 @@ class Interface:
             conduc_thermique=self.k,
             coef_convection=self.h,
             puissance_actuateur=self.P,
-            puissance_R=self.R_depo,
             perturbations=[
-                [(0.1, 0.1), self.R_depo, (1, 1)],
-                [(self.T_pos[0], self.T_pos[1]), self.T_depo, (self.T_lon[0], self.T_lon[1])]
+                [(6/100, 1/100), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
+                [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
                 ]
             )
         if self.graph == False:
-            for n in tqdm(range(1000)):
+            for n in tqdm(range(100)):
                 for k in range(20): 
                     self.Ma_plaque.iteration()
         else:
-            for n in tqdm(range(1000)):
+            for n in tqdm(range(100)):
                 self.Ma_plaque.show()
                 for k in range(20):
                     self.Ma_plaque.iteration()
@@ -266,6 +265,7 @@ class Interface:
     def graphique(self):
         self.graph = True
         self.submit()
+        self.graph = False
 
 
     def submit_plaque(self):
