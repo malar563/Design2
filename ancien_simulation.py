@@ -32,7 +32,7 @@ class Plaque:
     def __init__(self, dimensions=(0.116, 0.0615), epaisseur=0.00156, resolution_x=0.001, resolution_y=0.001, resolution_t=None, T_plaque=25, T_ambiante=23, densite=2700, cap_calorifique=897, conduc_thermique=167, coef_convection=12, puissance_actuateur = 1.5, perturbations = []):
     
         # Dimensions et propriétés physiques
-        self.dim = dimensions  # (longueur, largeur)
+        self.dim = dimensions  # (longueur y, largeur x)
         self.e = epaisseur  # Épaisseur de la plaque
         self.dx = resolution_x  # Résolution spatiale en x
         self.dy = resolution_y  # Résolution spatiale en y
@@ -222,9 +222,9 @@ class Plaque:
 
         "Enregistrement de la température"
         # Enregistrement de la température aux position des thermistances dans une liste de listes
-        pos_thermi1 = (int(0.015/self.dy), int(0.03/self.dx)) # En y=1.5cm, x=3cm
-        pos_thermi2 = (int(0.06/self.dy), int(0.03/self.dx)) # En y=6cm, x=3cm
-        pos_thermi3 = (int(0.104/self.dy), int(0.03/self.dx)) # En y=(11.6-1.2)cm, x=3cm
+        pos_thermi1 = (int(0.015/self.dy),  int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
+        pos_thermi2 = (int(0.06/self.dy),  int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
+        pos_thermi3 = (int(0.104/self.dy),  int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
         self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt) # Temps d'échantillonage
         self.rep_echelon[1].append(self.P_act) # Puissance appliquée à l'actuateur
         self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]]) # Température à la thermistance 1
@@ -251,8 +251,61 @@ class Plaque:
         df.to_csv("output.csv", index=False) # temps, entrée, T1, T2, T3
 
 
+    def affiche_initial(self):
+        """
+        Affiche la répartition des composants sur la plaque.
+    
+        - La plaque est en gris
+        - L'actuateur est en rouge
+        - Les thermistances sont en vert
+        - Les perturbations sont en bleu
+        """
+        size = self.grille.shape
+        plaque = np.ones((*size, 3)) * 0.5  # Fond gris
 
-Ma_plaque = Plaque(T_plaque=23, T_ambiante=25, resolution_t=None, puissance_actuateur=3, perturbations=[((0.01,0.01),3, (0.01,0.01)), ((0.05,0.03),4,(0.001,0.001))]) # TUPLE (Y, X) perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]
+        # Positions des éléments 
+        # actuateur
+        iy1, iy2, ix1, ix2 = self.actuateur_pos
+        # thermistances
+        pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
+        pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
+        pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
+        thermistances = [pos_thermi1, pos_thermi2, pos_thermi3]
+
+        # Affectation des couleurs
+        plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+        for t in thermistances:
+            plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+        for p in self.perturbations:
+            (iy1,iy2,ix1,ix2), T = p
+            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+
+        # Affichage avec imshow
+        fig, ax = plt.subplots()
+        ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+
+        # Ajout de la légende (patches)
+        from matplotlib.patches import Patch
+
+        legend_elements = [
+            Patch(facecolor=[0, 0, 1], label='Thermistances'),
+            Patch(facecolor=[0, 1, 0], label='Actuateur'),
+            Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
+            Patch(facecolor='gray', label='Plaque')
+        ]
+
+        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+        ax.set_xlabel("Position en x (cm)")
+        ax.set_ylabel("Position en y (cm)")
+
+        plt.show()
+
+
+Ma_plaque = Plaque(T_plaque=23, T_ambiante=25, resolution_t=None, puissance_actuateur=3, ) # TUPLE (Y, X) perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]
+Ma_plaque.perturbations = [((0.015+0.021-0.003, (Ma_plaque.dim[1]/2)-0.0015), 1, (0.006,0.003))]#, ((0.01,0.01),3, (0.01,0.01)), ((0.05,0.03),4,(0.001,0.001))
+#((0.015+0.021-0.0015, 0.03-0.003), 1, (0.006,0.003)) résistance de perturbation en y = T1y+2.1cm et y3cm-0.3
+Ma_plaque.convertir_perturbations()
+Ma_plaque.affiche_initial()
 
 
 Ma_plaque.iteration()

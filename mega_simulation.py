@@ -280,9 +280,9 @@ class Plaque:
         
         "Enregistrement de la température"
         # Enregistrement de la température aux position des thermistances dans une liste de listes
-        pos_thermi1 = (int(0.015/self.dy), int(0.03/self.dx)) # En (x=3, y=1,5) cm
-        pos_thermi2 = (int(0.06/self.dy), int(0.03/self.dx)) # En (x=3, y=6) cm
-        pos_thermi3 = (int(0.104/self.dy), int(0.03/self.dx)) # En (x=3, y=(11,6-1,2)) cm
+        pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
+        pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
+        pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
         self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt) # Temps d'échantillonage
         self.rep_echelon[1].append(self.P_act) # Puissance appliquée à l'actuateur
         self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]]) # Température à la thermistance 1
