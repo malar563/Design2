@@ -1,10 +1,24 @@
+# pour lire un document json
 import os
-from tqdm import tqdm
 import json
+
+# pour faire des iterations
+from tqdm import tqdm
+
+# pour faire des documents nommés selon l'heure actuelle
 from datetime import datetime
-import tkinter as tk # module de base
-from tkinter import ttk # mettre ça beau
+
+# pour faire rouler l'interface
+import tkinter as tk
+from tkinter import ttk
+
+# pour faire jouer la simulation
 import mega_simulation
+
+# pour le graphique dans l'interace
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class Interface:
@@ -13,7 +27,6 @@ class Interface:
         self.frame = ttk.Frame(self.inter, padding=10)
         self.frame.grid()
         self.inter.title('Contrôle de la simulation Python')
-        self.graph = False
 
         # lire json
         self.lire_json()
@@ -24,17 +37,22 @@ class Interface:
         self.dx = self.data_lu.get("resolution_x", 0.15) if self.data_lu.get("resolution_x", 0.15) != 0 else 0.15
         self.dy = self.data_lu.get("resolution_y", 0.1) if self.data_lu.get("resolution_y", 0.1) != 0 else 0.1
         self.dt = self.data_lu.get("resolution_t", None)
+        self.T_simul = self.data_lu.get("temps_simulation", 600) # [s]
         self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
         self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
         self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
         self.h = self.data_lu.get("coef_convection", 12) if self.data_lu.get("coef_convection", 12) != 0 else 12
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
-        self.T_amb = self.data_lu.get("T_ambiante", 23.0)
+        self.T_amb = self.data_lu.get("T_ambiante", 25.0)
         self.P = self.data_lu.get("puissance_actuateur", 1.5)
         self.R_depo = self.data_lu.get("puissance_R", 0)
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
-        self.T_lon = self.data_lu.get("longueur_puissance", [1,1]) # [y,x]
+        self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+
+        # Itérations des graphiques
+        self.saut = 20
+        self.N = 1000
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -48,7 +66,8 @@ class Interface:
             "k": self.k, "h": self.h, "T_plaque": self.T_plaque,
             "T_amb": self.T_amb, "P": self.P, "R_depo": self.R_depo,
             "T_depo": self.T_depo, "T_posy": self.T_pos[0], "T_posx": self.T_pos[1],
-            "T_lony": self.T_lon[0], "T_lonx": self.T_lon[1]
+            "T_lony": self.T_lon[0], "T_lonx": self.T_lon[1],
+            "T_simul": self.T_simul
         }.items()}
 
         # Go go main interface
@@ -87,17 +106,18 @@ class Interface:
             "resolution_x": 0.15,
             "resolution_y": 0.1,
             "resolution_t": None,
+            "temps_simulation": 600, # [s]
             "densite": 2700,
             "cap_calorifique": 897,
             "conduc_thermique": 167,
             "coef_convection": 12,
-            "T_plaque": 23,
+            "T_plaque": 25,
             "T_ambiante": 25,
             "puissance_actuateur": 1.5,
             "puissance_R": 0,
             "puissance_ajoutee": 0,
             "position_puissance": [0,0], # [y,x]
-            "longueur_puissance": [1,1] # [y,x]
+            "longueur_puissance": [0.5,0.5] # [y,x]
         }
 
 
@@ -121,14 +141,17 @@ class Interface:
         # Puissance appliquée
         self.entry(self.frame, "Puissance appliquée [W]", "P", 3)
 
+        # Durée de la simulation
+        self.entry(self.frame, "Durée de la simulation [s]", "T_simul", 4)
+
         # Boutons pour autres fenêtres
-        ttk.Button(self.inter,text = 'Variables de la plaque', command = self.plaque).grid(column=0, row=4)
-        ttk.Button(self.inter,text = 'Résolutions de la simulation', command = self.resolution).grid(column=0, row=5)
-        ttk.Button(self.inter,text = 'Puissance déposée', command = self.T_dep).grid(column=0, row=6)
+        ttk.Button(self.inter,text = 'Variables de la plaque', command = self.plaque).grid(column=0, row=5)
+        ttk.Button(self.inter,text = 'Résolutions de la simulation', command = self.resolution).grid(column=0, row=6)
+        ttk.Button(self.inter,text = 'Puissance déposée', command = self.T_dep).grid(column=0, row=7)
 
         # finish
-        ttk.Button(self.inter,text = 'OK', command = self.submit).grid(column=2, row=0)
-        ttk.Button(self.inter,text = 'Graphique', command = self.graphique).grid(column=3, row=0)
+        ttk.Button(self.inter,text = 'OK', command = self.no_graphique).grid(column=2, row=0)
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=3, row=0)
         self.inter.mainloop()
         
 
@@ -191,6 +214,9 @@ class Interface:
         self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 5)
         self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 6)
 
+        # Graphique
+        ttk.Button(self.T_dep_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=7, column=0, columnspan=2, pady=5)
+
 
     def sauvegarder_json(self):
         # Avoir la date dans le format 'dd.mm'
@@ -211,6 +237,7 @@ class Interface:
         self.T_amb=self.variables["T_amb"].get()
         self.h=self.variables["h"].get()
         self.P=self.variables["P"].get()
+        self.T_simul=self.variables["T_simul"].get()
 
         # Sauvegarde des données mises à jour dans le JSON
         self.data_fait = {
@@ -219,6 +246,7 @@ class Interface:
             "resolution_x": self.dx,
             "resolution_y": self.dy,
             "resolution_t": self.dt,
+            "temps_simulation": self.T_simul, # [s]
             "densite": self.rho,
             "cap_calorifique": self.cp,
             "conduc_thermique": self.k,
@@ -246,26 +274,36 @@ class Interface:
             coef_convection=self.h,
             puissance_actuateur=self.P,
             perturbations=[
-                [(6/100, 1/100), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
+                [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
                 [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
-                ]
+                ],
+            T_simul=self.T_simul
             )
-        if self.graph == False:
-            for n in tqdm(range(100)):
-                for k in range(20): 
-                    self.Ma_plaque.iteration()
-        else:
-            for n in tqdm(range(100)):
-                self.Ma_plaque.show()
-                for k in range(20):
-                    self.Ma_plaque.iteration()
+
+
+    def no_graphique(self):
+        self.submit()
+        for n in tqdm(range(self.N)):
+            for k in range(self.saut): 
+                self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
 
-    def graphique(self):
-        self.graph = True
+    def yes_graphique(self):
         self.submit()
+        for n in tqdm(range(self.N)):
+            self.Ma_plaque.show()
+            for k in range(self.saut):
+                self.Ma_plaque.iteration()
+        self.Ma_plaque.enregistre_rep_echelon()
+
+    
+    def graphique_plaque(self):
+        self.graph = True
+        self.submit_T_dep()
         self.graph = False
+        self.submit()
+        self.Ma_plaque.affiche()
 
 
     def submit_plaque(self):
@@ -293,7 +331,10 @@ class Interface:
         self.T_depo=self.variables["T_depo"].get()
         self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
         self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
-        self.T_dep_frame.destroy()
+        if self.graph is False:
+            self.T_dep_frame.destroy()
+        else:
+            pass
 
 
         

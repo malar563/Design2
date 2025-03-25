@@ -13,10 +13,12 @@ def plot_csv_data(csv_file1, csv_file2, common_column, y_column):
     # Merge the data on the common column
     merged_df = pd.merge(df1, df2, on=str(common_column))
     
-    # Plot the data
+    # Plot the data with smaller markers
     plt.figure(figsize=(10, 5))
-    plt.plot(merged_df[str(common_column)], merged_df[str(y_column) + "_x"], label=f"{y_column} (mega.csv)", marker='o')
-    plt.plot(merged_df[str(common_column)], merged_df[str(y_column) + "_y"], label=f"{y_column} (output.csv)", marker='s')
+    plt.plot(merged_df[str(common_column)], merged_df[str(y_column) + "_x"], 
+             label=f"{y_column} (mega.csv)", marker='o', markersize=4)  # Adjust markersize
+    plt.plot(merged_df[str(common_column)], merged_df[str(y_column) + "_y"], 
+             label=f"{y_column} (output.csv)", marker='s', markersize=1)  # Adjust markersize
     
     plt.xlabel(str(common_column))
     plt.ylabel("Values")
@@ -26,4 +28,5 @@ def plot_csv_data(csv_file1, csv_file2, common_column, y_column):
     plt.show()
 
 # Example usage
-plot_csv_data("mega.csv", "output.csv", "0", "3")
+plot_csv_data("now.csv", "mega.csv", "0", "3")
+

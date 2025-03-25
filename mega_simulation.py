@@ -1,13 +1,16 @@
 import os
 os.system("git pull")
 import numpy as np
-import matplotlib.pyplot as plt
+
 import pandas as pd
 from datetime import datetime
 
-# optionnel
+# Graphiques
+from matplotlib.patches import Patch
+import matplotlib.pyplot as plt
+
+# chrono
 import time
-from tqdm import tqdm
 
 
 class Plaque:
@@ -37,13 +40,14 @@ class Plaque:
             resolution_y=0.1,
             resolution_t=None,
             T_plaque=25,
-            T_ambiante=23,
+            T_ambiante=25,
             densite=2700,
             cap_calorifique=897,
             conduc_thermique=167,
             coef_convection=12,
             puissance_actuateur = 1.5,
-            perturbations = [] # position_enregistrement [y,x]
+            perturbations = [], # position_enregistrement [y,x]
+            T_simul=600
             ):
         # Dimensions et propriétés physiques
         self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
@@ -56,7 +60,16 @@ class Plaque:
         self.cp = cap_calorifique  # Capacité thermique massique (J/kg.K)
         self.k = conduc_thermique  # Conductivité thermique (W/m.K)
         self.h = coef_convection  # Coefficient de convection (W/m².K)
+        self.T_simul = T_simul # Durée de la simulation
 
+        # Itérations des graphiques
+        self.saut = 20
+        self.N = 1000
+
+        # Position des thermistances
+        self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
+        self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
+        self.pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
         
         # Initialisation de la grille de température (matrice remplie avec la température initiale)
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
@@ -95,6 +108,9 @@ class Plaque:
         Modifie self.perturbations en mettant à jour les tuples de la liste des perturbations thermiques. 
         Chaque perturbation est décrite par un tuple d'indices de position et un objet de type np.ndarray contenant la température de chaque élément.
         """
+        self.nouv_pertur = True
+        if self.perturbations[1][1] == 0:
+            self.nouv_pertur = False
         nouvelles_perturbations = []
         for perturb in self.perturbations:
             (pos_y, pos_x), puissance, (longueur, largeur) = perturb
@@ -167,12 +183,16 @@ class Plaque:
             self.ax.set_zlabel('Température (K)')
             self.ax.set_title("Température de la plaque après simulation")
             # self.fig.colorbar(self.surface, ax=self.ax)
-            
+
+            # Chrono
+            self.t0 = time.time()  # Démarrer le chrono
+            self.chrono_text = self.fig.text(0.05, 0.05, "Temps écoulé : 0.00 s", fontsize=12, color='black')
+
             # Graphique 2D
             self.t = [0] 
-            self.temp1 = [self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])]]
-            self.temp2 = [self.grille[int(50 * self.dim[1]) , int(50 * self.dim[0])]]
-            self.temp3 = [self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])]]
+            self.temp1 = [self.grille[self.pos_thermi1]]
+            self.temp2 = [self.grille[self.pos_thermi2]]
+            self.temp3 = [self.grille[self.pos_thermi3]]
             self.ax2.plot(self.t, self.temp1, color='b')
             self.ax2.plot(self.t, self.temp2, color='g')
             self.ax2.plot(self.t, self.temp3, color='r')
@@ -185,15 +205,26 @@ class Plaque:
             self.surface.remove()  
             self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
 
+            # Chrono
+            elapsed_time = time.time() - self.t0
+            self.chrono_text.set_text(f"Temps écoulé : {elapsed_time:.2f} s")
+
             # Graphique 2D
-            self.t.append(self.t[-1] + 85*self.dt)
-            self.temp1.append(self.grille[int(50 * self.dim[1]) , int(10 * self.dim[0])])
-            self.temp2.append(self.grille[int(50 * self.dim[1]), int(50 * self.dim[0])])
-            self.temp3.append(self.grille[int(50 * self.dim[1]) , int(90 * self.dim[0])])
+            self.t.append(self.t[-1] + self.saut*self.dt)
+            self.temp1.append(self.grille[self.pos_thermi1])
+            self.temp2.append(self.grille[self.pos_thermi2])
+            self.temp3.append(self.grille[self.pos_thermi3])
             self.ax2.clear() 
             self.ax2.plot(self.t, self.temp1, color='b')
             self.ax2.plot(self.t, self.temp2, color='g')
             self.ax2.plot(self.t, self.temp3, color='r')
+            legend_elements = [
+                Patch(facecolor='blue', label="Thermistance à l'actuateur"),
+                Patch(facecolor='green', label="Thermistance au milieu"),
+                Patch(facecolor='red', label="Thermistance au laser")
+            ]
+
+            self.ax2.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1, 1))
             self.ax2.set_xlabel('t (s)')
             self.ax2.set_ylabel('T (K)')
             self.ax2.set_title("Température des thermistances en fonction du temps ")
@@ -315,6 +346,55 @@ class Plaque:
         # Sauvegarder
         df = pd.DataFrame(np.array(self.rep_echelon).T)
         df.to_csv(new_nom, index=False) # temps, entrée, T1, T2, T3
+    
+
+    def affiche(self):
+        """
+        Affiche la répartition des composants sur la plaque.
+    
+        - La plaque est en gris
+        - L'actuateur est en rouge
+        - Les thermistances sont en vert
+        - Les perturbations sont en bleu
+        """
+        size = self.grille.shape
+        plaque = np.ones((*size, 3)) * 0.5  # Fond gris
+
+        # Positions des éléments 
+        # actuateur
+        iy1, iy2, ix1, ix2 = self.actuateur_pos
+        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
+
+        # Affectation des couleurs
+        plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+        for t in thermistances:
+            plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+
+        if self.nouv_pertur is True:
+            for p in self.perturbations:
+                (iy1,iy2,ix1,ix2), T = p
+                plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+        else:
+            (iy1,iy2,ix1,ix2), T = self.perturbations[0]
+            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]
+
+
+        # Affichage avec imshow
+        fig, ax = plt.subplots()
+        ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+
+        legend_elements = [
+            Patch(facecolor=[0, 0, 1], label='Thermistances'),
+            Patch(facecolor=[0, 1, 0], label='Actuateur'),
+            Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
+            Patch(facecolor='gray', label='Plaque')
+        ]
+
+        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+        ax.set_xlabel("Position en x (cm)")
+        ax.set_ylabel("Position en y (cm)")
+
+        plt.show()
         
 
 
