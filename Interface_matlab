@@ -31,7 +31,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         BoucleLabel          matlab.ui.control.Label
         BoucleButton         matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version31"; 
+        ModelName            string = "simulateur_matlab_version33"; 
     end
 
     properties (Access = private)
@@ -54,7 +54,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
         
         function stopSimulation(app)
-            % Arr�te la simulation lorsque le timer finit????
+            % Arrte la simulation lorsque le timer finit????
             set_param(app.ModelName, 'SimulationCommand', 'stop');
             app.StatusLabel.Text = "\'Etat : Arr\^et";
             app.StatusLabel.Interpreter = 'latex';
@@ -67,7 +67,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
 
         function Initialisation(app)
-            % Initialise en boucle fermée
+            % Initialise en boucle ferme
             assignin('base', 'boucleouverte', false);
 
             % Initialise les variables du Simulink
@@ -135,19 +135,27 @@ classdef Interface_matlab < matlab.apps.AppBase
                 Data = evalin('base', "Temperature_simulation");
                 time = Data.Time;
                 temp = Data.Data;
-
+                Data_predit = evalin('base', 'Temperature_predit');
+                time_predit = Data_predit.time;
+                temp_predit = Data_predit.Data;
+                
+                hold(app.UIAxes, 'on');
                 plot(app.UIAxes, time, temp, 'b', 'LineWidth', 2);
-                title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
+                plot(app.UIAxes, time_predit, temp_predit, 'r', 'LineWidth', 2);
+                title(app.UIAxes, "Temp\'erature au laser",'Interpreter','latex');
                 xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
                 ylabel(app.UIAxes, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                 grid(app.UIAxes, 'on');
+                legend(app.UIAxes, "Temp\'erature T_3",'Température T_3 prédit');
+                hold(app.UIAxes, 'off');
+
                 end
         end
 
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
-            app.BoucleButton.Text = "fermée";
+            app.BoucleButton.Text = "ferme";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'boucleouverte', true);
@@ -161,7 +169,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         % Ouvre les fenetres individuelles de chaque graphique
         % supplementaire
         
-        figNewGraph = uifigure('Name', sprintf('Graph Interface %d', graphNum), 'Position', [150 150 500 400]);
+        figNewGraph = uifigure('Name', sprintf('Graphique Interface %d', graphique), 'Position', [150 150 500 400]);
         ax = uiaxes(figNewGraph, 'Position', [50 50 400 300]);
         
         
@@ -208,8 +216,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 end
                
             case 4
-                if evalin('base', 'exist("ampli_entre", "var")')
-                    regulateur = evalin('base', 'ampli_entre');
+                if evalin('base', 'exist("tension3", "var")')
+                    regulateur = evalin('base', 'tension3');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -222,8 +230,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 end
             
             case 5
-                if evalin('base', 'exist("tension3", "var")')
-                    regulateur = evalin('base', 'tension3');
+                if evalin('base', 'exist("ampli_entre", "var")')
+                    regulateur = evalin('base', 'ampli_entre');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -370,7 +378,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BoucleLabel.Position = [600 300 200 30];
             app.BoucleLabel.Interpreter = 'latex';
 
-            app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "fermée");
+            app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "ferme");
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
             app.BoucleButton.Position = [680 300 60 30];
             app.BoucleButton.ButtonPushedFcn = @(~,~)app.toggleBoucle();
