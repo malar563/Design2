@@ -42,15 +42,6 @@ class Interface:
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
 
-        # Itérations des graphiques
-        self.saut = round(( self.T_simul / (50 * self.dt))**(1/2))
-        self.N = 50 * self.saut
-        # self.N = 800
-        # if self.T_simul > 100:
-        #     self.saut = round(self.T_simul / (self.N *self.dt))
-        # else:
-        #     self.saut = round(self.T_simul / (self.N *self.dt)) * 10
-
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
         if self.dt is None:
@@ -229,12 +220,16 @@ class Interface:
             json.dump(self.data_fait, f, indent=4)
 
 
-    def submit(self):
+    def submit(self):    
         self.T_plaque = self.variables["T_plaque"].get()
         self.T_amb=self.variables["T_amb"].get()
         self.h=self.variables["h"].get()
         self.P=self.variables["P"].get()
         self.T_simul=self.variables["T_simul"].get()
+
+        # Quantité d'itérations
+        self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
+        self.N = 10 * self.saut
 
         # Sauvegarde des données mises à jour dans le JSON
         self.data_fait = {
@@ -281,17 +276,23 @@ class Interface:
     def no_graphique(self):
         self.submit()
         for n in range(self.N):
-            for k in range(self.saut):
-                self.Ma_plaque.iteration()
+            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
+                break
+            else:
+                for k in range(self.saut):
+                    self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
 
     def yes_graphique(self):
         self.submit()
         for n in range(self.N):
-            self.Ma_plaque.show()
-            for k in range(self.saut):
-                self.Ma_plaque.iteration()
+            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
+                break
+            else:
+                self.Ma_plaque.show()
+                for k in range(self.saut):
+                    self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
     

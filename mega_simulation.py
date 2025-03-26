@@ -77,13 +77,8 @@ class Plaque:
         self.dt = min(self.dx**2 / (4 * self.alpha), self.dy**2 / (4 * self.alpha)) if resolution_t is None else resolution_t
 
         # Itérations des graphiques
-        self.saut = round(( self.T_simul / (50 * self.dt))**(1/2))
-        self.N = 50 * self.saut
-        # self.N = 800
-        # if self.T_simul > 100:
-        #     self.saut = round(self.T_simul / (self.N *self.dt))
-        # else:
-        #     self.saut = round(self.T_simul / (self.N *self.dt)) * 10
+        self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
+        self.N = 10 * self.saut
         
         # Paramètres de l'actuateur (chauffage)
         self.P_act = puissance_actuateur  # Puissance fournie par l'actuateur (W)
@@ -229,7 +224,7 @@ class Plaque:
                 Patch(facecolor='red', label="Thermistance au laser")
             ]
 
-            self.ax2.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1, 1))
+            self.ax2.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(0, 1))
             self.ax2.set_xlabel('t (s)')
             self.ax2.set_ylabel('T (K)')
             self.ax2.set_title("Température des thermistances en fonction du temps ")
