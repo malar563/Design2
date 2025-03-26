@@ -2,9 +2,6 @@
 import os
 import json
 
-# pour faire des iterations
-from tqdm import tqdm
-
 # pour faire des documents nommés selon l'heure actuelle
 from datetime import datetime
 
@@ -14,11 +11,6 @@ from tkinter import ttk
 
 # pour faire jouer la simulation
 import mega_simulation
-
-# pour le graphique dans l'interace
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class Interface:
@@ -51,8 +43,13 @@ class Interface:
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
 
         # Itérations des graphiques
-        self.saut = 20
-        self.N = 1000
+        self.saut = round(( self.T_simul / (50 * self.dt))**(1/2))
+        self.N = 50 * self.saut
+        # self.N = 800
+        # if self.T_simul > 100:
+        #     self.saut = round(self.T_simul / (self.N *self.dt))
+        # else:
+        #     self.saut = round(self.T_simul / (self.N *self.dt)) * 10
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -283,15 +280,15 @@ class Interface:
 
     def no_graphique(self):
         self.submit()
-        for n in tqdm(range(self.N)):
-            for k in range(self.saut): 
+        for n in range(self.N):
+            for k in range(self.saut):
                 self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
 
     def yes_graphique(self):
         self.submit()
-        for n in tqdm(range(self.N)):
+        for n in range(self.N):
             self.Ma_plaque.show()
             for k in range(self.saut):
                 self.Ma_plaque.iteration()

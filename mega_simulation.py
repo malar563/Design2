@@ -62,10 +62,6 @@ class Plaque:
         self.h = coef_convection  # Coefficient de convection (W/m².K)
         self.T_simul = T_simul # Durée de la simulation
 
-        # Itérations des graphiques
-        self.saut = 20
-        self.N = 1000
-
         # Position des thermistances
         self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
         self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
@@ -79,6 +75,15 @@ class Plaque:
         
         # Calcul du pas temporel optimal pour assurer la stabilité numérique
         self.dt = min(self.dx**2 / (4 * self.alpha), self.dy**2 / (4 * self.alpha)) if resolution_t is None else resolution_t
+
+        # Itérations des graphiques
+        self.saut = round(( self.T_simul / (50 * self.dt))**(1/2))
+        self.N = 50 * self.saut
+        # self.N = 800
+        # if self.T_simul > 100:
+        #     self.saut = round(self.T_simul / (self.N *self.dt))
+        # else:
+        #     self.saut = round(self.T_simul / (self.N *self.dt)) * 10
         
         # Paramètres de l'actuateur (chauffage)
         self.P_act = puissance_actuateur  # Puissance fournie par l'actuateur (W)
@@ -314,12 +319,12 @@ class Plaque:
         pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
         pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
         pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
-        self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt) # Temps d'échantillonage
+        self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt) # Temps d'échantillonnage
         self.rep_echelon[1].append(self.P_act) # Puissance appliquée à l'actuateur
         self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]]) # Température à la thermistance 1
         self.rep_echelon[3].append(self.grille[pos_thermi2[0], pos_thermi2[1]]) # Température à la thermistance 2
         self.rep_echelon[4].append(self.grille[pos_thermi3[0], pos_thermi3[1]]) # Température à la thermistance 3
-
+        
         return self.grille
     
     
