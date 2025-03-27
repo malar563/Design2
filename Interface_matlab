@@ -71,9 +71,9 @@ classdef Interface_matlab < matlab.apps.AppBase
         function Initialisation(app)
             % Initialise en boucle ferme
             assignin('base', 'boucleouverte', false);
+            assignin('base' , 'pwm_ouvert', false);
 
             % Initialise les variables du Simulink
-            assignin('base' , 'pmw_ouvert', false);
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
@@ -162,7 +162,7 @@ classdef Interface_matlab < matlab.apps.AppBase
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
-            app.BoucleButton.Text = "ferme";
+            app.BoucleButton.Text = "fermée";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'boucleouverte', true);
@@ -171,19 +171,43 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
     end
 
-    function pwm(app)
-        if evalin('base', 'pmw_ouvert') == true
-            assignin('base, pwm_ouvert', false);
-            app.pwmbutton.Text = "ferm";
-            app.PwmButton.BackgroundColor = [1, 1, 0];
+    function togglepwm(app)
+        if evalin('base', 'pwm_ouvert') == true
+            assignin('base', 'pwm_ouvert', false);
+            app.PwmButton.Text = "désactivé";
+            app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'pwm_ouvert', true);
             app.PwmButton.Text = "activé";
-            app.PwmButton.BackgroundColor = [0, 1, 0];
-
+            app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
         end
     end
+
+    function labelly(app, NomLabel, textLabel, Position)
+        app.(NomLabel) = uilabel(app.UIFigure, 'Text', textLabel);  
+        app.(NomLabel).Position = Position;
+        app.(NomLabel).Interpreter = 'latex';
+    end
+
+    %app.labelly(StartLabel, "D\'emarrer", [50 300 100 30])
+            %
+            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
+            % app.StartLabel.Position = [50 300 100 30];
+            % app.StartLabel.Interpreter = 'latex';
+
    
+    %function pwm(app)
+        %if evalin('base', 'Le_maitre_du_temps') == true
+            %assignin('base', 'Le_maitre_du_temps', false);
+            %app.pwmbutton.Text = "ferm";
+            %app.PwmButton.BackgroundColor = [1, 1, 0];
+        %else
+            %assignin('base', 'pwm_ouvert', true);
+            %app.PwmButton.Text = "activé";
+            %app.PwmButton.BackgroundColor = [0, 1, 0];
+
+        %end
+    %end
 
     function openGraphInterface(app, graphNum)
         % Ouvre les fenetres individuelles de chaque graphique
@@ -370,10 +394,11 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Positionne les boutons dans l'interface de base
             app.Initialisation()
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
-
-            app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
-            app.StartLabel.Position = [50 300 100 30];
-            app.StartLabel.Interpreter = 'latex';
+            
+            % app.labelly(StartLabel, "D\'emarrer", [50 300 100 30]);
+            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
+            % app.StartLabel.Position = [50 300 100 30];
+            % app.StartLabel.Interpreter = 'latex';
 
             app.StartButton = uibutton(app.UIFigure, 'push', 'Text', "X");
             app.StartButton.Position = [20 300 30 30];
@@ -414,9 +439,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.PwmLabel.Interpreter = 'latex';
 
             app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "désactivé");
-            app.PwmButton.BackgroundColor = [1, 1, 0]; % Vert
+            app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
             app.PwmButton.Position = [845 300 60 30];
-            app.PwmButton.ButtonPushedFcn = @(~,~)app.pwm();
+            app.PwmButton.ButtonPushedFcn = @(~,~)app.togglepwm();
 
             
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
