@@ -30,8 +30,10 @@ classdef Interface_matlab < matlab.apps.AppBase
         GraphiqueButton      matlab.ui.control.Button
         BoucleLabel          matlab.ui.control.Label
         BoucleButton         matlab.ui.control.Button
+        PwmLabel             matlab.ui.control.Label
+        PwmButton            matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version33"; 
+        ModelName            string = "simulateur_matlab_version34"; 
     end
 
     properties (Access = private)
@@ -71,6 +73,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'boucleouverte', false);
 
             % Initialise les variables du Simulink
+            assignin('base' , 'pmw_ouvert', false);
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
@@ -130,7 +133,11 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
     end
         function updatePlot(app)
+
+            cla(app.UIAxes);
+
             % Imprime le graphique de base
+
             if evalin('base', 'exist("Temperature_simulation", "var")')  
                 Data = evalin('base', "Temperature_simulation");
                 time = Data.Time;
@@ -146,7 +153,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                 xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
                 ylabel(app.UIAxes, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                 grid(app.UIAxes, 'on');
-                legend(app.UIAxes, "Temp\'erature T_3",'Température T_3 prédit');
+                legend(app.UIAxes, "Température T_3", "Température T_3 prédit", 'Interpreter', 'tex');
                 hold(app.UIAxes, 'off');
 
                 end
@@ -163,13 +170,31 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BoucleButton.BackgroundColor = [1, 1, 0]; % Jaune
         end
     end
+
+    function pwm(app)
+        if evalin('base', 'pmw_ouvert') == true
+            assignin('base, pwm_ouvert', false);
+            app.pwmbutton.Text = "ferm";
+            app.PwmButton.BackgroundColor = [1, 1, 0];
+        else
+            assignin('base', 'pwm_ouvert', true);
+            app.PwmButton.Text = "activé";
+            app.PwmButton.BackgroundColor = [0, 1, 0];
+
+        end
+    end
    
 
     function openGraphInterface(app, graphNum)
         % Ouvre les fenetres individuelles de chaque graphique
         % supplementaire
         
-        figNewGraph = uifigure('Name', sprintf('Graphique Interface %d', graphique), 'Position', [150 150 500 400]);
+        graphique = {'Erreur', "R\'egulateur", 'PWM', "Filtre entr\'ee", 'Filtre sortie', ...
+                 'Thermistance 1', 'Thermistance 2', 'Thermistance 3', 'TEC', ...
+                 "R\'esistance thermistance 3", "Thermistance 1 mesur\'ee", "Thermistance 2 mesur\'ee"};
+
+    
+        figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{graphNum}), 'Position', [150 150 500 400]);
         ax = uiaxes(figNewGraph, 'Position', [50 50 400 300]);
         
         
@@ -382,6 +407,17 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
             app.BoucleButton.Position = [680 300 60 30];
             app.BoucleButton.ButtonPushedFcn = @(~,~)app.toggleBoucle();
+
+
+            app.PwmLabel = uilabel(app.UIFigure, 'Text', "Le PMW est ");
+            app.PwmLabel.Position = [770 300 200 30];
+            app.PwmLabel.Interpreter = 'latex';
+
+            app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "désactivé");
+            app.PwmButton.BackgroundColor = [1, 1, 0]; % Vert
+            app.PwmButton.Position = [845 300 60 30];
+            app.PwmButton.ButtonPushedFcn = @(~,~)app.pwm();
+
             
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
             title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
