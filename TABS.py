@@ -1,0 +1,368 @@
+# pour lire un document json
+import os
+import json
+
+# pour faire des documents nommés selon l'heure actuelle
+from datetime import datetime
+
+# pour faire rouler l'interface
+import tkinter as tk
+from tkinter import ttk
+
+# pour faire jouer la simulation
+import mega_simulation
+
+
+class Interface:
+    def __init__(self):
+        # Interface gogo
+        self.inter = tk.Tk()
+        self.inter.title('Contrôle de la simulation Python')
+        style = ttk.Style()
+        style.configure("TNotebook.Tab", padding=[5, 5])
+
+        # lire json
+        self.lire_json()
+        
+        # Initialisation des variables depuis JSON ou valeurs par défaut (certaines valeurs =! 0)
+        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) if self.data_lu.get("dimensions", [11.6,6.15]) != 0 else [11.6,6.15] #[y,x]
+        self.e = self.data_lu.get("epaisseur", 0.156) if self.data_lu.get("epaisseur", 0.156) != 0 else 0.156
+        self.dx = self.data_lu.get("resolution_x", 0.15) if self.data_lu.get("resolution_x", 0.15) != 0 else 0.15
+        self.dy = self.data_lu.get("resolution_y", 0.1) if self.data_lu.get("resolution_y", 0.1) != 0 else 0.1
+        self.dt = self.data_lu.get("resolution_t", None)
+        self.T_simul = self.data_lu.get("temps_simulation", 600) # [s]
+        self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
+        self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
+        self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
+        self.h = self.data_lu.get("coef_convection", 12) if self.data_lu.get("coef_convection", 12) != 0 else 12
+        self.T_plaque = self.data_lu.get("T_plaque", 25.0)
+        self.T_amb = self.data_lu.get("T_ambiante", 25.0)
+        self.P = self.data_lu.get("puissance_actuateur", 1.5)
+        self.R_depo = self.data_lu.get("puissance_R", 0)
+        self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
+        self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
+        self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+
+        # Initier variables avec calculs
+        self.alpha = self.k/(self.rho*self.cp)
+        if self.dt is None:
+            self.dt = min((self.dx/100)**2/(4*self.alpha), (self.dy/100)**2/(4*self.alpha))  # À regarder!!
+
+        # Initier toutes les entrées 
+        self.variables = {key: tk.DoubleVar(value=val) for key, val in {
+            "dimy": self.dim[0], "dimx": self.dim[1], "e": self.e, "dx": self.dx,
+            "dy": self.dy, "dt": self.dt, "rho": self.rho, "cp": self.cp, 
+            "k": self.k, "h": self.h, "T_plaque": self.T_plaque,
+            "T_amb": self.T_amb, "P": self.P, "R_depo": self.R_depo,
+            "T_depo": self.T_depo, "T_posy": self.T_pos[0], "T_posx": self.T_pos[1],
+            "T_lony": self.T_lon[0], "T_lonx": self.T_lon[1],
+            "T_simul": self.T_simul
+        }.items()}
+
+        # Go go main interface
+        self.main()
+    
+
+    def lire_json(self):
+        """ Charge les données depuis le fichier JSON le plus récent ou utilise les valeurs par défaut. """
+        
+        # Trouver les fichiers JSON
+        json_files = sorted(
+            (f for f in os.listdir() if f.endswith('.json')),
+            key=os.path.getmtime,
+            reverse=True
+        )
+
+        # Si aucun fichier n'est trouvé, utiliser les valeurs par défaut
+        if not json_files:
+            print("Aucun fichier JSON trouvé. Valeurs par défaut utilisées.")
+            self.data_lu = self.json_de_base()
+            return
+
+        # Charger le fichier JSON le plus récent
+        self.nom_json = json_files[0]
+        try:
+            with open(self.nom_json, "r", encoding="utf-8") as file:
+                self.data_lu = json.load(file)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Erreur lors de la lecture du fichier {self.nom_json}: {e}\nValeurs par défaut utilisées.")
+            self.data_lu = self.json_de_base()
+
+    def json_de_base(self):
+        return {
+            "dimensions": [11.6,6.15], # [y,x]
+            "epaisseur": 0.156,
+            "resolution_x": 0.15,
+            "resolution_y": 0.1,
+            "resolution_t": None,
+            "temps_simulation": 600, # [s]
+            "densite": 2700,
+            "cap_calorifique": 897,
+            "conduc_thermique": 167,
+            "coef_convection": 12,
+            "T_plaque": 25,
+            "T_ambiante": 25,
+            "puissance_actuateur": 1.5,
+            "puissance_R": 0,
+            "puissance_ajoutee": 0,
+            "position_puissance": [0,0], # [y,x]
+            "longueur_puissance": [0.5,0.5] # [y,x]
+        }
+
+
+    def entry(self, parent, texte, var, row):
+        ttk.Label(parent, text=texte).grid(column=0, row=row, padx=5, pady=5, sticky="w")
+        entry = ttk.Entry(parent, textvariable=self.variables[var])
+        entry.grid(column=1, row=row, padx=5, pady=5, sticky="ew")
+        return entry
+
+
+    def main(self):
+        # Initialisation des tabs
+        self.tabs = ttk.Notebook(self.inter)
+        self.tabs.grid(column=0, row=0, rowspan=2, columnspan=2, sticky="nsew")
+
+        # Interface time
+        self.frame = ttk.Frame(self.tabs, padding=10)
+        self.frame.grid()
+        self.tabs.add(self.frame, text="Contrôle de base")
+
+        # Température initiale de la plaque
+        self.entry(self.frame, "Température initiale de la plaque [°C]", "T_plaque", 0)
+
+        # Température ambiante
+        self.entry(self.frame, "Température ambiante [°C]", "T_amb", 1)
+
+        # Coefficient de convection
+        self.entry(self.frame, "Coefficient de convection [W / m².K]", "h", 2)
+
+        # Puissance appliquée
+        self.entry(self.frame, "Puissance appliquée [W]", "P", 3)
+
+        # Durée de la simulation
+        self.entry(self.frame, "Durée de la simulation [s]", "T_simul", 4)
+
+        # TABS
+        self.plaque()
+        self.mat()
+        self.resolution()
+        self.T_dep()
+
+        # finish
+        ttk.Button(self.inter,text = 'OK', command = self.no_graphique).grid(column=0, row=3, pady=5, sticky="ew")
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=1, row=3, pady=5, sticky="ew")
+        self.inter.mainloop()
+        
+
+    def plaque(self):
+        self.plaque_frame = ttk.Frame(self.tabs, padding=10)
+        self.plaque_frame.grid()
+        self.tabs.add(self.plaque_frame, text="Variables de la plaque")
+
+        # Dimensions de la plaque
+        self.entry(self.plaque_frame, "Longueur en x de la plaque [cm]", "dimx", 0)
+        self.entry(self.plaque_frame, "Longueur en y de la plaque [cm]", "dimy", 1)
+
+        # Épaisseur de la plaque
+        self.entry(self.plaque_frame, "Épaisseur de la plaque [cm]", "e", 2)
+
+
+    def mat(self):
+        self.mat_frame = ttk.Frame(self.tabs, padding=10)
+        self.mat_frame.grid()
+        self.tabs.add(self.mat_frame, text="Paramètres du matériau de la plaque")
+
+        # Densité du matériau
+        self.entry(self.mat_frame, "Densité du matériau [kg / m^3]", "rho", 0)
+
+        # Capacité calorifique du matériau
+        self.entry(self.mat_frame, "Capacité calorifique du matériau [J / kg.K]", "cp", 1)
+
+        # Conductivité thermique du matériau
+        self.entry(self.mat_frame, "Conductivité thermique du matériau [W / m.K]", "k", 2)
+
+
+    def resolution(self):
+        self.reso_frame = ttk.Frame(self.tabs, padding=10)
+        self.reso_frame.grid()
+        self.tabs.add(self.reso_frame, text="Résolutions de la simulation de la plaque")
+
+        # Résolutions de longueur
+        self.entry(self.reso_frame, "Résolution en x [cm]", "dx", 0)
+        self.entry(self.reso_frame, "Résolution en y [cm]", "dy", 1)
+
+        # Résolution de temps
+        self.entry(self.reso_frame, "Résolution en temps [s]", "dt", 2)
+
+
+    def T_dep(self):
+        self.T_dep_frame = ttk.Frame(self.tabs, padding=10)
+        self.T_dep_frame.grid()
+        self.tabs.add(self.T_dep_frame, text="Contrôle de la puissance déposée")
+
+        # Température déposée
+        self.entry(self.T_dep_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0)
+
+        # Position de la temp
+        self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 2)
+        self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 3)
+        self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 4)
+        self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 5)
+        self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 6)
+
+        # Graphique
+        ttk.Button(self.T_dep_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=7, column=0, columnspan=2, pady=5)
+
+
+    def sauvegarder_json(self):
+        # Avoir la date dans le format 'dd.mm'
+        current_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        new_nom = f'{current_date}.json'
+        
+        # Regarde si fichier existe déjà, fait nouveau fichier
+        while os.path.exists(new_nom):
+            new_nom = f'{current_date}.json'
+        
+        # Sauvegarder
+        with open(new_nom, 'w') as f:
+            json.dump(self.data_fait, f, indent=4)
+
+
+    def submit(self):
+        # Aller chercher les variables
+        self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
+        self.e=self.variables["e"].get()
+        self.T_plaque = self.variables["T_plaque"].get()
+        self.T_amb=self.variables["T_amb"].get()
+        self.h=self.variables["h"].get()
+        self.P=self.variables["P"].get()
+        self.T_simul=self.variables["T_simul"].get()
+        self.rho=self.variables["rho"].get()
+        self.cp=self.variables["cp"].get()
+        self.k=self.variables["k"].get()
+        self.dx=self.variables["dx"].get()
+        self.dy=self.variables["dy"].get()
+        self.dt=self.variables["dt"].get()
+        self.R_depo=self.variables["R_depo"].get()
+        self.T_depo=self.variables["T_depo"].get()
+        self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
+        self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
+
+        # Quantité d'itérations
+        self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
+        self.N = 10 * self.saut
+
+        # Sauvegarde des données mises à jour dans le JSON
+        self.data_fait = {
+            "dimensions": [self.dim[0],self.dim[1]], # [y,x]
+            "epaisseur": self.e,
+            "resolution_x": self.dx,
+            "resolution_y": self.dy,
+            "resolution_t": self.dt,
+            "temps_simulation": self.T_simul, # [s]
+            "densite": self.rho,
+            "cap_calorifique": self.cp,
+            "conduc_thermique": self.k,
+            "coef_convection": self.h,
+            "T_plaque": self.T_plaque,
+            "T_ambiante": self.T_amb,
+            "puissance_actuateur": self.P,
+            "puissance_R": self.R_depo,
+            "puissance_ajoutee": self.T_depo,
+            "position_puissance": [self.T_pos[0], self.T_pos[1]], # [y,x]
+            "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
+        }
+        self.sauvegarder_json()
+        if hasattr(self, 'Ma_plaque') and self.Ma_plaque is not None:
+            self.Ma_plaque.update_parameters(
+                dimensions=(self.dim[0], self.dim[1]),
+                epaisseur=self.e,
+                resolution_x=self.dx,
+                resolution_y=self.dy,
+                resolution_t=self.dt,
+                T_plaque=self.T_plaque,
+                T_ambiante=self.T_amb,
+                densite=self.rho,
+                cap_calorifique=self.cp,
+                conduc_thermique=self.k,
+                coef_convection=self.h,
+                puissance_actuateur=self.P,
+                perturbations=[
+                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)],
+                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)]
+                ],
+                T_simul=self.T_simul
+            )
+        else:
+        
+            self.Ma_plaque = mega_simulation.Plaque(
+             dimensions=(self.dim[0], self.dim[1]),
+                epaisseur=self.e,
+                resolution_x=self.dx,
+                resolution_y=self.dy,
+                resolution_t=self.dt,
+                T_plaque=self.T_plaque,
+                T_ambiante=self.T_amb,
+                densite=self.rho,
+                cap_calorifique=self.cp,
+                conduc_thermique=self.k,
+                coef_convection=self.h,
+                puissance_actuateur=self.P,
+                perturbations=[
+                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)],
+                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)]
+                ],
+                T_simul=self.T_simul
+            )
+
+        #self.Ma_plaque = mega_simulation.Plaque(
+            #dimensions=(self.dim[0], self.dim[1]), # (y,x)
+            #epaisseur=self.e,
+            #resolution_x=self.dx,
+            #resolution_y=self.dy,
+            #resolution_t=self.dt,
+            #T_plaque=self.T_plaque,
+            #T_ambiante=self.T_amb,
+            #densite=self.rho,
+            #cap_calorifique=self.cp,
+            #conduc_thermique=self.k,
+            #coef_convection=self.h,
+            #puissance_actuateur=self.P,
+            #perturbations=[
+                #[((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
+                #[(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
+                #],
+            #T_simul=self.T_simul
+            #)
+
+
+    def no_graphique(self):
+        self.submit()
+        for n in range(self.N):
+            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
+                break
+            else:
+                for k in range(self.saut):
+                    self.Ma_plaque.iteration()
+        self.Ma_plaque.enregistre_rep_echelon()
+
+
+    def yes_graphique(self):
+        self.submit()
+        for n in range(self.N):
+            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
+                break
+            else:
+                self.Ma_plaque.show()
+                for k in range(self.saut):
+                    self.Ma_plaque.iteration()
+        self.Ma_plaque.enregistre_rep_echelon()
+
+    
+    def graphique_plaque(self):
+        self.submit()
+        self.Ma_plaque.affiche()
+
+
+        
+Inter= Interface()
