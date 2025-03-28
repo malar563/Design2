@@ -301,20 +301,20 @@ class Plaque:
         plt.show()
 
 
-Ma_plaque = Plaque(T_plaque=23, T_ambiante=25, resolution_t=None, puissance_actuateur=3, ) # TUPLE (Y, X) perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]
-Ma_plaque.perturbations = [((0.015+0.021-0.003, (Ma_plaque.dim[1]/2)-0.0015), 1, (0.006,0.003))]#, ((0.01,0.01),3, (0.01,0.01)), ((0.05,0.03),4,(0.001,0.001))
+Ma_plaque = Plaque(T_plaque=30, T_ambiante=30, resolution_t=None, puissance_actuateur=0.54) # TUPLE (Y, X) perturbations=[((0.01,0.01),2), ((0.05,0.03),4)]
+# Ma_plaque.perturbations = [((0.015+0.021-0.003, (Ma_plaque.dim[1]/2)-0.0015), 0.75, (0.006,0.003))]#, ((0.01,0.01),3, (0.01,0.01)), ((0.05,0.03),4,(0.001,0.001))
 #((0.015+0.021-0.0015, 0.03-0.003), 1, (0.006,0.003)) résistance de perturbation en y = T1y+2.1cm et y3cm-0.3
 Ma_plaque.convertir_perturbations()
 Ma_plaque.affiche_initial()
 
 
-Ma_plaque.iteration()
-Ma_plaque.show()
+# Ma_plaque.iteration()
+# Ma_plaque.show()
 
 
 "ICII"
 start = time.time()
-for n in tqdm(range(1000)):
+for n in tqdm(range(10000)):
     for k in range(20): 
         Ma_plaque.iteration()
         # Ma_plaque.show()
@@ -325,5 +325,4 @@ Ma_plaque.show()
 print(Ma_plaque.dt)
 #print(Ma_plaque.grille.size)
 #print(Ma_plaque.grille.shape)
-
 
