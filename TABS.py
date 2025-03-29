@@ -12,6 +12,12 @@ from tkinter import ttk
 # pour faire jouer la simulation
 import mega_simulation
 
+# Graphique
+import numpy as np
+from matplotlib.patches import Patch
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 class Interface:
     def __init__(self):
@@ -42,6 +48,9 @@ class Interface:
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+
+        # Variable pour l'affichage de la plque avec perturbations
+        self.aff = False
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -204,14 +213,14 @@ class Interface:
         self.entry(self.T_dep_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0)
 
         # Position de la temp
-        self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 2)
-        self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 3)
-        self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 4)
-        self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 5)
-        self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 6)
+        self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 1)
+        self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 2)
+        self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 3)
+        self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 4)
+        self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 5)
 
         # Graphique
-        ttk.Button(self.T_dep_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=7, column=0, columnspan=2, pady=5)
+        ttk.Button(self.T_dep_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=6, column=0, columnspan=2, pady=5)
 
 
     def sauvegarder_json(self):
@@ -273,67 +282,26 @@ class Interface:
             "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
         }
         self.sauvegarder_json()
-        if hasattr(self, 'Ma_plaque') and self.Ma_plaque is not None:
-            self.Ma_plaque.update_parameters(
-                dimensions=(self.dim[0], self.dim[1]),
-                epaisseur=self.e,
-                resolution_x=self.dx,
-                resolution_y=self.dy,
-                resolution_t=self.dt,
-                T_plaque=self.T_plaque,
-                T_ambiante=self.T_amb,
-                densite=self.rho,
-                cap_calorifique=self.cp,
-                conduc_thermique=self.k,
-                coef_convection=self.h,
-                puissance_actuateur=self.P,
-                perturbations=[
-                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)],
-                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)]
-                ],
-                T_simul=self.T_simul
-            )
-        else:
-        
-            self.Ma_plaque = mega_simulation.Plaque(
-             dimensions=(self.dim[0], self.dim[1]),
-                epaisseur=self.e,
-                resolution_x=self.dx,
-                resolution_y=self.dy,
-                resolution_t=self.dt,
-                T_plaque=self.T_plaque,
-                T_ambiante=self.T_amb,
-                densite=self.rho,
-                cap_calorifique=self.cp,
-                conduc_thermique=self.k,
-                coef_convection=self.h,
-                puissance_actuateur=self.P,
-                perturbations=[
-                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)],
-                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)]
-                ],
-                T_simul=self.T_simul
-            )
 
-        #self.Ma_plaque = mega_simulation.Plaque(
-            #dimensions=(self.dim[0], self.dim[1]), # (y,x)
-            #epaisseur=self.e,
-            #resolution_x=self.dx,
-            #resolution_y=self.dy,
-            #resolution_t=self.dt,
-            #T_plaque=self.T_plaque,
-            #T_ambiante=self.T_amb,
-            #densite=self.rho,
-            #cap_calorifique=self.cp,
-            #conduc_thermique=self.k,
-            #coef_convection=self.h,
-            #puissance_actuateur=self.P,
-            #perturbations=[
-                #[((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
-                #[(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
-                #],
-            #T_simul=self.T_simul
-            #)
+        self.Ma_plaque = mega_simulation.Plaque(
+            dimensions=(self.dim[0], self.dim[1]), # (y,x)
+            epaisseur=self.e,
+            resolution_x=self.dx,
+            resolution_y=self.dy,
+            resolution_t=self.dt,
+            T_plaque=self.T_plaque,
+            T_ambiante=self.T_amb,
+            densite=self.rho,
+            cap_calorifique=self.cp,
+            conduc_thermique=self.k,
+            coef_convection=self.h,
+            puissance_actuateur=self.P,
+            perturbations=[
+                [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
+                [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
+                ],
+            T_simul=self.T_simul
+            )
 
 
     def no_graphique(self):
@@ -361,7 +329,51 @@ class Interface:
     
     def graphique_plaque(self):
         self.submit()
-        self.Ma_plaque.affiche()
+        # Supprimer l'ancien canvas s'il existe
+        if hasattr(self, "canvas"):
+            self.canvas.get_tk_widget().grid_forget()  # Retirer le widget précédent
+
+        size = self.Ma_plaque.grille.shape
+        plaque = np.ones((*size, 3)) * 0.5  # Fond gris
+
+        # Positions des éléments 
+        # actuateur
+        iy1, iy2, ix1, ix2 = self.Ma_plaque.actuateur_pos
+        # thermistances
+        thermistances = [self.Ma_plaque.pos_thermi1, self.Ma_plaque.pos_thermi2, self.Ma_plaque.pos_thermi3]
+
+        # Affectation des couleurs
+        plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+        for t in thermistances:
+            plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+        for p in self.Ma_plaque.perturbations:
+            (iy1,iy2,ix1,ix2), T = p
+            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+
+        # Affichage avec imshow
+        self.figy, ax = plt.subplots()
+        ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+
+        legend_elements = [
+            Patch(facecolor=[0, 0, 1], label='Thermistances'),
+            Patch(facecolor=[0, 1, 0], label='Actuateur'),
+            Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
+            Patch(facecolor='gray', label='Plaque')
+        ]
+
+        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+        ax.set_xlabel("Position en x (cm)")
+        ax.set_ylabel("Position en y (cm)")
+
+        # Intégration à Tkinter
+        self.canvas = FigureCanvasTkAgg(self.figy, master=self.T_dep_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid(row=1, column=2, sticky="nsew", rowspan=6)
+
+        # Assurez-vous que la frame s'ajuste correctement si nécessaire
+        self.T_dep_frame.grid_rowconfigure(0, weight=1)
+        self.T_dep_frame.grid_columnconfigure(0, weight=1)
+
 
 
         

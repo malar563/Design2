@@ -364,120 +364,68 @@ class Plaque:
         - Les thermistances sont en bleu
         - Les perturbations sont en rouge
         """
-        def affiche(self):
-    # Mise à jour des données (par exemple, création de la plaque)
-    plaque = self.creer_plaque()  # Votre fonction pour générer le tableau "plaque"
+        size = self.grille.shape
+        self.plaque = np.ones((*size, 3)) * 0.5  # Fond gris
 
-    # Vérification de l'existence de la figure
-    if not hasattr(self, 'fig') or self.fig is None:
-        # Création d'une nouvelle figure si elle n'existe pas
-        self.fig, self.ax = plt.subplots()
-        self.im = self.ax.imshow(plaque, origin="lower", 
-                                  extent=(0, 100 * self.dim[1], 0, 100 * self.dim[0]))
-        
-        # Ajout de la légende et autres personnalisations
+        # Positions des éléments 
+        # actuateur
+        iy1, iy2, ix1, ix2 = self.actuateur_pos
+        # thermistances
+        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
+
+        # Affectation des couleurs
+        self.plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+        for t in thermistances:
+            self.plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+        for p in self.perturbations:
+            (iy1,iy2,ix1,ix2), T = p
+            self.plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+
+        # Affichage avec imshow
+        fig, ax = plt.subplots()
+        ax.imshow(self.plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+
         legend_elements = [
             Patch(facecolor=[0, 0, 1], label='Thermistances'),
             Patch(facecolor=[0, 1, 0], label='Actuateur'),
             Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
             Patch(facecolor='gray', label='Plaque')
         ]
-        self.ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-        self.ax.set_xlabel("Position en x (cm)")
-        self.ax.set_ylabel("Position en y (cm)")
-        
-        # Mode interactif et affichage
-        plt.ion()
-        plt.show()
-    else:
-        # Mise à jour du graphique existant
-        self.im.set_data(plaque)
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-        plt.pause(0.001)  # Permet de rafraîchir l'interface
+
+        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+        ax.set_xlabel("Position en x (cm)")
+        ax.set_ylabel("Position en y (cm)")
+
+        plt.show(block=False)
+
+
+    def update(self):
+        """ Met à jour la figure existante sans recréer une nouvelle fenêtre """
+        if self.fig is None or self.ax is None:
+            print("Erreur : affiche() doit être appelé avant update()")
+            return
+
+        size = self.grille.shape
+        self.plaque = np.ones((*size, 3)) * 0.5  # Fond gris
+
+        # Mise à jour des positions
+        iy1, iy2, ix1, ix2 = self.actuateur_pos
+        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
+
+        # Affectation des nouvelles couleurs
+        self.plaque[iy1:iy2, ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+        for t in thermistances:
+            self.plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+        for p in self.perturbations:
+            (iy1, iy2, ix1, ix2), T = p
+            self.plaque[iy1:iy2, ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbations
+
+        # Mise à jour de l'image affichée
+        self.im.set_data(self.plaque)
+        plt.draw()  # Redessine la figure
 
 
 
-        '''if not hasattr(self, 'fig') or self.fig is None:
-
-            size = self.grille.shape
-            plaque = np.ones((*size, 3)) * 0.5  # Fond gris
-
-            # Positions des éléments 
-            # actuateur
-            iy1, iy2, ix1, ix2 = self.actuateur_pos
-            thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
-
-            # Affectation des couleurs
-            plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
-            for t in thermistances:
-                plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
-
-            if self.nouv_pertur is True:
-                for p in self.perturbations:
-                    (iy1,iy2,ix1,ix2), T = p
-                    plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
-            else:
-                (iy1,iy2,ix1,ix2), T = self.perturbations[0]
-                plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]
-
-
-            # Affichage avec imshow
-            fig, ax = plt.subplots()
-            ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
-
-            legend_elements = [
-                Patch(facecolor=[0, 0, 1], label='Thermistances'),
-                Patch(facecolor=[0, 1, 0], label='Actuateur'),
-                Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
-                Patch(facecolor='gray', label='Plaque')
-            ]
-
-            ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-            ax.set_xlabel("Position en x (cm)")
-            ax.set_ylabel("Position en y (cm)")
-
-            plt.show()
-
-        else:
-
-            self.fig.canvas.flush_events()
-
-
-        #if not hasattr(self, 'fig') or self.fig is None:
-
-            # Graphique 2D
-            #self.x = [0] 
-            #self.y = [self.grille[self.pos_thermi1]]
-            #self.ax2.plot(self.t, self.temp1, color='b')
-            #self.ax2.set_xlabel('t (s)')
-            #self.ax2.set_ylabel('T (K)')
-            #self.ax2.set_title("Température des thermistances en fonction du temps ")
-
-        #else:
-
-            # Graphique 2D
-            #self.t.append(self.t[-1] + self.saut*self.dt)
-            #self.temp1.append(self.grille[self.pos_thermi1])
-            #self.temp2.append(self.grille[self.pos_thermi2])
-            #self.temp3.append(self.grille[self.pos_thermi3])
-            #self.ax2.clear() 
-            #self.ax2.plot(self.t, self.temp1, color='b')
-            #self.ax2.plot(self.t, self.temp2, color='g')
-            #self.ax2.plot(self.t, self.temp3, color='r')
-            #legend_elements = [
-                #Patch(facecolor='blue', label="Thermistance à l'actuateur"),
-                #Patch(facecolor='green', label="Thermistance au milieu"),
-                #Patch(facecolor='red', label="Thermistance au laser")
-            #]
-
-            #self.ax2.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(0, 1))
-            #self.ax2.set_xlabel('t (s)')
-            #self.ax2.set_ylabel('T (K)')
-            #self.ax2.set_title("Température des thermistances en fonction du temps ")
-
-        #self.fig.canvas.flush_events()
-        '''
 
 
 # Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
