@@ -103,3 +103,16 @@ plt.legend()
 plt.show()
 
 
+def make_same_length(array1, array2):
+    """make array1 the same length as array2, where one of the arrays is undersampled"""
+    length_ratio = int(len(array1)/len(array2)) if len(array1) > len(array2) else int(len(array2)/len(array1))
+    new_array = []
+    if len(array1) > len(array2):
+        for i in range(len(array2)):
+            for k in range(length_ratio):
+                new_array.append(array2[i])
+        return array1, new_array
+    for i in range(len(array1)):
+        for k in range(length_ratio):
+            new_array.append(array1[i])
+    return new_array, array2
