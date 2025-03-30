@@ -169,6 +169,9 @@ class Plaque:
         Affiche la répartition de la température sur la plaque.
         """
         if not hasattr(self, 'fig') or self.fig is None:
+            # Enlève les anciennes figures
+            plt.close('all')
+
             # Graphique 3D
             self.temp = []
             self.fig = plt.figure()
@@ -199,6 +202,10 @@ class Plaque:
             self.ax2.set_xlabel('t (s)')
             self.ax2.set_ylabel('T (K)')
             self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+            # Mettre la figure en plein écran
+            mng = plt.get_current_fig_manager()
+            mng.window.state('zoomed')
 
         else:
             # Graphique 3D
@@ -335,6 +342,7 @@ class Plaque:
         Retourne : None
         Crée un fichier "csv" contenant les données sous forme de tableau.
         """
+        
         # Avoir la date dans le format 'dd.mm'
         current_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         new_nom = f"{current_date}.csv"
@@ -346,83 +354,6 @@ class Plaque:
         # Sauvegarder
         df = pd.DataFrame(np.array(self.rep_echelon).T)
         df.to_csv(new_nom, index=False) # temps, entrée, T1, T2, T3
-    
-
-    def affiche(self):
-        """
-        Affiche la répartition des composants sur la plaque.
-    
-        - La plaque est en gris
-        - L'actuateur est en rouge
-        - Les thermistances sont en vert
-        - Les perturbations sont en bleu
-        """
-        """
-        Affiche la répartition des composants sur la plaque.
-        - La plaque est en gris
-        - L'actuateur est en vert
-        - Les thermistances sont en bleu
-        - Les perturbations sont en rouge
-        """
-        size = self.grille.shape
-        self.plaque = np.ones((*size, 3)) * 0.5  # Fond gris
-
-        # Positions des éléments 
-        # actuateur
-        iy1, iy2, ix1, ix2 = self.actuateur_pos
-        # thermistances
-        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
-
-        # Affectation des couleurs
-        self.plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
-        for t in thermistances:
-            self.plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
-        for p in self.perturbations:
-            (iy1,iy2,ix1,ix2), T = p
-            self.plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
-
-        # Affichage avec imshow
-        fig, ax = plt.subplots()
-        ax.imshow(self.plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
-
-        legend_elements = [
-            Patch(facecolor=[0, 0, 1], label='Thermistances'),
-            Patch(facecolor=[0, 1, 0], label='Actuateur'),
-            Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
-            Patch(facecolor='gray', label='Plaque')
-        ]
-
-        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-        ax.set_xlabel("Position en x (cm)")
-        ax.set_ylabel("Position en y (cm)")
-
-        plt.show(block=False)
-
-
-    def update(self):
-        """ Met à jour la figure existante sans recréer une nouvelle fenêtre """
-        if self.fig is None or self.ax is None:
-            print("Erreur : affiche() doit être appelé avant update()")
-            return
-
-        size = self.grille.shape
-        self.plaque = np.ones((*size, 3)) * 0.5  # Fond gris
-
-        # Mise à jour des positions
-        iy1, iy2, ix1, ix2 = self.actuateur_pos
-        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
-
-        # Affectation des nouvelles couleurs
-        self.plaque[iy1:iy2, ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
-        for t in thermistances:
-            self.plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
-        for p in self.perturbations:
-            (iy1, iy2, ix1, ix2), T = p
-            self.plaque[iy1:iy2, ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbations
-
-        # Mise à jour de l'image affichée
-        self.im.set_data(self.plaque)
-        plt.draw()  # Redessine la figure
 
 
 

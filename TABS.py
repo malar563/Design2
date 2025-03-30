@@ -18,6 +18,10 @@ from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+# Bar de progression
+import time
+from threading import Thread
+
 
 class Interface:
     def __init__(self):
@@ -158,8 +162,16 @@ class Interface:
         self.T_dep()
 
         # finish
-        ttk.Button(self.inter,text = 'OK', command = self.no_graphique).grid(column=0, row=3, pady=5, sticky="ew")
-        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=1, row=3, pady=5, sticky="ew")
+        ttk.Button(self.inter,text = 'OK', command = self.no_graphique_clique).grid(column=0, row=3, pady=5, sticky="ew")
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique_clique).grid(column=1, row=3, pady=5, sticky="ew")
+
+        # bar de progression
+        tk.Label(self.inter, text="Progression :").grid(column=0, row=4, padx=10, pady=5, sticky="ew")
+        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=300, mode="determinate")
+        self.progres.grid(column=1, row=4, padx=10, pady=5, columnspan=2, sticky="ew")
+
+
+        # go go interface
         self.inter.mainloop()
         
 
@@ -304,9 +316,13 @@ class Interface:
             )
 
 
+
+
     def no_graphique(self):
         self.submit()
+        self.progres.configure(maximum=self.T_simul)
         for n in range(self.N):
+            self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1]
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
                 break
             else:
@@ -314,10 +330,16 @@ class Interface:
                     self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
 
+    
+    def no_graphique_clique(self):
+        Thread(target=self.no_graphique, daemon=True).start()
+
 
     def yes_graphique(self):
         self.submit()
+        self.progres.configure(maximum=self.T_simul)
         for n in range(self.N):
+            self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1]
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul:
                 break
             else:
@@ -325,6 +347,10 @@ class Interface:
                 for k in range(self.saut):
                     self.Ma_plaque.iteration()
         self.Ma_plaque.enregistre_rep_echelon()
+
+
+    def yes_graphique_clique(self):
+        Thread(target=self.yes_graphique, daemon=True).start()
 
     
     def graphique_plaque(self):
@@ -346,13 +372,20 @@ class Interface:
         plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
         for t in thermistances:
             plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
-        for p in self.Ma_plaque.perturbations:
-            (iy1,iy2,ix1,ix2), T = p
-            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+
+        if self.Ma_plaque.nouv_pertur is True:
+            for p in self.Ma_plaque.perturbations:
+                (iy1,iy2,ix1,ix2), T = p
+                plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+        else:
+            (iy1,iy2,ix1,ix2), T = self.Ma_plaque.perturbations[0]
+            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]
 
         # Affichage avec imshow
-        self.figy, ax = plt.subplots()
-        ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+        figy = plt.figure()
+        axy = figy.gca()  # Récupère les axes actuels ou les crée si nécessaire
+        axy.imshow(plaque, origin="lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+
 
         legend_elements = [
             Patch(facecolor=[0, 0, 1], label='Thermistances'),
@@ -361,12 +394,12 @@ class Interface:
             Patch(facecolor='gray', label='Plaque')
         ]
 
-        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-        ax.set_xlabel("Position en x (cm)")
-        ax.set_ylabel("Position en y (cm)")
+        axy.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+        axy.set_xlabel("Position en x (cm)")
+        axy.set_ylabel("Position en y (cm)")
 
         # Intégration à Tkinter
-        self.canvas = FigureCanvasTkAgg(self.figy, master=self.T_dep_frame)
+        self.canvas = FigureCanvasTkAgg(figy, master=self.T_dep_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=1, column=2, sticky="nsew", rowspan=6)
 
