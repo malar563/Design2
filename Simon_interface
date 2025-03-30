@@ -2,20 +2,43 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     properties (Access = public)
         UIFigure             matlab.ui.Figure
+        StartLabel           matlab.ui.control.Label
         StartButton          matlab.ui.control.Button
+        StopLabel            matlab.ui.control.Label
         StopButton           matlab.ui.control.Button
-        InitialTempButton    matlab.ui.control.Button 
-        FinalTempButton      matlab.ui.control.Button 
-        SamplingTimeButton   matlab.ui.control.Button 
-        InitialPowerButton   matlab.ui.control.Button 
-        FinalPowerButton     matlab.ui.control.Button 
-        InitialTimeButton    matlab.ui.control.Button
-        GraphiqueButton      matlab.ui.control.Button
+        InitialTempLabel     matlab.ui.control.Label
+        InitialTempField     matlab.ui.control.NumericEditField
+        FinalTempLabel       matlab.ui.control.Label
+        FinalTempField       matlab.ui.control.NumericEditField
+        SamplingTimeLabel    matlab.ui.control.Label
+        SamplingTimeField    matlab.ui.control.NumericEditField
+        InitialPowerLabel    matlab.ui.control.Label
+        InitialPowerField    matlab.ui.control.NumericEditField
+        FinalPowerLabel      matlab.ui.control.Label
+        FinalPowerField      matlab.ui.control.NumericEditField
+        InitialTimeLabel     matlab.ui.control.Label
+        InitialTimeField     matlab.ui.control.NumericEditField
+        GainRegLabel         matlab.ui.control.Label
+        GainRegField         matlab.ui.control.NumericEditField
+        TempsRegLabel        matlab.ui.control.Label
+        TempsRegField        matlab.ui.control.NumericEditField
+        tempsLabel           matlab.ui.control.Label
+        tempsField           matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
+        RegulateurLabel      matlab.ui.control.Label
+        TempsLabel           matlab.ui.control.Label
+        GraphiqueLabel       matlab.ui.control.Label
+        GraphiqueButton      matlab.ui.control.Button
+        BoucleLabel          matlab.ui.control.Label
+        BoucleButton         matlab.ui.control.Button
+        PwmLabel             matlab.ui.control.Label
+        PwmButton            matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version25"; 
+        CSVLabel             matlab.ui.control.Label
+        CSVButton            matlab.ui.control.Button
+        ModelName            string = "simulateur_matlab_version35"; 
     end
 
     properties (Access = private)
@@ -23,14 +46,12 @@ classdef Interface_matlab < matlab.apps.AppBase
     end
 
     methods (Access = private)
-
         function startSimulation(app)
+            % Active le simulink
             load_system(app.ModelName);
-
-            
             set_param(app.ModelName, 'SimulationCommand', 'start');
-            app.StatusLabel.Text = "tat : En cours";
-
+            app.StatusLabel.Text = "\'Etat : En cours";
+            app.StatusLabel.Interpreter = 'latex';
             
             app.SimulationTimer = timer(...
                 'ExecutionMode', 'fixedSpacing', ...
@@ -38,21 +59,28 @@ classdef Interface_matlab < matlab.apps.AppBase
                 'TimerFcn', @(~,~)app.updatePlot());
             start(app.SimulationTimer);
         end
-
-
+        
         function stopSimulation(app)
+            % Arrte la simulation lorsque le timer finit????
             set_param(app.ModelName, 'SimulationCommand', 'stop');
-            app.StatusLabel.Text = "tat : Arrt";
-
+            app.StatusLabel.Text = "\'Etat : Arr\^et";
+            app.StatusLabel.Interpreter = 'latex';
+            
             if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
                 stop(app.SimulationTimer);
-            delete(app.SimulationTimer);
+                delete(app.SimulationTimer);
             end
-
-    
             app.updatePlot();
-       end
+        end
+
         function Initialisation(app)
+            % Initialise en boucle ferme
+            assignin('base', 'boucleouverte', false);
+            assignin('base' , 'pwm_ouvert', false);
+
+            % Initialise les variables du Simulink
+            temps = 1000;
+            assignin('base', "temps", temps);
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
@@ -65,174 +93,172 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'finalPower', finalPower);
             initialTime = 0;
             assignin('base', 'initialTime', initialTime);
+            gainReg = 0.044317;
+            assignin('base', 'gainReg', gainReg);
+            tempsReg = 146.07;
+            assignin('base', 'tempsReg', tempsReg);
         end
 
-        function set_InitialTemp(app)
-            prompt = {'Entrez la temprature initiale :'}; 
-            title = 'Temprature initiale';
-            dims = [1 35];
-            definput = {'23'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                initialTemp = str2double(answer{1});
-                assignin('base', 'initialTemp', initialTemp);
-            end
-        end
-        
-        function set_FinalTemp(app)
-            prompt = {'Entrez la temprature dsire :'};
-            title = 'Temprature dsire';
-            dims = [1 35];
-            definput = {'25'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                finalTemp = str2double(answer{1});
-                assignin('base', 'finalTemp', finalTemp);
-            end
-        end
-        
-        function set_SamplingTime(app)
-            prompt = {"Entrez le temps d'chantillonnage :"};
-            title = "Temps d'chantillonnage";
-            dims = [1 35];
-            definput = {'4'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                samplingTime = str2double(answer{1});
-                assignin('base', 'samplingTime', samplingTime);
-            end
-        end
-        
-        function set_InitialPower(app)
-            prompt = {'Entrez la puissance initiale :'};
-            title = 'Puissance initiale';
-            dims = [1 35];
-            definput = {'0'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                initialPower = str2double(answer{1});
-                assignin('base', 'initialPower', initialPower);
-            end
-        end
-
-        function set_FinalPower(app)
-            prompt = {'Entrez la puissance finale :'};
-            title = 'Puissance finale';
-            dims = [1 35];
-            definput = {'0'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                finalPower = str2double(answer{1});
-                assignin('base', 'finalPower', finalPower);
-            end
-        end
-
-        function set_InitialTime(app)
-            prompt = {'Entrez le temps de dmarrage :'};
-            title = 'Temps de dmarrage';
-            dims = [1 35];
-            definput = {'0'};
-            answer = inputdlg(prompt, title, dims, definput);
-            if ~isempty(answer)
-                initialTime = str2double(answer{1});
-                assignin('base', 'initialTime', initialTime);
-            end
-        end
-        
-        function Graphique(app)
-           
-           title = 'Graphique';
-           dims = [1 35];
-           definput = {'0'};
-           answer = inputdlg(prompt, title, dims, definput);
-           if ~isempty(answer)
-               initialTime = str2double(answer{1});
-               assignin('base', 'initialTime', initialTime);
-            end
-        end
-
-        %function set_Graphique(app)
-    
-            %figGraph = uifigure('Name', 'Interface Graphique', 'Position', [100 100 600 400]);
-    
-    
-            %axGraph = uiaxes(figGraph, 'Position', [50 50 500 300]);
-            %title(axGraph, 'Graphique personnalis');
-            %xlabel(axGraph, 'Axe des X');
-            %ylabel(axGraph, 'Axe des Y');
-    
-   
-            %end
         function set_Graphique(app)
+            % Ouvre une nouvelle fenetre avec les graphiques
+            % supplementaires
          
-            figGraph = uifigure('Name', 'Interface Graphique - Slection', 'Position', [100 100 600 400]);
+            figGraph = uifigure('Name', 'Interface Graphique - Selection', 'Position', [100 100 600 400]);
     
             
-            graphique = {'erreur', 'Rgulateur', 'PWM', 'Filtre entr','Filtre sortie', ...
-                        'Temprature thermistance 1',  ...
-                        'Temprature thermistance 2', 'Temprature thermistance 3','TEC', ...
-                        'r�sistance thermistance 3', 'Temprature thermistance 1 mesure ', 'Temprature thermistance 2 mesure'};
+            graphique = {'Erreur', "R\'egulateur", 'PWM', "Filtre entr\'ee",'Filtre sortie', ...
+                        'Thermistance 1',  ...
+                        'Thermistance 2', 'Thermistance 3','TEC', ...
+                        "R\'esistance thermistance 3", "Thermistance 1 mesur\'ee", "Thermistance 2 mesur\'ee"};
     
             n = numel(graphique);
-            colone = 3;
+            colonne = 3;
             range = 4;
             largeur = 140;
             hauteur = 30;
             distance_entre_x = 50;
-            distance_entre_y = 20;
-            espaceX = (600 - 2*distance_entre_x - colone*largeur) / (colone - 1);
+            distance_entre_y = 40;
+            espaceX = (600 - 2*distance_entre_x - colonne*largeur) / (colonne - 1);
             espaceY = (400 - 2*distance_entre_y - range*hauteur) / (range - 1);
     
             
             for i = 1:n
-                col = mod(i-1, colone);
-                row = floor((i-1)/colone);
+                col = mod(i-1, colonne);
+                row = floor((i-1)/colonne);
                 posX = distance_entre_x + col*(largeur + espaceX);
                 posY = 400 - distance_entre_y - row*(hauteur + espaceY) - hauteur;
+                lblposX = posX + 30;
        
-                btn = uibutton(figGraph, 'push', 'Text', graphique{i});
-                btn.Position = [posX, posY, largeur, hauteur];
+                btn = uibutton(figGraph, 'push', 'Text', "X");
+                btn.Position = [posX, posY, hauteur, hauteur];
+
+                lbl = uilabel(figGraph, 'Text', graphique{i});
+                lbl.Position = [lblposX, posY, largeur, hauteur];
+                lbl.Interpreter = 'latex';
         
                 btn.ButtonPushedFcn = @(src, event) app.openGraphInterface(i);
         end
     end
-            
-
-
         function updatePlot(app)
+
+            cla(app.UIAxes);
+
+            % Imprime le graphique de base
+
             if evalin('base', 'exist("Temperature_simulation", "var")')  
                 Data = evalin('base', "Temperature_simulation");
                 time = Data.Time;
                 temp = Data.Data;
-
+                Data_predit = evalin('base', 'Temperature_predit');
+                time_predit = Data_predit.time;
+                temp_predit = Data_predit.Data;
+                
+                hold(app.UIAxes, 'on');
                 plot(app.UIAxes, time, temp, 'b', 'LineWidth', 2);
-                title(app.UIAxes, 'Temprature au laser ');
-                xlabel(app.UIAxes, 'Temps (s)');
-                ylabel(app.UIAxes, 'Temprature (C)');
+                plot(app.UIAxes, time_predit, temp_predit, 'r', 'LineWidth', 2);
+                title(app.UIAxes, "Temp\'erature au laser",'Interpreter','latex');
+                xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
+                ylabel(app.UIAxes, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                 grid(app.UIAxes, 'on');
-                end
-        end
-   
+                legend(app.UIAxes, "Temprature T_3", "Temprature T_3 prdit", 'Interpreter', 'tex');
+                hold(app.UIAxes, 'off');
+            end
 
-    function openGraphInterface(app, graphNum)
         
-        figNewGraph = uifigure('Name', sprintf('Graph Interface %d', graphNum), 'Position', [150 150 500 400]);
+        end
+        function Faire_csv(app)
+            
+            Temperature3 = evalin('base', "Temperature_simulation");
+            temperature2 = evalin('base', 'temperature2');
+            temperature1 = evalin('base', 'temperature1');
+            Temperature3_predit = evalin('base', 'Temperature_predit');
+            
+            nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
+                'VariableNames', {'Temps', 'Temperature_simulation', 'temperature2', 'temperature1', 'Temperature_predit'});
+            
+            dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
+            fichier = sprintf('_%s.csv', char(dt));
+
+
+            writetable(nom_des_colones, fichier);
+        end
+
+    function toggleBoucle(app)
+        if evalin('base', 'boucleouverte') == true
+            assignin('base', 'boucleouverte', false);
+            app.BoucleButton.Text = "ferme";
+            app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
+        else
+            assignin('base', 'boucleouverte', true);
+            app.BoucleButton.Text = "ouverte";
+            app.BoucleButton.BackgroundColor = [1, 1, 0]; % Jaune
+        end
+    end
+
+    function togglepwm(app)
+        if evalin('base', 'pwm_ouvert') == true
+            assignin('base', 'pwm_ouvert', false);
+            app.PwmButton.Text = "dsactiv";
+            app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
+        else
+            assignin('base', 'pwm_ouvert', true);
+            app.PwmButton.Text = "activ";
+            app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
+        end
+    end
+
+    function labelly(app, NomLabel, textLabel, Position)
+        app.(NomLabel) = uilabel(app.UIFigure, 'Text', textLabel);  
+        app.(NomLabel).Position = Position;
+        app.(NomLabel).Interpreter = 'latex';
+    end
+
+    %app.labelly(StartLabel, "D\'emarrer", [50 300 100 30])
+            %
+            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
+            % app.StartLabel.Position = [50 300 100 30];
+            % app.StartLabel.Interpreter = 'latex';
+
+   
+    %function pwm(app)
+        %if evalin('base', 'Le_maitre_du_temps') == true
+            %assignin('base', 'Le_maitre_du_temps', false);
+            %app.pwmbutton.Text = "ferm";
+            %app.PwmButton.BackgroundColor = [1, 1, 0];
+        %else
+            %assignin('base', 'pwm_ouvert', true);
+            %app.PwmButton.Text = "activ";
+            %app.PwmButton.BackgroundColor = [0, 1, 0];
+
+        %end
+    %end
+
+    function openGraphInterface(app, numero_graph)
+        % Ouvre les fenetres individuelles de chaque graphique
+        % supplementaire
+        
+        graphique = {'Erreur', "R\'egulateur", 'PWM', "Filtre entr\'ee", 'Filtre sortie', ...
+                 'Thermistance 1', 'Thermistance 2', 'Thermistance 3', 'TEC', ...
+                 "R\'esistance thermistance 3", "Thermistance 1 mesur\'ee", "Thermistance 2 mesur\'ee"};
+
+    
+        figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{numero_graph}), 'Position', [150 150 500 400]);
         ax = uiaxes(figNewGraph, 'Position', [50 50 400 300]);
         
         
-        switch graphNum
+        switch numero_graph
             case 1
                 if evalin('base', 'exist("erreur", "var")')
                     erreur = evalin('base', 'erreur');
                     y = erreur.Data;
                     x = erreur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, 'Erreur entre la commande et la valeur actuelle');
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Erreur (C)');
+                    title(ax, 'Erreur entre la commande et la valeur actuelle','Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Erreur [$^\circ$C]','Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de l'erreur ne sont pas enregistr sur Matlab ");
+                    warning("Les valeurs de l'erreur ne sont pas enregistrees sur Matlab");
                 end
 
             case 2
@@ -241,12 +267,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, 'Tension  la sortie du rgulateur');
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Tension (V)');
+                    title(ax, 'Tension \`a la sortie du r\''egulateur','Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Tension [V]','Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning('Les valeurs du regulateur ne sont pas enregistr sur Matlab');
+                    warning('Les valeurs du regulateur ne sont pas enregistrees sur Matlab');
                 end
             case 3
                 if evalin('base', 'exist("PWM", "var")')
@@ -254,40 +280,40 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, 'Signal de sortie du PWM');
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Tension (V)');
+                    title(ax, 'Signal de sortie du PWM','Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Tension [V]','Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning('Les valeurs du PWM ne sont pas enregistr sur Matlab');
+                    warning('Les valeurs du PWM ne sont pas enregistrees sur Matlab');
                 end
                
             case 4
-                if evalin('base', 'exist("ampli_entre", "var")')
-                    regulateur = evalin('base', 'ampli_entre');
-                    y = regulateur.Data;
-                    x = regulateur.Time;
-                    plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Tension  la sortie du filtre d'entr ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Tension (V)');
-                    grid(ax, 'on');
-                else
-                    warning("Les valeurs du filtre d'entr ne sont pas enregistr sur Matlab");
-                end
-            
-            case 5
                 if evalin('base', 'exist("tension3", "var")')
                     regulateur = evalin('base', 'tension3');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Tension  la sortie du filtre de sortie pour la tmeprature au laser ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Tension (V)');
+                    title(ax, "Tension \`a la sortie du filtre d'entr\'ee ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Tension [V]','Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning('Les valeurs du filtre de sortie ne sont pas enregistr sur Matlab');
+                    warning("Les valeurs du filtre d'entree ne sont pas enregistrees sur Matlab");
+                end
+            
+            case 5
+                if evalin('base', 'exist("ampli_entre", "var")')
+                    regulateur = evalin('base', 'ampli_entre');
+                    y = regulateur.Data;
+                    x = regulateur.Time;
+                    plot(ax, x, y, 'b', 'LineWidth', 2);
+                    title(ax, "Tension \`a la sortie du filtre de sortie pour la temp\'erature au laser ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Tension [V]','Interpreter','latex');
+                    grid(ax, 'on');
+                else
+                    warning('Les valeurs du filtre de sortie ne sont pas enregistrees sur Matlab');
                 end
             
             case 6
@@ -296,12 +322,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Temp�rature � la premi�re thermistance ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Temp�rature (C)');
+                    title(ax, "Temp\'erature \`a la premi\`ere thermistance ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
             case 7
                 if evalin('base', 'exist("temperature1", "var")')
@@ -309,12 +335,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Temp�rature � la deuxi�me thermistance ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Tension (C )');
+                    title(ax, "Temp\'erature \`a la deuxi\`eme thermistance ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
             case 8
                 if evalin('base', 'exist("temperature3", "var")')
@@ -322,12 +348,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Temp�rature � la troisi�me thermistance ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Temp�rature (C)');
+                    title(ax, "Temp\'erature \`a la troisi\`eme thermistance ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
             case 9
                 if evalin('base', 'exist("Puissance", "var")')
@@ -335,12 +361,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Puissance qui sort du TEC ");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Puissance (W)');
+                    title(ax, "Puissance qui sort du TEC ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, 'Puissance [W]','Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la puissance ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la puissance ne sont pas enregistrees sur Matlab");
                 end
             case 10
                 if evalin('base', 'exist("resistance3_entre", "var")')
@@ -348,12 +374,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "R�sistance de la troisi�me thermistance");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'R�sistance ()');
+                    title(ax, "R\'esistance de la troisi\`eme thermistance",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "R\'esistance [$\Omega$]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la r�sistance ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la resistance ne sont pas enregistrees sur Matlab");
                 end
 
             case 11
@@ -362,12 +388,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Temp�rature mesur�e de la themistance 1");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Temp�rature (C)');
+                    title(ax, "Temp\'erature mesur\'ee \`a la premi\`ere thermistance ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
             
             case 12
@@ -376,72 +402,181 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Temp�rature mesur�e de la themistance 2");
-                    xlabel(ax, 'Temps (s)');
-                    ylabel(ax, 'Temp�rature (C)');
+                    title(ax, "Temp\'erature mesur\'ee \`a la deuxi\`eme thermistance ",'Interpreter','latex');
+                    xlabel(ax, 'Temps [s]','Interpreter','latex');
+                    ylabel(ax, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
-                    warning("Les valeurs de la temp�rature ne sont pas enregistr sur Matlab");
+                    warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
            end
         end
-    end
-    
+    end 
+
     methods (Access = public)
         function app = Interface_matlab()
+            % Positionne les boutons dans l'interface de base
             app.Initialisation()
-            app.UIFigure = uifigure('Name', 'Contrle Simulink', 'Position', [100 100 800 350]);
+            app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
+            
+            % app.labelly(StartLabel, "D\'emarrer", [50 300 100 30]);
+            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
+            % app.StartLabel.Position = [50 300 100 30];
+            % app.StartLabel.Interpreter = 'latex';
 
-            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', 'Dmarrer');
-            app.StartButton.Position = [20 300 100 30];
+            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', "X");
+            app.StartButton.Position = [20 300 30 30];
             app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
+            
+            app.StopLabel = uilabel(app.UIFigure, 'Text', "Arr\^eter");
+            app.StopLabel.Position = [170 300 100 30];
+            app.StopLabel.Interpreter = 'latex';
 
-            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', 'Arrter');
-            app.StopButton.Position = [140 300 100 30];
+            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', "X");
+            app.StopButton.Position = [140 300 30 30];
             app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
             
-            app.StatusLabel = uilabel(app.UIFigure, 'Text', 'tat : Arrt');
-            app.StatusLabel.Position = [260 300 150 30];
+            app.StatusLabel = uilabel(app.UIFigure, 'Text', "\'Etat : Arr\^et");
+            app.StatusLabel.Position = [240 300 150 30];
+            app.StatusLabel.Interpreter = 'latex';
+
+            app.GraphiqueLabel = uilabel(app.UIFigure, 'Text', "Graphiques suppl\'ementaires");
+            app.GraphiqueLabel.Position = [390 300 200 30];
+            app.GraphiqueLabel.Interpreter = 'latex';
+
+            app.GraphiqueButton = uibutton(app.UIFigure,'push', 'Text', "X");
+            app.GraphiqueButton.Position = [360 300 30 30];
+            app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
+
+            app.CSVLabel = uilabel(app.UIFigure, 'Text', "csv");
+            app.CSVLabel.Position = [1200 300 200 30];
+            app.CSVLabel.Interpreter = 'latex';
+
+            app.CSVButton = uibutton(app.UIFigure,'push', 'Text', "X");
+            app.CSVButton.Position = [1160 300 30 30];
+            app.CSVButton.ButtonPushedFcn = @(~,~)app.Faire_csv();
+
+            app.BoucleLabel = uilabel(app.UIFigure, 'Text', "La boucle est ");
+            app.BoucleLabel.Position = [600 300 200 30];
+            app.BoucleLabel.Interpreter = 'latex';
+
+            app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "ferme");
+            app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
+            app.BoucleButton.Position = [680 300 60 30];
+            app.BoucleButton.ButtonPushedFcn = @(~,~)app.toggleBoucle();
+
+
+            app.PwmLabel = uilabel(app.UIFigure, 'Text', "Le PMW est ");
+            app.PwmLabel.Position = [770 300 200 30];
+            app.PwmLabel.Interpreter = 'latex';
+
+            app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "dsactiv");
+            app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
+            app.PwmButton.Position = [845 300 60 30];
+            app.PwmButton.ButtonPushedFcn = @(~,~)app.togglepwm();
+
             
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
-            title(app.UIAxes, 'Temprature au laser');
-            xlabel(app.UIAxes, 'Temps');
-            ylabel(app.UIAxes, 'Temprature');
+            title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
+            xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
+            ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
-            app.PlaqueLabel = uilabel(app.UIFigure, 'Text', 'Plaque');
-            app.PlaqueLabel.Position = [500 270 140 30];
-         
-            app.InitialTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Temprature initiale');
-            app.InitialTempButton.Position = [500 230 140 30];
-            app.InitialTempButton.ButtonPushedFcn = @(~,~)app.set_InitialTemp();
-            
-            app.FinalTempButton = uibutton(app.UIFigure, 'push', 'Text', 'Temprature dsire');
-            app.FinalTempButton.Position = [500 190 140 30];
-            app.FinalTempButton.ButtonPushedFcn = @(~,~)app.set_FinalTemp();
-            
-            app.SamplingTimeButton = uibutton(app.UIFigure, 'push', 'Text', "Temps d'chantillonnage");
-            app.SamplingTimeButton.Position = [500 150 140 30];
-            app.SamplingTimeButton.ButtonPushedFcn = @(~,~)app.set_SamplingTime();
-            
-            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', 'Rsistance de perturbation');
-            app.ResistanceLabel.Position = [650 270 150 30];
-            
-            app.InitialPowerButton = uibutton(app.UIFigure, 'push', 'Text', 'Puissance initiale');
-            app.InitialPowerButton.Position = [650 230 140 30];
-            app.InitialPowerButton.ButtonPushedFcn = @(~,~)app.set_InitialPower();
+            app.PlaqueLabel = uilabel(app.UIFigure, 'Text', '\textbf{Plaque}');
+            app.PlaqueLabel.Position = [500 260 160 30];
+            app.PlaqueLabel.Interpreter = 'latex';
 
-            app.FinalPowerButton = uibutton(app.UIFigure, 'push', 'Text', 'Puissance finale');
-            app.FinalPowerButton.Position = [650 190 140 30];
-            app.FinalPowerButton.ButtonPushedFcn = @(~,~)app.set_FinalPower();
+            app.InitialTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature initiale [$^\circ$C]");
+            app.InitialTempLabel.Position = [500 240 160 20];
+            app.InitialTempLabel.Interpreter = 'latex';
 
-            app.InitialTimeButton = uibutton(app.UIFigure, 'push', 'Text', 'Temps de dmarrage');
-            app.InitialTimeButton.Position = [650 150 140 30];
-            app.InitialTimeButton.ButtonPushedFcn = @(~,~)app.set_InitialTime();
+            app.InitialTempField = uieditfield(app.UIFigure, 'numeric');
+            app.InitialTempField.Position = [500 210 160 30];
+            app.InitialTempField.Value = evalin('base', 'initialTemp');
+            app.InitialTempField.ValueChangedFcn = @(src, event) assignin('base', 'initialTemp', src.Value);
+            
+            app.FinalTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature finale [$^\circ$C]");
+            app.FinalTempLabel.Position = [500 180 160 20];
+            app.FinalTempLabel.Interpreter = 'latex';
 
-            app.GraphiqueButton = uibutton(app.UIFigure,'push', 'text', 'Graphique' );
-            app.GraphiqueButton.Position = [650 110 140 30];
-            app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
+            app.FinalTempField = uieditfield(app.UIFigure, 'numeric');
+            app.FinalTempField.Position = [500 150 160 30];
+            app.FinalTempField.Value = evalin('base', 'finalTemp');
+            app.FinalTempField.ValueChangedFcn = @(src, event) assignin('base', 'finalTemp', src.Value);
+            
+            app.SamplingTimeLabel = uilabel(app.UIFigure, 'Text', "Temps d'\'echantillonnage [s]");
+            app.SamplingTimeLabel.Position = [500 120 160 20];
+            app.SamplingTimeLabel.Interpreter = 'latex';
+
+            app.SamplingTimeField = uieditfield(app.UIFigure, 'numeric');
+            app.SamplingTimeField.Position = [500 90 160 30];
+            app.SamplingTimeField.Value = evalin('base', 'samplingTime');
+            app.SamplingTimeField.ValueChangedFcn = @(src, event) assignin('base', 'samplingTime', src.Value);
+             
+            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'esistance de perturbation}");
+            app.ResistanceLabel.Position = [830 260 170 30];
+            app.ResistanceLabel.Interpreter = 'latex';
+
+            app.InitialPowerLabel = uilabel(app.UIFigure, 'Text', 'Puissance initiale [W]');
+            app.InitialPowerLabel.Position = [830 240 160 20];
+            app.InitialPowerLabel.Interpreter = 'latex';
+
+            app.InitialPowerField = uieditfield(app.UIFigure, 'numeric');
+            app.InitialPowerField.Position = [830 210 160 30];
+            app.InitialPowerField.Value = evalin('base', 'initialPower');
+            app.InitialPowerField.ValueChangedFcn = @(src, event) assignin('base', 'initialPower', src.Value);
+            
+            app.FinalPowerLabel = uilabel(app.UIFigure, 'Text', 'Puissance finale [W]');
+            app.FinalPowerLabel.Position = [830 180 160 20];
+            app.FinalPowerLabel.Interpreter = 'latex';
+
+            app.FinalPowerField = uieditfield(app.UIFigure, 'numeric');
+            app.FinalPowerField.Position = [830 150 160 30];
+            app.FinalPowerField.Value = evalin('base', 'finalPower');
+            app.FinalPowerField.ValueChangedFcn = @(src, event) assignin('base', 'finalPower', src.Value);
+            
+            app.InitialTimeLabel = uilabel(app.UIFigure, 'Text', "Temps de d\'emarrage [s]");
+            app.InitialTimeLabel.Position = [830 120 160 20];
+            app.InitialTimeLabel.Interpreter = 'latex';
+
+            app.InitialTimeField = uieditfield(app.UIFigure, 'numeric');
+            app.InitialTimeField.Position = [830 90 160 30];
+            app.InitialTimeField.Value = evalin('base', 'initialTime');
+            app.InitialTimeField.ValueChangedFcn = @(src, event) assignin('base', 'initialTime', src.Value);
+
+            app.RegulateurLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'egulateur}");
+            app.RegulateurLabel.Position = [670 260 150 30];
+            app.RegulateurLabel.Interpreter = 'latex';
+
+            app.TempsLabel = uilabel(app.UIFigure, 'Text', "\textbf{Variable de la simulation}");
+            app.TempsLabel.Position = [1000 260 150 30];
+            app.TempsLabel.Interpreter = 'latex';
+
+            app.GainRegLabel = uilabel(app.UIFigure, 'Text', 'Gain [-]');
+            app.GainRegLabel.Position = [670 240 150 20];
+            app.GainRegLabel.Interpreter = 'latex';
+
+            app.GainRegField = uieditfield(app.UIFigure, 'numeric');
+            app.GainRegField.Position = [670 210 150 30];
+            app.GainRegField.Value = evalin('base', 'gainReg');
+            app.GainRegField.ValueChangedFcn = @(src, event) assignin('base', 'gainReg', src.Value);
+
+            app.TempsRegLabel = uilabel(app.UIFigure, 'Text', 'Constante de temps [s]');
+            app.TempsRegLabel.Position = [670 180 150 20];
+            app.TempsRegLabel.Interpreter = 'latex';
+
+            app.TempsRegField = uieditfield(app.UIFigure, 'numeric');
+            app.TempsRegField.Position = [670 150 150 30];
+            app.TempsRegField.Value = evalin('base', 'tempsReg');
+            app.TempsRegField.ValueChangedFcn = @(src, event) assignin('base', 'tempsReg', src.Value);
+
+            app.tempsLabel = uilabel(app.UIFigure, 'Text', 'Temps de simulation [s]');
+            app.tempsLabel.Position = [1000 240 160 20];
+            app.tempsLabel.Interpreter = 'latex';
+
+            app.tempsField = uieditfield(app.UIFigure, 'numeric');
+            app.tempsField.Position = [1000 210 150 30];
+            app.tempsField.Value = evalin('base', 'temps');
+            app.tempsField.ValueChangedFcn = @(src, event) assignin('base', 'temps', src.Value);
         end
     end
 end
-
