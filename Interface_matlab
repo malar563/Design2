@@ -38,7 +38,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version35"; 
+        ModelName            string = "simulateur_matlab_version32"; 
     end
 
     properties (Access = private)
@@ -207,9 +207,9 @@ classdef Interface_matlab < matlab.apps.AppBase
     end
 
     function labelly(app, NomLabel, textLabel, Position)
-        app.(NomLabel) = uilabel(app.UIFigure, 'Text', textLabel);  
-        app.(NomLabel).Position = Position;
-        app.(NomLabel).Interpreter = 'latex';
+        NomLabel = uilabel(app.UIFigure, 'Text', textLabel);  
+        NomLabel.Position = Position;
+        NomLabel.Interpreter = 'latex';
     end
 
     %app.labelly(StartLabel, "D\'emarrer", [50 300 100 30])
@@ -418,46 +418,36 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Initialisation()
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
             
-            % app.labelly(StartLabel, "D\'emarrer", [50 300 100 30]);
-            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
-            % app.StartLabel.Position = [50 300 100 30];
-            % app.StartLabel.Interpreter = 'latex';
+            app.labelly(app.StartLabel, "D\'emarrer", [50 300 100 30]);
+            %app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
+            %app.StartLabel.Position = [50 300 100 30];
+            %app.StartLabel.Interpreter = 'latex';
 
             app.StartButton = uibutton(app.UIFigure, 'push', 'Text', "X");
             app.StartButton.Position = [20 300 30 30];
             app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
             
-            app.StopLabel = uilabel(app.UIFigure, 'Text', "Arr\^eter");
-            app.StopLabel.Position = [170 300 100 30];
-            app.StopLabel.Interpreter = 'latex';
+            app.labelly(app.StopLabel, "Arr\^eter", [170 300 100 30]);
 
             app.StopButton = uibutton(app.UIFigure, 'push', 'Text', "X");
             app.StopButton.Position = [140 300 30 30];
             app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
             
-            app.StatusLabel = uilabel(app.UIFigure, 'Text', "\'Etat : Arr\^et");
-            app.StatusLabel.Position = [240 300 150 30];
-            app.StatusLabel.Interpreter = 'latex';
+            app.labelly(app.StatusLabel, "\'Etat : Arr\^et", [240 300 150 30]);
 
-            app.GraphiqueLabel = uilabel(app.UIFigure, 'Text', "Graphiques suppl\'ementaires");
-            app.GraphiqueLabel.Position = [390 300 200 30];
-            app.GraphiqueLabel.Interpreter = 'latex';
+            app.labelly(app.GraphiqueLabel, "Graphiques suppl\'ementaires", [390 300 200 30]);
 
             app.GraphiqueButton = uibutton(app.UIFigure,'push', 'Text', "X");
             app.GraphiqueButton.Position = [360 300 30 30];
             app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
 
-            app.CSVLabel = uilabel(app.UIFigure, 'Text', "csv");
-            app.CSVLabel.Position = [1200 300 200 30];
-            app.CSVLabel.Interpreter = 'latex';
+            app.labelly(app.CSVLabel, "csv", [1200 300 200 30]);
 
             app.CSVButton = uibutton(app.UIFigure,'push', 'Text', "X");
             app.CSVButton.Position = [1160 300 30 30];
             app.CSVButton.ButtonPushedFcn = @(~,~)app.Faire_csv();
 
-            app.BoucleLabel = uilabel(app.UIFigure, 'Text', "La boucle est ");
-            app.BoucleLabel.Position = [600 300 200 30];
-            app.BoucleLabel.Interpreter = 'latex';
+            app.labelly(app.BoucleLabel, "La boucle est ", [600 300 200 30]);
 
             app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "ferme");
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
@@ -480,40 +470,30 @@ classdef Interface_matlab < matlab.apps.AppBase
             xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
-            app.PlaqueLabel = uilabel(app.UIFigure, 'Text', '\textbf{Plaque}');
-            app.PlaqueLabel.Position = [500 260 160 30];
-            app.PlaqueLabel.Interpreter = 'latex';
+            app.labelly(app.PlaqueLabel, "\textbf{Plaque}", [500 260 160 30]);
 
-            app.InitialTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature initiale [$^\circ$C]");
-            app.InitialTempLabel.Position = [500 240 160 20];
-            app.InitialTempLabel.Interpreter = 'latex';
+            app.labelly(app.InitialTempLabel, "Temp\'erature initiale [$^\circ$C]", [500 240 160 20]);
 
             app.InitialTempField = uieditfield(app.UIFigure, 'numeric');
             app.InitialTempField.Position = [500 210 160 30];
             app.InitialTempField.Value = evalin('base', 'initialTemp');
             app.InitialTempField.ValueChangedFcn = @(src, event) assignin('base', 'initialTemp', src.Value);
-            
-            app.FinalTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature finale [$^\circ$C]");
-            app.FinalTempLabel.Position = [500 180 160 20];
-            app.FinalTempLabel.Interpreter = 'latex';
+
+            app.labelly(app.FinalTempLabel, "Temp\'erature finale [$^\circ$C]", [500 180 160 20]);
 
             app.FinalTempField = uieditfield(app.UIFigure, 'numeric');
             app.FinalTempField.Position = [500 150 160 30];
             app.FinalTempField.Value = evalin('base', 'finalTemp');
             app.FinalTempField.ValueChangedFcn = @(src, event) assignin('base', 'finalTemp', src.Value);
             
-            app.SamplingTimeLabel = uilabel(app.UIFigure, 'Text', "Temps d'\'echantillonnage [s]");
-            app.SamplingTimeLabel.Position = [500 120 160 20];
-            app.SamplingTimeLabel.Interpreter = 'latex';
+            app.labelly(app.SamplingTimeLabel, "Temps d'\'echantillonnage [s]", [500 120 160 20]);
 
             app.SamplingTimeField = uieditfield(app.UIFigure, 'numeric');
             app.SamplingTimeField.Position = [500 90 160 30];
             app.SamplingTimeField.Value = evalin('base', 'samplingTime');
             app.SamplingTimeField.ValueChangedFcn = @(src, event) assignin('base', 'samplingTime', src.Value);
-             
-            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'esistance de perturbation}");
-            app.ResistanceLabel.Position = [830 260 170 30];
-            app.ResistanceLabel.Interpreter = 'latex';
+            
+            app.labelly(app.ResistanceLabel, "\textbf{R\'esistance de perturbation}", [830 260 170 30]);
 
             app.InitialPowerLabel = uilabel(app.UIFigure, 'Text', 'Puissance initiale [W]');
             app.InitialPowerLabel.Position = [830 240 160 20];
@@ -578,3 +558,4 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.tempsField.ValueChangedFcn = @(src, event) assignin('base', 'temps', src.Value);
         end
     end
+end
