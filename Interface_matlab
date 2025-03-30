@@ -22,10 +22,13 @@ classdef Interface_matlab < matlab.apps.AppBase
         GainRegField         matlab.ui.control.NumericEditField
         TempsRegLabel        matlab.ui.control.Label
         TempsRegField        matlab.ui.control.NumericEditField
+        tempsLabel           matlab.ui.control.Label
+        tempsField           matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
         RegulateurLabel      matlab.ui.control.Label
+        TempsLabel           matlab.ui.control.Label
         GraphiqueLabel       matlab.ui.control.Label
         GraphiqueButton      matlab.ui.control.Button
         BoucleLabel          matlab.ui.control.Label
@@ -33,7 +36,9 @@ classdef Interface_matlab < matlab.apps.AppBase
         PwmLabel             matlab.ui.control.Label
         PwmButton            matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
-        ModelName            string = "simulateur_matlab_version34"; 
+        CSVLabel             matlab.ui.control.Label
+        CSVButton            matlab.ui.control.Button
+        ModelName            string = "simulateur_matlab_version35"; 
     end
 
     properties (Access = private)
@@ -42,7 +47,7 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     methods (Access = private)
         function startSimulation(app)
-            % Active la simulink le timer
+            % Active le simulink
             load_system(app.ModelName);
             set_param(app.ModelName, 'SimulationCommand', 'start');
             app.StatusLabel.Text = "\'Etat : En cours";
@@ -74,6 +79,8 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base' , 'pwm_ouvert', false);
 
             % Initialise les variables du Simulink
+            temps = 1000;
+            assignin('base', "temps", temps);
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
@@ -153,16 +160,32 @@ classdef Interface_matlab < matlab.apps.AppBase
                 xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
                 ylabel(app.UIAxes, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                 grid(app.UIAxes, 'on');
-                legend(app.UIAxes, "Température T_3", "Température T_3 prédit", 'Interpreter', 'tex');
+                legend(app.UIAxes, "Temprature T_3", "Temprature T_3 prdit", 'Interpreter', 'tex');
                 hold(app.UIAxes, 'off');
+            end
 
-                end
+        
+        end
+        function Faire_csv(app)
+            
+            Data = evalin('base', "Temperature_simulation");
+            Data2 = evalin('base', 'temperature2');
+            Data3 = evalin('base', 'temperature1');
+            Data4 = evalin('base', 'Temperature_predit');
+            
+            Valeur = [Data.Time, Data.Data, Data2.Data, Data3.Data, Data4.Data];
+
+            dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
+            fichier = sprintf('_%s.csv', char(dt));
+
+
+            writematrix(Valeur, fichier);
         end
 
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
-            app.BoucleButton.Text = "fermée";
+            app.BoucleButton.Text = "ferme";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'boucleouverte', true);
@@ -174,11 +197,11 @@ classdef Interface_matlab < matlab.apps.AppBase
     function togglepwm(app)
         if evalin('base', 'pwm_ouvert') == true
             assignin('base', 'pwm_ouvert', false);
-            app.PwmButton.Text = "désactivé";
+            app.PwmButton.Text = "dsactiv";
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'pwm_ouvert', true);
-            app.PwmButton.Text = "activé";
+            app.PwmButton.Text = "activ";
             app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
         end
     end
@@ -203,13 +226,13 @@ classdef Interface_matlab < matlab.apps.AppBase
             %app.PwmButton.BackgroundColor = [1, 1, 0];
         %else
             %assignin('base', 'pwm_ouvert', true);
-            %app.PwmButton.Text = "activé";
+            %app.PwmButton.Text = "activ";
             %app.PwmButton.BackgroundColor = [0, 1, 0];
 
         %end
     %end
 
-    function openGraphInterface(app, graphNum)
+    function openGraphInterface(app, numero_graph)
         % Ouvre les fenetres individuelles de chaque graphique
         % supplementaire
         
@@ -218,11 +241,11 @@ classdef Interface_matlab < matlab.apps.AppBase
                  "R\'esistance thermistance 3", "Thermistance 1 mesur\'ee", "Thermistance 2 mesur\'ee"};
 
     
-        figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{graphNum}), 'Position', [150 150 500 400]);
+        figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{numero_graph}), 'Position', [150 150 500 400]);
         ax = uiaxes(figNewGraph, 'Position', [50 50 400 300]);
         
         
-        switch graphNum
+        switch numero_graph
             case 1
                 if evalin('base', 'exist("erreur", "var")')
                     erreur = evalin('base', 'erreur');
@@ -424,6 +447,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.GraphiqueButton.Position = [360 300 30 30];
             app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
 
+            app.CSVLabel = uilabel(app.UIFigure, 'Text', "csv");
+            app.CSVLabel.Position = [1200 300 200 30];
+            app.CSVLabel.Interpreter = 'latex';
+
+            app.CSVButton = uibutton(app.UIFigure,'push', 'Text', "X");
+            app.CSVButton.Position = [1160 300 30 30];
+            app.CSVButton.ButtonPushedFcn = @(~,~)app.Faire_csv();
+
             app.BoucleLabel = uilabel(app.UIFigure, 'Text', "La boucle est ");
             app.BoucleLabel.Position = [600 300 200 30];
             app.BoucleLabel.Interpreter = 'latex';
@@ -438,7 +469,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.PwmLabel.Position = [770 300 200 30];
             app.PwmLabel.Interpreter = 'latex';
 
-            app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "désactivé");
+            app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "dsactiv");
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
             app.PwmButton.Position = [845 300 60 30];
             app.PwmButton.ButtonPushedFcn = @(~,~)app.togglepwm();
@@ -515,6 +546,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.RegulateurLabel.Position = [670 260 150 30];
             app.RegulateurLabel.Interpreter = 'latex';
 
+            app.TempsLabel = uilabel(app.UIFigure, 'Text', "\textbf{Variable de la simulation}");
+            app.TempsLabel.Position = [1000 260 150 30];
+            app.TempsLabel.Interpreter = 'latex';
+
             app.GainRegLabel = uilabel(app.UIFigure, 'Text', 'Gain [-]');
             app.GainRegLabel.Position = [670 240 150 20];
             app.GainRegLabel.Interpreter = 'latex';
@@ -532,6 +567,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.TempsRegField.Position = [670 150 150 30];
             app.TempsRegField.Value = evalin('base', 'tempsReg');
             app.TempsRegField.ValueChangedFcn = @(src, event) assignin('base', 'tempsReg', src.Value);
+
+            app.tempsLabel = uilabel(app.UIFigure, 'Text', 'Temps de simulation [s]');
+            app.tempsLabel.Position = [1000 240 160 20];
+            app.tempsLabel.Interpreter = 'latex';
+
+            app.tempsField = uieditfield(app.UIFigure, 'numeric');
+            app.tempsField.Position = [1000 210 150 30];
+            app.tempsField.Value = evalin('base', 'temps');
+            app.tempsField.ValueChangedFcn = @(src, event) assignin('base', 'temps', src.Value);
         end
     end
-end
