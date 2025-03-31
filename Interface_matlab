@@ -529,6 +529,11 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Puissance fermée
             app.PuissancefermerLabel = labelly(app, "Puissance de l'actuateur [W]", [500 60 160 20]);
             app.PuissancefermerField = fielddy(app, "Puissancefermer", [500 30 160 30]);
+
+            % Timer
+            app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
+            
+
         end
     end
 end
