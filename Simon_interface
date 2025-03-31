@@ -24,9 +24,12 @@ classdef Interface_matlab < matlab.apps.AppBase
         TempsRegField        matlab.ui.control.NumericEditField
         tempsLabel           matlab.ui.control.Label
         tempsField           matlab.ui.control.NumericEditField
+        PuissancefermerLabel matlab.ui.control.Label
+        PuissancefermerField matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
+        TimerLabel           matlab.ui.control.Label
         RegulateurLabel      matlab.ui.control.Label
         TempsLabel           matlab.ui.control.Label
         GraphiqueLabel       matlab.ui.control.Label
@@ -38,7 +41,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version35"; 
+        ModelName            string = "simulateur_matlab_version36"; 
     end
 
     properties (Access = private)
@@ -49,6 +52,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         function startSimulation(app)
             % Active le simulink
             load_system(app.ModelName);
+            assignin('base', "temps_debut", tic);
             set_param(app.ModelName, 'SimulationCommand', 'start');
             app.StatusLabel.Text = "\'Etat : En cours";
             app.StatusLabel.Interpreter = 'latex';
@@ -62,6 +66,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         function stopSimulation(app)
             % Arrte la simulation lorsque le timer finit????
+            assignin('base', "temps_fin", toc);
             set_param(app.ModelName, 'SimulationCommand', 'stop');
             app.StatusLabel.Text = "\'Etat : Arr\^et";
             app.StatusLabel.Interpreter = 'latex';
@@ -79,6 +84,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base' , 'pwm_ouvert', false);
 
             % Initialise les variables du Simulink
+            temps_debut = 0;
+            assignin('base', "temps_debut", temps_debut);
+            temps_fin = 0;
+            assignin('base', "temps_fin", temps_fin);
             temps = 1000;
             assignin('base', "temps", temps);
             initialTemp = 23;
@@ -97,6 +106,8 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'gainReg', gainReg);
             tempsReg = 146.07;
             assignin('base', 'tempsReg', tempsReg);
+            Puissancefermer = 0;
+            assignin('base', 'Puissancefermer', Puissancefermer);
         end
 
         function set_Graphique(app)
@@ -498,6 +509,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.FinalTempLabel.Position = [500 180 160 20];
             app.FinalTempLabel.Interpreter = 'latex';
 
+            app.FinalTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature finale [$^\circ$C]");
+            app.FinalTempLabel.Position = [500 180 160 20];
+            app.FinalTempLabel.Interpreter = 'latex';
+
             app.FinalTempField = uieditfield(app.UIFigure, 'numeric');
             app.FinalTempField.Position = [500 150 160 30];
             app.FinalTempField.Value = evalin('base', 'finalTemp');
@@ -511,6 +526,15 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.SamplingTimeField.Position = [500 90 160 30];
             app.SamplingTimeField.Value = evalin('base', 'samplingTime');
             app.SamplingTimeField.ValueChangedFcn = @(src, event) assignin('base', 'samplingTime', src.Value);
+
+            app.PuissancefermerLabel = uilabel(app.UIFigure, 'Text', "Puissance de l'actuateur [W]");
+            app.PuissancefermerLabel.Position = [500 60 160 20];
+            app.PuissancefermerLabel.Interpreter = 'latex';
+
+            app.PuissancefermerField = uieditfield(app.UIFigure, 'numeric');
+            app.PuissancefermerField.Position = [500 30 160 30];
+            app.PuissancefermerField.Value = evalin('base', 'Puissancefermer');
+            app.PuissancefermerField.ValueChangedFcn = @(src, event) assignin('base', 'Puissancefermer', src.Value);
              
             app.ResistanceLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'esistance de perturbation}");
             app.ResistanceLabel.Position = [830 260 170 30];
@@ -550,6 +574,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.TempsLabel = uilabel(app.UIFigure, 'Text', "\textbf{Variable de la simulation}");
             app.TempsLabel.Position = [1000 260 150 30];
             app.TempsLabel.Interpreter = 'latex';
+           
+            app.TimerLabel = uilabel(app.UIFigure, 'Text', string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}");
+            app.TimerLabel.Position = [1000 60 150 30];
+            app.TimerLabel.Interpreter = 'latex';
 
             app.GainRegLabel = uilabel(app.UIFigure, 'Text', 'Gain [-]');
             app.GainRegLabel.Position = [670 240 150 20];
