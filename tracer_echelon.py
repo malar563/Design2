@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 temperatures = [19,24.5,30]
-gain = [0.23,0.388,0.54]
+gain = [2.3,3.88,5.4]
 
-temperatures = np.array(temperatures)+273.15 # En Kelvin
+temperatures = np.array(temperatures)#+273.15 # En Kelvin
 gain = np.array(gain)
 
 def linear(x, a, b):
@@ -13,7 +13,8 @@ def linear(x, a, b):
 
 res, cov = curve_fit(linear, temperatures, gain)
 uncertainties = np.sqrt(np.diag(cov))
-temp_theoriques = np.linspace(283.15, 313.15, 1000)
+# temp_theoriques = np.linspace(283.15, 313.15, 1000)
+temp_theoriques = np.linspace(18, 32, 1000)
 
 print(f"Parameters:")
 for i in range(len(res)):
@@ -39,29 +40,46 @@ from scipy.optimize import curve_fit
 # # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rapportV2\output.csv"
 
-#fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre_perturbation.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre_perturbation.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre_perturbation.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre_perturbation.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre_perturbation.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre_perturbation.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
-fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
+
+fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"#Pour rouler vite
+fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_25_degre.csv"
+# fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_20_degre.csv"
+# fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_30_degre.csv"
+
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab_25_degre.csv"
+
 
 data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
 # data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
 data_sim = pd.read_csv(fich_sim)
+data_matl = pd.read_csv(fich_matl)
 column_names = data.columns
 column_names_sim = data_sim.columns
-# print(column_names_sim)
+column_names_matl = data_matl.columns
+print(column_names_matl)
 
 print(column_names)
-
+## Python
 plt.plot(data_sim["0"],(data_sim["2"]-data_sim["2"][0]),color="red", label="Simulateur")
 plt.plot(data_sim["0"],(data_sim["3"]-data_sim["3"][0]),color="red")
 plt.plot(data_sim["0"],(data_sim["4"]-data_sim["4"][0]),color="red")
 # plt.show()
+##Matlab
+plt.plot(data_matl['Temps'],(data_matl['temperature1']-data_matl['temperature1'][0]),color="green", label="Simulateur")
+plt.plot(data_matl['Temps'],(data_matl['temperature2']-data_matl['temperature2'][0]),color="green")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_simulation']-data_matl['Temperature_simulation'][0]),color="green")
 
+# # Test_25_degre
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T3"][614:]-data["T3"][614], color="blue")
 # # Test_25_degre
 # plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
 # plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
@@ -82,10 +100,10 @@ plt.plot(data_sim["0"],(data_sim["4"]-data_sim["4"][0]),color="red")
 # plt.plot(data["Temps"][801:]-data["Temps"][801],data["T1"][801:]-data["T1"][801], color="blue", label="Prototype")
 # plt.plot(data["Temps"][801:]-data["Temps"][801],data["T2"][801:]-data["T2"][801], color="blue")
 # plt.plot(data["Temps"][801:]-data["Temps"][801],data["T3"][801:]-data["T3"][801], color="blue")
-# Test_30_degre_perturbation
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T1"][468:]-data["T1"][468], color="blue", label="Prototype")
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T2"][468:]-data["T2"][468], color="blue")
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T3"][468:]-data["T3"][468], color="blue")
+# # Test_30_degre_perturbation
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T1"][468:]-data["T1"][468], color="blue", label="Prototype")
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T2"][468:]-data["T2"][468], color="blue")
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T3"][468:]-data["T3"][468], color="blue")
 
 
 
