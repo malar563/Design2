@@ -41,7 +41,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version36"; 
+        ModelName            string = "simulateur_matlab_version38"; 
     end
 
     properties (Access = private)
@@ -66,17 +66,16 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         function stopSimulation(app)
             % Arrte la simulation lorsque le timer finit????
-            assignin('base', "temps_fin", toc);
-            set_param(app.ModelName, 'SimulationCommand', 'stop');
-            app.StatusLabel.Text = "\'Etat : Arr\^et";
-            app.StatusLabel.Interpreter = 'latex';
-            
             if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
                 stop(app.SimulationTimer);
                 delete(app.SimulationTimer);
             end
+            app.StatusLabel.Text = 'Etat : Arret';
+            app.StatusLabel.Interpreter = 'Latex'; 
+            drawnow;
+            pause(0.1);
             app.updatePlot();
-        end
+            end
 
         function Initialisation(app)
             % Initialise en boucle ferme
@@ -185,7 +184,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             Temperature3_predit = evalin('base', 'Temperature_predit');
             
             nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
-                'VariableNames', {'Temps', 'Temperature_simulation', 'temperature2', 'temperature1', 'Temperature_predit'});
+                'VariableNames', {'Temps', 'Temperature_au_laser', 'temperature2', 'temperature1', 'Temperature_predit'});
             
             dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
             fichier = sprintf('_%s.csv', char(dt));
@@ -197,7 +196,7 @@ classdef Interface_matlab < matlab.apps.AppBase
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
-            app.BoucleButton.Text = "ferme";
+            app.BoucleButton.Text = "ferm"+char(233)+"e";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'boucleouverte', true);
@@ -209,28 +208,49 @@ classdef Interface_matlab < matlab.apps.AppBase
     function togglepwm(app)
         if evalin('base', 'pwm_ouvert') == true
             assignin('base', 'pwm_ouvert', false);
-            app.PwmButton.Text = "dsactiv";
+            app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'pwm_ouvert', true);
-            app.PwmButton.Text = "activ";
+            app.PwmButton.Text = "activ"+char(233);
             app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
         end
     end
 
-    function labelly(app, NomLabel, textLabel, Position)
-        app.(NomLabel) = uilabel(app.UIFigure, 'Text', textLabel);  
-        app.(NomLabel).Position = Position;
-        app.(NomLabel).Interpreter = 'latex';
+    function NomLabel = labelly(app, textLabel, Position)
+        NomLabel = uilabel(app.UIFigure, 'Text', textLabel);  
+        NomLabel.Position = Position;
+        NomLabel.Interpreter = 'latex';
     end
 
-    %app.labelly(StartLabel, "D\'emarrer", [50 300 100 30])
-            %
-            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
-            % app.StartLabel.Position = [50 300 100 30];
-            % app.StartLabel.Interpreter = 'latex';
+    function NomLabel = labelly_tab(app, parent, textLabel, Position)
+        NomLabel = uilabel(parent,"Position",Position);
+        NomLabel.Text = textLabel;
+        NomLabel.Interpreter = "latex";
+    end
 
-   
+    function NomButton = buttonny(app, textButton, Position, Fonction)
+        NomButton = uibutton(app.UIFigure, 'push', 'Text', textButton);
+        NomButton.Position = Position;
+        NomButton.ButtonPushedFcn = Fonction;
+    end
+
+    function NomField = fielddy(app, valueField, Position)
+        NomField = uieditfield(app.UIFigure, 'numeric');
+        NomField.Position = Position;
+        NomField.Value = evalin('base', valueField);
+        NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
+    end
+
+    function NomField = fielddy_tab(app, parent, valueField, Position)
+        NomField = uieditfield(parent, 'numeric');
+        NomField.Position = Position;
+        NomField.Value = evalin('base', valueField);
+        NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
+    end
+
+
+
     %function pwm(app)
         %if evalin('base', 'Le_maitre_du_temps') == true
             %assignin('base', 'Le_maitre_du_temps', false);
@@ -238,7 +258,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             %app.PwmButton.BackgroundColor = [1, 1, 0];
         %else
             %assignin('base', 'pwm_ouvert', true);
-            %app.PwmButton.Text = "activ";
+            %app.PwmButton.Text = "activ"+char(233);
             %app.PwmButton.BackgroundColor = [0, 1, 0];
 
         %end
@@ -426,185 +446,111 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     methods (Access = public)
         function app = Interface_matlab()
-            % Positionne les boutons dans l'interface de base
+            % Initialise les variables
             app.Initialisation()
+
+            % Initialise l'interface
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
+            tabs = uitabgroup(app.UIFigure, 'Position', [500 30 485 250]);
             
-            % app.labelly(StartLabel, "D\'emarrer", [50 300 100 30]);
-            % app.StartLabel = uilabel(app.UIFigure, 'Text', "D\'emarrer");
-            % app.StartLabel.Position = [50 300 100 30];
-            % app.StartLabel.Interpreter = 'latex';
-
-            app.StartButton = uibutton(app.UIFigure, 'push', 'Text', "X");
-            app.StartButton.Position = [20 300 30 30];
-            app.StartButton.ButtonPushedFcn = @(~,~)app.startSimulation();
+            % Bouton de dmarrage
+            app.StartLabel = labelly(app, "D\'emarrer", [50 300 100 30]);
+            app.StartButton = buttonny(app, "X", [20 300 30 30], @(~,~)app.startSimulation());
             
-            app.StopLabel = uilabel(app.UIFigure, 'Text', "Arr\^eter");
-            app.StopLabel.Position = [170 300 100 30];
-            app.StopLabel.Interpreter = 'latex';
-
-            app.StopButton = uibutton(app.UIFigure, 'push', 'Text', "X");
-            app.StopButton.Position = [140 300 30 30];
-            app.StopButton.ButtonPushedFcn = @(~,~)app.stopSimulation();
+            % Bouton d'arrt
+            app.StopLabel = labelly(app, "Arr\^eter", [170 300 100 30]);
+            app.StopButton = buttonny(app, "X", [140 300 30 30], @(~,~)app.stopSimulation());
             
-            app.StatusLabel = uilabel(app.UIFigure, 'Text', "\'Etat : Arr\^et");
-            app.StatusLabel.Position = [240 300 150 30];
-            app.StatusLabel.Interpreter = 'latex';
+            % tat du systme
+            app.StatusLabel = labelly(app, "\'Etat : Arr\^et", [240 300 150 30]);
 
-            app.GraphiqueLabel = uilabel(app.UIFigure, 'Text', "Graphiques suppl\'ementaires");
-            app.GraphiqueLabel.Position = [390 300 200 30];
-            app.GraphiqueLabel.Interpreter = 'latex';
+            % Bouton pour graphiques supplmentaires
+            app.GraphiqueLabel = labelly(app, "Graphiques suppl\'ementaires", [390 300 200 30]);
+            app.GraphiqueButton = buttonny(app, "X", [360 300 30 30], @(~,~)app.set_Graphique());
 
-            app.GraphiqueButton = uibutton(app.UIFigure,'push', 'Text', "X");
-            app.GraphiqueButton.Position = [360 300 30 30];
-            app.GraphiqueButton.ButtonPushedFcn = @(~,~)app.set_Graphique();
-
-            app.CSVLabel = uilabel(app.UIFigure, 'Text', "csv");
-            app.CSVLabel.Position = [1200 300 200 30];
-            app.CSVLabel.Interpreter = 'latex';
-
-            app.CSVButton = uibutton(app.UIFigure,'push', 'Text', "X");
-            app.CSVButton.Position = [1160 300 30 30];
-            app.CSVButton.ButtonPushedFcn = @(~,~)app.Faire_csv();
-
-            app.BoucleLabel = uilabel(app.UIFigure, 'Text', "La boucle est ");
-            app.BoucleLabel.Position = [600 300 200 30];
-            app.BoucleLabel.Interpreter = 'latex';
-
-            app.BoucleButton = uibutton(app.UIFigure,'push', 'Text', "ferme");
+            % Bouton pour contrle de la boucle
+            app.BoucleLabel = labelly(app, "La boucle est ", [600 300 200 30]);
+            app.BoucleButton = buttonny(app, "ferm"+char(233)+"e", [680 300 60 30], @(~,~)app.toggleBoucle());
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
-            app.BoucleButton.Position = [680 300 60 30];
-            app.BoucleButton.ButtonPushedFcn = @(~,~)app.toggleBoucle();
 
-
-            app.PwmLabel = uilabel(app.UIFigure, 'Text', "Le PMW est ");
-            app.PwmLabel.Position = [770 300 200 30];
-            app.PwmLabel.Interpreter = 'latex';
-
-            app.PwmButton = uibutton(app.UIFigure,'push', 'Text', "dsactiv");
+            % Bouton pour contrle du PWM
+            app.PwmLabel = labelly(app, "Le PMW est ", [770 300 200 30]);
+            app.PwmButton = buttonny(app, "d"+char(233)+"sactiv"+char(233), [845 300 60 30], @(~,~)app.togglepwm());
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
-            app.PwmButton.Position = [845 300 60 30];
-            app.PwmButton.ButtonPushedFcn = @(~,~)app.togglepwm();
 
-            
+            % Bouton pour enregistrer un csv
+            app.CSVLabel = labelly(app, "csv", [1200 300 200 30]);
+            app.CSVButton = buttonny(app, "X", [1160 300 30 30], @(~,~)app.Faire_csv());
+
+            % Graphique
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
             title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
             xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
-            app.PlaqueLabel = uilabel(app.UIFigure, 'Text', '\textbf{Plaque}');
-            app.PlaqueLabel.Position = [500 260 160 30];
-            app.PlaqueLabel.Interpreter = 'latex';
 
-            app.InitialTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature initiale [$^\circ$C]");
-            app.InitialTempLabel.Position = [500 240 160 20];
-            app.InitialTempLabel.Interpreter = 'latex';
+            % SECTION PLAQUE
+            t_plaque = uitab(tabs,"Title","Plaque");
+            %t_plaque.Scrollable = 'on';
 
-            app.InitialTempField = uieditfield(app.UIFigure, 'numeric');
-            app.InitialTempField.Position = [500 210 160 30];
-            app.InitialTempField.Value = evalin('base', 'initialTemp');
-            app.InitialTempField.ValueChangedFcn = @(src, event) assignin('base', 'initialTemp', src.Value);
+            % Temprature initiale
+            app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature initiale [$^\circ$C]", [10 200 150 20]);
+            app.InitialTempField = fielddy_tab(app, t_plaque, "initialTemp", [10 170 140 30]);
+
+            % Temprature finale
+            app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature finale [$^\circ$C]", [10 140 150 20]);
+            app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30]);
             
-            app.FinalTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature finale [$^\circ$C]");
-            app.FinalTempLabel.Position = [500 180 160 20];
-            app.FinalTempLabel.Interpreter = 'latex';
+            % Temps d'chantillonnage
+            app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [10 80 160 20]);
+            app.SamplingTimeField = fielddy_tab(app, t_plaque, "samplingTime", [10 50 140 30]);
 
-            app.FinalTempLabel = uilabel(app.UIFigure, 'Text', "Temp\'erature finale [$^\circ$C]");
-            app.FinalTempLabel.Position = [500 180 160 20];
-            app.FinalTempLabel.Interpreter = 'latex';
 
-            app.FinalTempField = uieditfield(app.UIFigure, 'numeric');
-            app.FinalTempField.Position = [500 150 160 30];
-            app.FinalTempField.Value = evalin('base', 'finalTemp');
-            app.FinalTempField.ValueChangedFcn = @(src, event) assignin('base', 'finalTemp', src.Value);
+            % SECTION ACTUATEUR??
+            % Puissance ferme
+            %app.PuissancefermerLabel = labelly(app, "Puissance de l'actuateur [W]", [500 60 160 20]);
+            %app.PuissancefermerField = fielddy(app, "Puissancefermer", [500 30 160 30]);
+
+
+            % SECTION RGULATEUR
+            t_reg = uitab(tabs,"Title","R"+char(233)+"gulateur");
             
-            app.SamplingTimeLabel = uilabel(app.UIFigure, 'Text', "Temps d'\'echantillonnage [s]");
-            app.SamplingTimeLabel.Position = [500 120 160 20];
-            app.SamplingTimeLabel.Interpreter = 'latex';
+            % Gain du rgualteur
+            app.GainRegLabel = labelly_tab(app, t_reg, "Gain [-]", [10 200 150 20]);
+            app.GainRegField = fielddy_tab(app, t_reg, "gainReg", [10 170 140 30]);
 
-            app.SamplingTimeField = uieditfield(app.UIFigure, 'numeric');
-            app.SamplingTimeField.Position = [500 90 160 30];
-            app.SamplingTimeField.Value = evalin('base', 'samplingTime');
-            app.SamplingTimeField.ValueChangedFcn = @(src, event) assignin('base', 'samplingTime', src.Value);
+            % Constante de temps du rgulateur
+            app.TempsRegLabel = labelly_tab(app, t_reg, "Constante de temps [s]", [10 140 150 20]);
+            app.TempsRegField = fielddy_tab(app, t_reg, "tempsReg", [10 110 140 30]);
 
-            app.PuissancefermerLabel = uilabel(app.UIFigure, 'Text', "Puissance de l'actuateur [W]");
-            app.PuissancefermerLabel.Position = [500 60 160 20];
-            app.PuissancefermerLabel.Interpreter = 'latex';
-
-            app.PuissancefermerField = uieditfield(app.UIFigure, 'numeric');
-            app.PuissancefermerField.Position = [500 30 160 30];
-            app.PuissancefermerField.Value = evalin('base', 'Puissancefermer');
-            app.PuissancefermerField.ValueChangedFcn = @(src, event) assignin('base', 'Puissancefermer', src.Value);
-             
-            app.ResistanceLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'esistance de perturbation}");
-            app.ResistanceLabel.Position = [830 260 170 30];
-            app.ResistanceLabel.Interpreter = 'latex';
-
-            app.InitialPowerLabel = uilabel(app.UIFigure, 'Text', 'Puissance initiale [W]');
-            app.InitialPowerLabel.Position = [830 240 160 20];
-            app.InitialPowerLabel.Interpreter = 'latex';
-
-            app.InitialPowerField = uieditfield(app.UIFigure, 'numeric');
-            app.InitialPowerField.Position = [830 210 160 30];
-            app.InitialPowerField.Value = evalin('base', 'initialPower');
-            app.InitialPowerField.ValueChangedFcn = @(src, event) assignin('base', 'initialPower', src.Value);
             
-            app.FinalPowerLabel = uilabel(app.UIFigure, 'Text', 'Puissance finale [W]');
-            app.FinalPowerLabel.Position = [830 180 160 20];
-            app.FinalPowerLabel.Interpreter = 'latex';
+            % SECTION RESISTANCE DE PERTURBATION
+            t_resistance = uitab(tabs,"Title","R"+char(233)+"sistance de perturbation");
 
-            app.FinalPowerField = uieditfield(app.UIFigure, 'numeric');
-            app.FinalPowerField.Position = [830 150 160 30];
-            app.FinalPowerField.Value = evalin('base', 'finalPower');
-            app.FinalPowerField.ValueChangedFcn = @(src, event) assignin('base', 'finalPower', src.Value);
+            % Puissance initiale
+            app.InitialPowerLabel = labelly_tab(app, t_resistance, "Puissance initiale [W]", [10 200 150 20]);
+            app.InitialPowerField = fielddy_tab(app, t_resistance, "initialPower", [10 170 140 30]);
+
+            % Puissance finale
+            app.FinalPowerLabel = labelly_tab(app, t_resistance, "Puissance finale [W]", [10 140 150 20]);
+            app.FinalPowerField = fielddy_tab(app, t_resistance, "finalPower", [10 110 140 30]);
+
+            % Temps de dmarrage
+            app.InitialTimeLabel = labelly_tab(app, t_resistance, "Temps de d\'emarrage [s]", [10 80 160 20]);
+            app.InitialTimeField = fielddy_tab(app, t_resistance, "initialTime", [10 50 140 30]);
             
-            app.InitialTimeLabel = uilabel(app.UIFigure, 'Text', "Temps de d\'emarrage [s]");
-            app.InitialTimeLabel.Position = [830 120 160 20];
-            app.InitialTimeLabel.Interpreter = 'latex';
+            
+            % SECTION VARIABLE DE LA SIMULATION
+            t_controle = uitab(tabs, "Title", "Contr" + char(244) + "le de la simulation");
 
-            app.InitialTimeField = uieditfield(app.UIFigure, 'numeric');
-            app.InitialTimeField.Position = [830 90 160 30];
-            app.InitialTimeField.Value = evalin('base', 'initialTime');
-            app.InitialTimeField.ValueChangedFcn = @(src, event) assignin('base', 'initialTime', src.Value);
+            % Temps de simulation
+            app.tempsLabel = labelly_tab(app, t_controle, "Temps de simulation [s]", [10 200 150 20]);
+            app.tempsField = fielddy_tab(app, t_controle, "temps", [10 170 140 30]);
+          
+            % Timer
+            app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
+            
 
-            app.RegulateurLabel = uilabel(app.UIFigure, 'Text', "\textbf{R\'egulateur}");
-            app.RegulateurLabel.Position = [670 260 150 30];
-            app.RegulateurLabel.Interpreter = 'latex';
-
-            app.TempsLabel = uilabel(app.UIFigure, 'Text', "\textbf{Variable de la simulation}");
-            app.TempsLabel.Position = [1000 260 150 30];
-            app.TempsLabel.Interpreter = 'latex';
-           
-            app.TimerLabel = uilabel(app.UIFigure, 'Text', string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}");
-            app.TimerLabel.Position = [1000 60 150 30];
-            app.TimerLabel.Interpreter = 'latex';
-
-            app.GainRegLabel = uilabel(app.UIFigure, 'Text', 'Gain [-]');
-            app.GainRegLabel.Position = [670 240 150 20];
-            app.GainRegLabel.Interpreter = 'latex';
-
-            app.GainRegField = uieditfield(app.UIFigure, 'numeric');
-            app.GainRegField.Position = [670 210 150 30];
-            app.GainRegField.Value = evalin('base', 'gainReg');
-            app.GainRegField.ValueChangedFcn = @(src, event) assignin('base', 'gainReg', src.Value);
-
-            app.TempsRegLabel = uilabel(app.UIFigure, 'Text', 'Constante de temps [s]');
-            app.TempsRegLabel.Position = [670 180 150 20];
-            app.TempsRegLabel.Interpreter = 'latex';
-
-            app.TempsRegField = uieditfield(app.UIFigure, 'numeric');
-            app.TempsRegField.Position = [670 150 150 30];
-            app.TempsRegField.Value = evalin('base', 'tempsReg');
-            app.TempsRegField.ValueChangedFcn = @(src, event) assignin('base', 'tempsReg', src.Value);
-
-            app.tempsLabel = uilabel(app.UIFigure, 'Text', 'Temps de simulation [s]');
-            app.tempsLabel.Position = [1000 240 160 20];
-            app.tempsLabel.Interpreter = 'latex';
-
-            app.tempsField = uieditfield(app.UIFigure, 'numeric');
-            app.tempsField.Position = [1000 210 150 30];
-            app.tempsField.Value = evalin('base', 'temps');
-            app.tempsField.ValueChangedFcn = @(src, event) assignin('base', 'temps', src.Value);
         end
     end
 end
