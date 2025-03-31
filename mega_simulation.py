@@ -199,8 +199,8 @@ class Plaque:
             self.ax2.plot(self.t, self.temp1, color='b')
             self.ax2.plot(self.t, self.temp2, color='g')
             self.ax2.plot(self.t, self.temp3, color='r')
-            self.ax2.set_xlabel('t (s)')
-            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_xlabel('Temps (s)')
+            self.ax2.set_ylabel('Température (K)')
             self.ax2.set_title("Température des thermistances en fonction du temps ")
 
             # Mettre la figure en plein écran
@@ -232,8 +232,8 @@ class Plaque:
             ]
 
             self.ax2.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(0, 1))
-            self.ax2.set_xlabel('t (s)')
-            self.ax2.set_ylabel('T (K)')
+            self.ax2.set_xlabel('Temps (s)')
+            self.ax2.set_ylabel('Température (K)')
             self.ax2.set_title("Température des thermistances en fonction du temps ")
 
         self.fig.canvas.flush_events()
