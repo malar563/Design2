@@ -148,8 +148,9 @@ classdef Interface_matlab < matlab.apps.AppBase
                 lbl.Interpreter = 'latex';
         
                 btn.ButtonPushedFcn = @(src, event) app.openGraphInterface(i);
+            end
         end
-    end
+
         function updatePlot(app)
 
             cla(app.UIAxes);
@@ -174,35 +175,58 @@ classdef Interface_matlab < matlab.apps.AppBase
                 legend(app.UIAxes, "Temprature T_3", "Temprature T_3 prdit", 'Interpreter', 'tex');
                 hold(app.UIAxes, 'off');
             end
-
+        end
         
-        end
         function Faire_csv(app)
-            
-            Temperature3 = evalin('base', "Temperature_simulation");
-            temperature2 = evalin('base', 'temperature2');
-            temperature1 = evalin('base', 'temperature1');
-            Temperature3_predit = evalin('base', 'Temperature_predit');
-            
-            nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
-                'VariableNames', {'Temps', 'Temperature_simulation', 'temperature2', 'temperature1', 'Temperature_predit'});
-            
-            dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
-            fichier = sprintf('_%s.csv', char(dt));
+            try
+                Temperature3 = evalin('base', "Temperature_simulation");
+                temperature2 = evalin('base', 'temperature2');
+                temperature1 = evalin('base', 'temperature1');
+                Temperature3_predit = evalin('base', 'Temperature_predit');
 
-
-            writetable(nom_des_colones, fichier);
+                nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
+                    'VariableNames', { ...
+                    'Temps', ...
+                    'Temperature_au_laser', ...
+                    'Temperature_au_milieu', ...
+                    'Temperature_a_lactuateur', ...
+                    'Temperature_predit_au_laser' ...
+                    });
+            
+                dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
+                fichier = sprintf('%s.csv', char(dt));
+            
+                writetable(nom_des_colones, fichier);
+            catch
+                warndlg('Pas de valeurs à enregistrer', 'WARNING');
+                return;
+            end
         end
+
 
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
             app.BoucleButton.Text = "ferm"+char(233)+"e";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
+
+            % Voir bonnes variables dans interface
+            set(app.FinalTempLabel, 'Visible', 'on');
+            set(app.FinalTempField, 'Visible', 'on');
+
+            set(app.PuissancefermerLabel, 'Visible', 'off');
+            set(app.PuissancefermerField, 'Visible', 'off');
         else
             assignin('base', 'boucleouverte', true);
             app.BoucleButton.Text = "ouverte";
             app.BoucleButton.BackgroundColor = [1, 1, 0]; % Jaune
+
+            % Voir bonnes variables dans interface
+            set(app.FinalTempLabel, 'Visible', 'off');
+            set(app.FinalTempField, 'Visible', 'off');
+
+            set(app.PuissancefermerLabel, 'Visible', 'on');
+            set(app.PuissancefermerField, 'Visible', 'on');
         end
     end
 
@@ -454,34 +478,34 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
             tabs = uitabgroup(app.UIFigure, 'Position', [500 30 485 250]);
             
-            % Bouton de d�marrage
+            % Bouton de dmarrage
             app.StartLabel = labelly(app, "D\'emarrer", [50 300 100 30]);
             app.StartButton = buttonny(app, "X", [20 300 30 30], @(~,~)app.startSimulation());
             
-            % Bouton d'arr�t
+            % Bouton d'arrt
             app.StopLabel = labelly(app, "Arr\^eter", [170 300 100 30]);
             app.StopButton = buttonny(app, "X", [140 300 30 30], @(~,~)app.stopSimulation());
             
-            % �tat du syst�me
+            % tat du systme
             app.StatusLabel = labelly(app, "\'Etat : Arr\^et", [240 300 150 30]);
 
-            % Bouton pour graphiques suppl�mentaires
+            % Bouton pour graphiques supplmentaires
             app.GraphiqueLabel = labelly(app, "Graphiques suppl\'ementaires", [390 300 200 30]);
             app.GraphiqueButton = buttonny(app, "X", [360 300 30 30], @(~,~)app.set_Graphique());
 
-            % Bouton pour contr�le de la boucle
+            % Bouton pour contrle de la boucle
             app.BoucleLabel = labelly(app, "La boucle est ", [600 300 200 30]);
             app.BoucleButton = buttonny(app, "ferm"+char(233)+"e", [680 300 60 30], @(~,~)app.toggleBoucle());
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
 
-            % Bouton pour contr�le du PWM
+            % Bouton pour contrle du PWM
             app.PwmLabel = labelly(app, "Le PMW est ", [770 300 200 30]);
             app.PwmButton = buttonny(app, "d"+char(233)+"sactiv"+char(233), [845 300 60 30], @(~,~)app.togglepwm());
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
 
             % Bouton pour enregistrer un csv
-            app.CSVLabel = labelly(app, "csv", [1200 300 200 30]);
-            app.CSVButton = buttonny(app, "X", [1160 300 30 30], @(~,~)app.Faire_csv());
+            app.CSVLabel = labelly(app, "Enregistrer un CSV", [980 300 200 30]);
+            app.CSVButton = buttonny(app, "X", [950 300 30 30], @(~,~)app.Faire_csv());
 
             % Graphique
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
@@ -490,37 +514,40 @@ classdef Interface_matlab < matlab.apps.AppBase
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
 
-            % SECTION PLAQUE
+            % SECTION PLAQUE (boucle fermée)
             t_plaque = uitab(tabs,"Title","Plaque");
             %t_plaque.Scrollable = 'on';
 
-            % Temp�rature initiale
+            % Temprature initiale
             app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature initiale [$^\circ$C]", [10 200 150 20]);
             app.InitialTempField = fielddy_tab(app, t_plaque, "initialTemp", [10 170 140 30]);
 
-            % Temp�rature finale
+            % Temprature finale
             app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature finale [$^\circ$C]", [10 140 150 20]);
             app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30]);
             
-            % Temps d'�chantillonnage
+            % Temps d'chantillonnage
             app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [10 80 160 20]);
             app.SamplingTimeField = fielddy_tab(app, t_plaque, "samplingTime", [10 50 140 30]);
 
 
-            % SECTION ACTUATEUR??
-            % Puissance ferm�e
-            %app.PuissancefermerLabel = labelly(app, "Puissance de l'actuateur [W]", [500 60 160 20]);
-            %app.PuissancefermerField = fielddy(app, "Puissancefermer", [500 30 160 30]);
+            % SECTION PLAQUE (boucle ouverte)
+
+            % Puissance / commande en watt
+            app.PuissancefermerLabel = labelly_tab(app, t_plaque, "Puissance de l'actuateur [W]", [10 140 160 20]);
+            app.PuissancefermerField = fielddy_tab(app, t_plaque, "Puissancefermer", [10 110 140 30]);
+            set(app.PuissancefermerLabel, 'Visible', 'off');
+            set(app.PuissancefermerField, 'Visible', 'off');
 
 
-            % SECTION R�GULATEUR
+            % SECTION RGULATEUR
             t_reg = uitab(tabs,"Title","R"+char(233)+"gulateur");
             
-            % Gain du r�gualteur
+            % Gain du rgualteur
             app.GainRegLabel = labelly_tab(app, t_reg, "Gain [-]", [10 200 150 20]);
             app.GainRegField = fielddy_tab(app, t_reg, "gainReg", [10 170 140 30]);
 
-            % Constante de temps du r�gulateur
+            % Constante de temps du rgulateur
             app.TempsRegLabel = labelly_tab(app, t_reg, "Constante de temps [s]", [10 140 150 20]);
             app.TempsRegField = fielddy_tab(app, t_reg, "tempsReg", [10 110 140 30]);
 
@@ -536,7 +563,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.FinalPowerLabel = labelly_tab(app, t_resistance, "Puissance finale [W]", [10 140 150 20]);
             app.FinalPowerField = fielddy_tab(app, t_resistance, "finalPower", [10 110 140 30]);
 
-            % Temps de d�marrage
+            % Temps de dmarrage
             app.InitialTimeLabel = labelly_tab(app, t_resistance, "Temps de d\'emarrage [s]", [10 80 160 20]);
             app.InitialTimeField = fielddy_tab(app, t_resistance, "initialTime", [10 50 140 30]);
             
@@ -550,8 +577,6 @@ classdef Interface_matlab < matlab.apps.AppBase
           
             % Timer
             app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
-            
-
         end
     end
 end
