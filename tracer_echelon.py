@@ -72,9 +72,9 @@ plt.plot(data_sim["0"],(data_sim["3"]-data_sim["3"][0]),color="red")
 plt.plot(data_sim["0"],(data_sim["4"]-data_sim["4"][0]),color="red")
 # plt.show()
 ##Matlab
-plt.plot(data_matl['Temps'],(data_matl['temperature1']-data_matl['temperature1'][0]),color="green", label="Simulateur")
-plt.plot(data_matl['Temps'],(data_matl['temperature2']-data_matl['temperature2'][0]),color="green")
-plt.plot(data_matl['Temps'],(data_matl['Temperature_simulation']-data_matl['Temperature_simulation'][0]),color="green")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_a_lactuateur']-data_matl['Temperature_a_lactuateur'][0]),color="green", label="Simulateur")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]),color="green")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]),color="green")
 
 # # Test_25_degre
 plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
