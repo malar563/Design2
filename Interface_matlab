@@ -197,7 +197,7 @@ classdef Interface_matlab < matlab.apps.AppBase
     function toggleBoucle(app)
         if evalin('base', 'boucleouverte') == true
             assignin('base', 'boucleouverte', false);
-            app.BoucleButton.Text = "ferme";
+            app.BoucleButton.Text = "ferm"+char(233)+"e";
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'boucleouverte', true);
@@ -209,11 +209,11 @@ classdef Interface_matlab < matlab.apps.AppBase
     function togglepwm(app)
         if evalin('base', 'pwm_ouvert') == true
             assignin('base', 'pwm_ouvert', false);
-            app.PwmButton.Text = "dsactiv";
+            app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
         else
             assignin('base', 'pwm_ouvert', true);
-            app.PwmButton.Text = "activ";
+            app.PwmButton.Text = "activ"+char(233);
             app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
         end
     end
@@ -222,6 +222,12 @@ classdef Interface_matlab < matlab.apps.AppBase
         NomLabel = uilabel(app.UIFigure, 'Text', textLabel);  
         NomLabel.Position = Position;
         NomLabel.Interpreter = 'latex';
+    end
+
+    function NomLabel = labelly_tab(app, parent, textLabel, Position)
+        NomLabel = uilabel(parent,"Position",Position);
+        NomLabel.Text = textLabel;
+        NomLabel.Interpreter = "latex";
     end
 
     function NomButton = buttonny(app, textButton, Position, Fonction)
@@ -237,7 +243,13 @@ classdef Interface_matlab < matlab.apps.AppBase
         NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
     end
 
-    %app.InitialTempField = labelly(app, "initialTemp", [500 210 160 30]);
+    function NomField = fielddy_tab(app, parent, valueField, Position)
+        NomField = uieditfield(parent, 'numeric');
+        NomField.Position = Position;
+        NomField.Value = evalin('base', valueField);
+        NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
+    end
+
 
 
     %function pwm(app)
@@ -247,7 +259,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             %app.PwmButton.BackgroundColor = [1, 1, 0];
         %else
             %assignin('base', 'pwm_ouvert', true);
-            %app.PwmButton.Text = "activ";
+            %app.PwmButton.Text = "activ"+char(233);
             %app.PwmButton.BackgroundColor = [0, 1, 0];
 
         %end
@@ -435,33 +447,36 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     methods (Access = public)
         function app = Interface_matlab()
-            % Positionne les boutons dans l'interface de base
+            % Initialise les variables
             app.Initialisation()
+
+            % Initialise l'interface
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1100 350]);
+            tabs = uitabgroup(app.UIFigure, 'Position', [500 30 485 250]);
             
-            % Bouton de démarrage
+            % Bouton de d�marrage
             app.StartLabel = labelly(app, "D\'emarrer", [50 300 100 30]);
             app.StartButton = buttonny(app, "X", [20 300 30 30], @(~,~)app.startSimulation());
             
-            % Bouton d'arrêt
+            % Bouton d'arr�t
             app.StopLabel = labelly(app, "Arr\^eter", [170 300 100 30]);
             app.StopButton = buttonny(app, "X", [140 300 30 30], @(~,~)app.stopSimulation());
             
-            % État du système
+            % �tat du syst�me
             app.StatusLabel = labelly(app, "\'Etat : Arr\^et", [240 300 150 30]);
 
-            % Bouton pour graphiques supplémentaires
+            % Bouton pour graphiques suppl�mentaires
             app.GraphiqueLabel = labelly(app, "Graphiques suppl\'ementaires", [390 300 200 30]);
             app.GraphiqueButton = buttonny(app, "X", [360 300 30 30], @(~,~)app.set_Graphique());
 
-            % Bouton pour contrôle de la boucle
+            % Bouton pour contr�le de la boucle
             app.BoucleLabel = labelly(app, "La boucle est ", [600 300 200 30]);
-            app.BoucleButton = buttonny(app, "fermée", [680 300 60 30], @(~,~)app.toggleBoucle());
+            app.BoucleButton = buttonny(app, "ferm"+char(233)+"e", [680 300 60 30], @(~,~)app.toggleBoucle());
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
 
-            % Bouton pour contrôle du PWM
+            % Bouton pour contr�le du PWM
             app.PwmLabel = labelly(app, "Le PMW est ", [770 300 200 30]);
-            app.PwmButton = buttonny(app, "désactivé", [845 300 60 30], @(~,~)app.togglepwm());
+            app.PwmButton = buttonny(app, "d"+char(233)+"sactiv"+char(233), [845 300 60 30], @(~,~)app.togglepwm());
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
 
             % Bouton pour enregistrer un csv
@@ -475,61 +490,64 @@ classdef Interface_matlab < matlab.apps.AppBase
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
 
-            % SECTION RÉGULATEUR
-            app.RegulateurLabel = labelly(app, "\textbf{R\'egulateur}", [670 260 150 30]);
-            
-            % Gain du régualteur
-            app.GainRegLabel = labelly(app, "Gain [-]", [670 240 150 20]);
-            app.GainRegField = fielddy(app, "gainReg", [670 210 150 30]);
-
-            % Constante de temps du régulateur
-            app.TempsRegLabel = labelly(app, "Constante de temps [s]", [670 180 150 20]);
-            app.TempsRegField = fielddy(app, "tempsReg", [670 150 150 30]);
-
-
             % SECTION PLAQUE
-            app.PlaqueLabel = labelly(app, "\textbf{Plaque}", [500 260 160 30]);
+            t_plaque = uitab(tabs,"Title","Plaque");
+            %t_plaque.Scrollable = 'on';
 
-            % Température initiale
-            app.InitialTempLabel = labelly(app, "Temp\'erature initiale [$^\circ$C]", [500 240 160 20]);
-            app.InitialTempField = fielddy(app, "initialTemp", [500 210 160 30]);
+            % Temp�rature initiale
+            app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature initiale [$^\circ$C]", [10 200 150 20]);
+            app.InitialTempField = fielddy_tab(app, t_plaque, "initialTemp", [10 170 140 30]);
 
-            % Température finale
-            app.FinalTempLabel = labelly(app, "Temp\'erature finale [$^\circ$C]", [500 180 160 20]);
-            app.FinalTempField = fielddy(app, "finalTemp", [500 150 160 30]);
+            % Temp�rature finale
+            app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature finale [$^\circ$C]", [10 140 150 20]);
+            app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30]);
             
-            % Temps d'échantillonnage
-            app.SamplingTimeLabel = labelly(app, "Temps d'\'echantillonnage [s]", [500 120 160 20]);
-            app.SamplingTimeField = fielddy(app, "samplingTime", [500 90 160 30]);
+            % Temps d'�chantillonnage
+            app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [10 80 160 20]);
+            app.SamplingTimeField = fielddy_tab(app, t_plaque, "samplingTime", [10 50 140 30]);
 
+
+            % SECTION ACTUATEUR??
+            % Puissance ferm�e
+            %app.PuissancefermerLabel = labelly(app, "Puissance de l'actuateur [W]", [500 60 160 20]);
+            %app.PuissancefermerField = fielddy(app, "Puissancefermer", [500 30 160 30]);
+
+
+            % SECTION R�GULATEUR
+            t_reg = uitab(tabs,"Title","R"+char(233)+"gulateur");
+            
+            % Gain du r�gualteur
+            app.GainRegLabel = labelly_tab(app, t_reg, "Gain [-]", [10 200 150 20]);
+            app.GainRegField = fielddy_tab(app, t_reg, "gainReg", [10 170 140 30]);
+
+            % Constante de temps du r�gulateur
+            app.TempsRegLabel = labelly_tab(app, t_reg, "Constante de temps [s]", [10 140 150 20]);
+            app.TempsRegField = fielddy_tab(app, t_reg, "tempsReg", [10 110 140 30]);
+
+            
             % SECTION RESISTANCE DE PERTURBATION
-            app.ResistanceLabel = labelly(app, "\textbf{R\'esistance de perturbation}", [830 260 170 30]);
+            t_resistance = uitab(tabs,"Title","R"+char(233)+"sistance de perturbation");
 
             % Puissance initiale
-            app.InitialPowerLabel = labelly(app, "Puissance initale [W]", [830 240 160 20]);
-            app.InitialPowerField = fielddy(app, "initialPower", [830 210 160 30]);
+            app.InitialPowerLabel = labelly_tab(app, t_resistance, "Puissance initiale [W]", [10 200 150 20]);
+            app.InitialPowerField = fielddy_tab(app, t_resistance, "initialPower", [10 170 140 30]);
 
             % Puissance finale
-            app.FinalPowerLabel = labelly(app, "Puissance finale [W]", [830 180 160 20]);
-            app.FinalPowerField = fielddy(app, "finalPower", [830 150 160 30]);
+            app.FinalPowerLabel = labelly_tab(app, t_resistance, "Puissance finale [W]", [10 140 150 20]);
+            app.FinalPowerField = fielddy_tab(app, t_resistance, "finalPower", [10 110 140 30]);
 
-            % Temps de démarrage
-            app.InitialTimeLabel = labelly(app, "Temps de d\'emarrage [s]", [830 120 160 20]);
-            app.InitialTimeField = fielddy(app, "initialTime", [830 90 160 30]);
+            % Temps de d�marrage
+            app.InitialTimeLabel = labelly_tab(app, t_resistance, "Temps de d\'emarrage [s]", [10 80 160 20]);
+            app.InitialTimeField = fielddy_tab(app, t_resistance, "initialTime", [10 50 140 30]);
             
             
             % SECTION VARIABLE DE LA SIMULATION
-            app.TempsLabel = labelly(app, "\textbf{Variable de la simulation}", [1000 260 150 30]);
+            t_controle = uitab(tabs, "Title", "Contr" + char(244) + "le de la simulation");
 
             % Temps de simulation
-            app.tempsLabel = labelly(app, "Temps de simulation [s]", [1000 240 160 20]);
-            app.tempsField = fielddy(app, "temps", [1000 210 150 30]);
-            
-
-            % Puissance fermée
-            app.PuissancefermerLabel = labelly(app, "Puissance de l'actuateur [W]", [500 60 160 20]);
-            app.PuissancefermerField = fielddy(app, "Puissancefermer", [500 30 160 30]);
-
+            app.tempsLabel = labelly_tab(app, t_controle, "Temps de simulation [s]", [10 200 150 20]);
+            app.tempsField = fielddy_tab(app, t_controle, "temps", [10 170 140 30]);
+          
             % Timer
             app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
             
