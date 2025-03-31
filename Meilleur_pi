@@ -1,0 +1,63 @@
+simu = Lancer_Meilleur_pi();
+pause('on')
+
+Gain = 0;
+constante_de_temps = 0;
+point = 0;
+
+% D�finition de la bande de tol�rance
+tol = 0.1;
+tempCible = 30;
+borneInf = tempCible - tol;
+borneSup = tempCible + tol;
+
+gainReg = 0.04432;
+
+% Initialisation des vecteurs pour stocker les temps de r�gulation et param�tres associ�s
+tempsRegulation_runs = nan(1,4);  % Temps de r�gulation
+tempsReg_values = nan(1,4);       % Valeurs de tempsReg utilis�es
+
+for i = 1:20
+    tempsReg = 80 + (i);  % par exemple, un param�tre de simulation
+    tempsReg_values(i) = tempsReg;  % Stocker la valeur utilis�e
+
+    % Lancement de la simulation
+    simu.startSimulation();
+    pause(2);  % laisser le temps � la simulation de s'ex�cuter
+    simu.stopSimulation();
+    
+    % Extraction des donn�es num�riques depuis l'objet timeseries
+    temp_data = Temperature_simulation.Data;
+    time_data = Temperature_simulation.Time;
+    
+    % Recherche des indices o� la temp�rature est dans la bande [26.9, 27.1]�C
+    indices = find(temp_data >= borneInf & temp_data <= borneSup);
+    
+    indiceRegulation = [];
+    for idx = indices'
+        if all(temp_data(idx:end) >= borneInf & temp_data(idx:end) <= borneSup)
+            indiceRegulation = idx;
+            break;
+        end
+    end
+    
+    if isempty(indiceRegulation)
+        fprintf('Pour le run %d, aucune r�gulation stable n''a �t� trouv�e.\n', i);
+    else
+        temps_regulation = time_data(indiceRegulation);
+        tempsRegulation_runs(i) = temps_regulation;
+        fprintf('Pour le run %d, la r�gulation stable est atteinte � t = %.2f secondes.\n', i, temps_regulation);
+    end
+end
+
+% S�lection de la meilleure valeur parmi les simulations
+if all(isnan(tempsRegulation_runs))
+    disp('Aucune simulation n''a atteint une r�gulation stable dans la plage d�sir�e.');
+else
+    [bestTemps, bestRun] = min(tempsRegulation_runs);
+    bestTempsReg = tempsReg_values(bestRun);  % R�cup�rer le tempsReg associ�
+    
+    fprintf('La meilleure r�gulation est obtenue lors du run %d avec un temps de %.2f secondes.\n', bestRun, bestTemps);
+    fprintf('Le param�tre temps_reg optimal correspondant est %.2f.\n', bestTempsReg);
+end
+
