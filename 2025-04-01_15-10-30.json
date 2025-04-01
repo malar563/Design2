@@ -7,7 +7,7 @@
     "resolution_x": 0.15,
     "resolution_y": 0.1,
     "resolution_t": 0.003625598802395209,
-    "temps_simulation": 2.0,
+    "temps_simulation": 600.0,
     "densite": 2700.0,
     "cap_calorifique": 897.0,
     "conduc_thermique": 167.0,
