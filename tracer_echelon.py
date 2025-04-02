@@ -40,20 +40,21 @@ from scipy.optimize import curve_fit
 # # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rapportV2\output.csv"
 
-# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_25_degre_perturbation.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre_perturbation.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre_perturbation.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
 
 fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"#Pour rouler vite
-fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Python_30_degre.csv"
+fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Python_25_degre.csv"
+##Pas bon suivant. Changer chiffre dans Python_30 précédent
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_20_degre.csv"
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_30_degre.csv"
 
-fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab_30_degre.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab_25_degre.csv"
 
 
 data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
@@ -86,13 +87,13 @@ Th2_mat=data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]
 Th3_mat=data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]
 
 # # Test_25_degre
-# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
-# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
-# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T3"][614:]-data["T3"][614], color="blue")
-# t=data["Temps"][614:]-data["Temps"][614]
-# Th1=data["T1"][614:]-data["T1"][614]
-# Th2=data["T2"][614:]-data["T2"][614]
-# Th3=data["T3"][614:]-data["T3"][614]
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
+plt.plot(data["Temps"][614:]-data["Temps"][614],data["T3"][614:]-data["T3"][614], color="blue")
+t=data["Temps"][614:]-data["Temps"][614]
+Th1=data["T1"][614:]-data["T1"][614]
+Th2=data["T2"][614:]-data["T2"][614]
+Th3=data["T3"][614:]-data["T3"][614]
 # # Test_25_degre_perturbation
 # plt.plot(data["Temps"][116:]-data["Temps"][116],data["T1"][116:]-data["T1"][116], color="blue", label="Prototype")
 # plt.plot(data["Temps"][116:]-data["Temps"][116],data["T2"][116:]-data["T2"][116], color="blue")
@@ -114,13 +115,13 @@ Th3_mat=data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]
 # Th2=data["T2"][801:]-data["T2"][801]
 # Th3=data["T3"][801:]-data["T3"][801]
 # # Test_30_degre
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T1"][468:]-data["T1"][468], color="blue", label="Prototype")
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T2"][468:]-data["T2"][468], color="blue")
-plt.plot(data["Temps"][468:]-data["Temps"][468],data["T3"][468:]-data["T3"][468], color="blue")
-t=data["Temps"][468:]-data["Temps"][468]
-Th1=data["T1"][468:]-data["T1"][468]
-Th2=data["T2"][468:]-data["T2"][468]
-Th3=data["T3"][468:]-data["T3"][468]
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T1"][468:]-data["T1"][468], color="blue", label="Prototype")
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T2"][468:]-data["T2"][468], color="blue")
+# plt.plot(data["Temps"][468:]-data["Temps"][468],data["T3"][468:]-data["T3"][468], color="blue")
+# t=data["Temps"][468:]-data["Temps"][468]
+# Th1=data["T1"][468:]-data["T1"][468]
+# Th2=data["T2"][468:]-data["T2"][468]
+# Th3=data["T3"][468:]-data["T3"][468]
 
 plt.xlabel("Temps (s)")
 plt.ylabel("Variation de température (°C)")
@@ -130,22 +131,22 @@ plt.show()
 
 
 
-def trace(t, Th1, Th2, Th3):
-    plt.plot(t, Th1, color="gold", label="Thermistance 1")
-    plt.plot(t, Th2, color="darkorange", label="Thermistance 2")
-    plt.plot(t, Th3, color="red", label="Thermistance 3")
+def trace(t, Th1, Th2, Th3, pt_op):
+    plt.plot(t, Th1+pt_op, color="gold", label="Thermistance 1")
+    plt.plot(t, Th2+pt_op, color="darkorange", label="Thermistance 2")
+    plt.plot(t, Th3+pt_op, color="red", label="Thermistance 3")
     plt.xlabel("Temps (s)")
     plt.ylabel("Variation de température (°C)")
     plt.legend()
     plt.show()
 
-trace(t_py, Th1_py, Th2_py, Th3_py)
-trace(t_mat, Th1_mat, Th2_mat, Th3_mat)
+trace(t_py, Th1_py, Th2_py, Th3_py, 24.5)
+trace(t_mat, Th1_mat, Th2_mat, Th3_mat, 24.5)
 
 
 # Faire une liste de liste : 1ere liste = simulation, 2e liste = prototype
 liste_rep = [[t_py, Th1_py, Th2_py, Th3_py],[t, Th1, Th2, Th3]]
-# liste_rep = [[t_mat, Th1_mat, Th2_mat, Th3_mat],[t, Th1, Th2, Th3]]
+liste_rep = [[t_mat, Th1_mat, Th2_mat, Th3_mat],[t, Th1, Th2, Th3]]
 
 from scipy.interpolate import CubicSpline
 

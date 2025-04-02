@@ -18,7 +18,7 @@ column_names_matl = data_matl.columns
 print(column_names_matl)
 print(column_names)
 
-# Matlab : Devrait être ok, ne pas toucher (J'ai juste remarqué que T1 et T2 semblent être inversés)
+# Matlab : Devrait être ok, ne pas toucher
 t_mat=data_matl['Temps']
 Th1_mat=data_matl['Temperature_a_lactuateur']-data_matl['Temperature_a_lactuateur'][0]
 Th2_mat=data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]
@@ -31,18 +31,18 @@ Th2=data["T2"][468:]-data["T2"][468]
 Th3=data["T3"][468:]-data["T3"][468]
 
 # Réponse en boucle fermé du simulateur
-def trace(t, Th1, Th2, Th3):
+def trace(t, Th1, Th2, Th3, pt_op):
     # Rajouter une colonne pour la commande u?
-    # Possible quil faille inverser Th1 et Th2 ici
-    plt.plot(t, Th1, color="gold", label="Thermistance 1")
-    plt.plot(t, Th2, color="darkorange", label="Thermistance 2")
-    plt.plot(t, Th3, color="red", label="Thermistance 3")
+    plt.plot(t, Th1+pt_op, color="gold", label="Thermistance 1")
+    plt.plot(t, Th2+pt_op, color="darkorange", label="Thermistance 2")
+    plt.plot(t, Th3+pt_op, color="red", label="Thermistance 3")
     plt.xlabel("Temps (s)")
     plt.ylabel("Variation de température (°C)")
     plt.legend()
     plt.show()
 
-trace(t_mat, Th1_mat, Th2_mat, Th3_mat)
+# TRÈS IMPORTANT : CHANGER LE POINT D'OPÉRATION ICI!!
+trace(t_mat, Th1_mat, Th2_mat, Th3_mat, 30)
 
 
 # Comparer prototype et simulateur 
@@ -53,13 +53,13 @@ def compare_echelon(liste_rep, pt_op):
     ax1 = plt.subplot(211)
     ax2= plt.subplot(212, sharex=ax1)
 
-    ax1.plot(liste_rep[0][0], liste_rep[0][1], color="blue", label="Thermistance 1")
-    ax1.plot(liste_rep[0][0], liste_rep[0][2], color="green", label="Thermistance 2")
-    ax1.plot(liste_rep[0][0], liste_rep[0][3], color="red", label="Thermistance 3")
+    ax1.plot(liste_rep[0][0], liste_rep[0][1]+pt_op, color="blue", label="Thermistance 1")
+    ax1.plot(liste_rep[0][0], liste_rep[0][2]+pt_op, color="green", label="Thermistance 2")
+    ax1.plot(liste_rep[0][0], liste_rep[0][3]+pt_op, color="red", label="Thermistance 3")
 
-    ax1.plot(liste_rep[1][0], liste_rep[1][1], color="blue", linestyle="dotted", linewidth=3)
-    ax1.plot(liste_rep[1][0], liste_rep[1][2], color="green", linestyle="dotted", linewidth=3)
-    ax1.plot(liste_rep[1][0], liste_rep[1][3], color="red", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][1]+pt_op, color="blue", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][2]+pt_op, color="green", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][3]+pt_op, color="red", linestyle="dotted", linewidth=3)
 
     # ax1.plot(t, cooling_law(t, params[0], params[1], params[2])-273.15, color="red", linestyle="dotted", linewidth=3, label="curve_fit")
     ax1.set_ylabel("Variation de température [°C]")
@@ -75,7 +75,7 @@ def compare_echelon(liste_rep, pt_op):
     plt.show()
 
 # TRÈS IMPORTANT : CHANGER LE POINT D'OPÉRATION ICI!!
-compare_echelon(liste_rep, 24.5)
+compare_echelon(liste_rep, 30)
 
 
 
