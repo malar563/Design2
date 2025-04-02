@@ -1,4 +1,5 @@
 classdef Interface_matlab < matlab.apps.AppBase
+    
 
     properties (Access = public)
         UIFigure             matlab.ui.Figure
@@ -41,7 +42,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version40"; 
+        ModelName            string = "simulateur_matlab_version41"; 
     end
 
     properties (Access = private)
@@ -75,6 +76,13 @@ classdef Interface_matlab < matlab.apps.AppBase
             drawnow;
             pause(0.1);
             app.updatePlot();
+        end
+
+        function Ouverture(app)
+            %Ouvre le simulink
+            if ~bdIsLoaded(app.ModelName)
+                load_system(app.ModelName);
+            end
         end
 
         function Initialisation(app)
@@ -475,6 +483,8 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     methods (Access = public)
         function app = Interface_matlab()
+            % Ouvre le simulink
+            app.Ouverture()
             % Initialise les variables
             app.Initialisation()
 
