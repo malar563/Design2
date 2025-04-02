@@ -41,7 +41,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version36"; 
+        ModelName            string = "simulateur_matlab_version39"; 
     end
 
     properties (Access = private)
@@ -66,20 +66,19 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         function stopSimulation(app)
             % Arrte la simulation lorsque le timer finit????
-            assignin('base', "temps_fin", toc);
-            set_param(app.ModelName, 'SimulationCommand', 'stop');
-            app.StatusLabel.Text = "\'Etat : Arr\^et";
-            app.StatusLabel.Interpreter = 'latex';
-            
             if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
                 stop(app.SimulationTimer);
                 delete(app.SimulationTimer);
             end
+            app.StatusLabel.Text = 'Etat : Arret';
+            app.StatusLabel.Interpreter = 'Latex'; 
+            drawnow;
+            pause(0.1);
             app.updatePlot();
         end
 
         function Initialisation(app)
-            % Initialise en boucle ferme
+            % Initialise en boucle ferme et active ou non le PWM
             assignin('base', 'boucleouverte', false);
             assignin('base' , 'pwm_ouvert', false);
 
@@ -94,7 +93,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
             assignin('base', 'finalTemp', finalTemp);
-            samplingTime = 4;
+            samplingTime = 3;
             assignin('base', 'samplingTime', samplingTime);
             initialPower = 0;
             assignin('base', 'initialPower', initialPower);
@@ -235,10 +234,12 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'pwm_ouvert', false);
             app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
+            set_param('simulateur_matlab_version39/PWM/PWM Generator1','Commented','through')
         else
             assignin('base', 'pwm_ouvert', true);
             app.PwmButton.Text = "activ"+char(233);
             app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
+            set_param('simulateur_matlab_version39/PWM/PWM Generator1','Commented', 'off')
         end
     end
 
@@ -277,15 +278,16 @@ classdef Interface_matlab < matlab.apps.AppBase
 
 
     %function pwm(app)
-        %if evalin('base', 'Le_maitre_du_temps') == true
+     %   if evalin('base', 'Le_maitre_du_temps') == true
             %assignin('base', 'Le_maitre_du_temps', false);
-            %app.pwmbutton.Text = "ferm";
-            %app.PwmButton.BackgroundColor = [1, 1, 0];
-        %else
-            %assignin('base', 'pwm_ouvert', true);
-            %app.PwmButton.Text = "activ"+char(233);
-            %app.PwmButton.BackgroundColor = [0, 1, 0];
-
+         %   app.pwmbutton.Text = "ferm"+char(233);
+          %  app.PwmButton.BackgroundColor = [1, 1, 0];
+           % set_param('PWM Generator1','Commented','through')
+       % else
+        %    assignin('base', 'pwm_ouvert', true);
+         %   app.PwmButton.Text = "activ"+char(233);
+          %  app.PwmButton.BackgroundColor = [0, 1, 0];
+            
         %end
     %end
 
@@ -499,7 +501,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
 
             % Bouton pour contrle du PWM
-            app.PwmLabel = labelly(app, "Le PMW est ", [770 300 200 30]);
+            app.PwmLabel = labelly(app, "Le PWM est ", [770 300 200 30]);
             app.PwmButton = buttonny(app, "d"+char(233)+"sactiv"+char(233), [845 300 60 30], @(~,~)app.togglepwm());
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
 
