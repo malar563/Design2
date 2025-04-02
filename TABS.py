@@ -12,16 +12,11 @@ from tkinter import ttk
 # pour faire jouer la simulation
 import mega_simulation
 
-# Graphique
+# pour afficher un graphique
 import numpy as np
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-# Bar de progression
-#import time
-#from threading import Thread
-
 
 class Interface:
     def __init__(self):
@@ -44,17 +39,17 @@ class Interface:
         # Lire un JSON si possible, sinon lire celui de base
         self.lire_json()
         
-        # Initialisation des variables depuis JSON ou valeurs par défaut (certaines valeurs =! 0)
-        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) if self.data_lu.get("dimensions", [11.6,6.15]) != 0 else [11.6,6.15] #[y,x]
-        self.e = self.data_lu.get("epaisseur", 0.156) if self.data_lu.get("epaisseur", 0.156) != 0 else 0.156
-        self.dx = self.data_lu.get("resolution_x", 0.15) if self.data_lu.get("resolution_x", 0.15) != 0 else 0.15
-        self.dy = self.data_lu.get("resolution_y", 0.1) if self.data_lu.get("resolution_y", 0.1) != 0 else 0.1
+        # Initialisation des variables depuis JSON ou valeurs par défaut
+        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) #[y,x]
+        self.e = self.data_lu.get("epaisseur", 0.156) 
+        self.dx = self.data_lu.get("resolution_x", 0.15) 
+        self.dy = self.data_lu.get("resolution_y", 0.1) 
         self.dt = self.data_lu.get("resolution_t", None)
         self.T_simul = self.data_lu.get("temps_simulation", 600) # [s]
-        self.rho = self.data_lu.get("densite", 2700) if self.data_lu.get("densite", 2700) != 0 else 2700
-        self.cp = self.data_lu.get("cap_calorifique", 897.0) if self.data_lu.get("cap_calorifique", 897.0) != 0 else 897.0
-        self.k = self.data_lu.get("conduc_thermique", 167.0) if self.data_lu.get("conduc_thermique", 167.0) != 0 else 167.0
-        self.h = self.data_lu.get("coef_convection", 12) if self.data_lu.get("coef_convection", 12) != 0 else 12
+        self.rho = self.data_lu.get("densite", 2700) 
+        self.cp = self.data_lu.get("cap_calorifique", 897.0)
+        self.k = self.data_lu.get("conduc_thermique", 167.0) 
+        self.h = self.data_lu.get("coef_convection", 12) 
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
         self.T_amb = self.data_lu.get("T_ambiante", 25.0)
         self.P = self.data_lu.get("puissance_actuateur", 1.5)
@@ -62,9 +57,6 @@ class Interface:
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
-
-        # Variable pour l'affichage de la plaque avec perturbations
-        self.aff = False
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -195,13 +187,42 @@ class Interface:
         self.T_dep() # Contrôle de la puissance déposée
 
         # Initialisation des boutons OK et Graphique
-        ttk.Button(self.inter,text = 'OK', command = self.no_graphique_clique).grid(column=0, row=3, pady=5, sticky="ew")
-        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique_clique).grid(column=1, row=3, pady=5, sticky="ew")
+        self.etat_OK = ttk.Button(self.inter,text = 'OK', command = self.no_graphique)
+        self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew")
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=1, row=3, pady=5, sticky="ew")
+        
+        # Initialisation du boutton Arrêt
+        self.etat_arret = ttk.Button(self.inter,text = 'Arrêt', command = self.arret)
+        self.etat_arret.grid(column=0, row=3, pady=5, sticky="ew")
+        self.etat_arret.grid_remove()
 
         # Initialisation de la barre de progression
         tk.Label(self.inter, text="Progression :").grid(column=0, row=4, padx=10, pady=5, sticky="ew")
-        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=300, mode="determinate")
-        self.progres.grid(column=1, row=4, padx=10, pady=5, columnspan=2, sticky="ew")
+        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
+        self.progres.grid(column=1, row=4, padx=10, pady=5, sticky="ew")
+
+        # Initialise et cache les messages d'erreurs
+        tk.Label(self.inter, text="Erreur : ").grid(column=0, row=5, padx=10, pady=5, sticky="ew")
+        
+        # Si les variables ne sont pas numériques
+        self.var_num = tk.Label(self.inter, text="Variables entrées ne sont pas numériques")
+        self.var_num.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+        self.var_num.grid_remove()
+
+        # Si les dimensions ne sont pas réalistes
+        self.var_dim = tk.Label(self.inter, text="Dimensions entrées ne sont pas plus grandes que zéro")
+        self.var_dim.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+        self.var_dim.grid_remove()
+
+        # Si les résolutions ne sont pas réalistes
+        self.var_res = tk.Label(self.inter, text="Résolutions entrées ne sont pas plus grandes que zéro")
+        self.var_res.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+        self.var_res.grid_remove()
+
+        # Si les paramètres du matériau ne sont pas réalistes
+        self.var_par = tk.Label(self.inter, text="Les paramètres du matériau ne sont pas plus grands que zéro")
+        self.var_par.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+        self.var_par.grid_remove()
 
         # Roulons l'interface!
         self.inter.mainloop()
@@ -225,9 +246,8 @@ class Interface:
         # Initialisation des entrées 
         self.entry(self.frame, "Température initiale de la plaque [°C]", "T_plaque", 0) # Température initiale de la plaque
         self.entry(self.frame, "Température ambiante [°C]", "T_amb", 1) # Température ambiante
-        self.entry(self.frame, "Coefficient de convection [W / m².K]", "h", 2) # Coefficient de convection
-        self.entry(self.frame, "Puissance appliquée [W]", "P", 3) # Puissance appliquée
-        self.entry(self.frame, "Durée de la simulation [s]", "T_simul", 4) # Durée de la simulation
+        self.entry(self.frame, "Puissance appliquée [W]", "P", 2) # Puissance appliquée
+        self.entry(self.frame, "Durée de la simulation [s]", "T_simul", 3) # Durée de la simulation
 
 
     def plaque(self):
@@ -267,10 +287,10 @@ class Interface:
         self.tabs.add(self.mat_frame, text="Paramètres du matériau de la plaque")
 
         # Initialisation des entrées
-        self.entry(self.mat_frame, "Densité du matériau [kg / m^3]", "rho", 0) # Densité du matériau
+        self.entry(self.mat_frame, "Densité du matériau [kg / m³]", "rho", 0) # Densité du matériau
         self.entry(self.mat_frame, "Capacité calorifique du matériau [J / kg.K]", "cp", 1) # Capacité calorifique du matériau
         self.entry(self.mat_frame, "Conductivité thermique du matériau [W / m.K]", "k", 2) # Conductivité thermique du matériau
-        self.entry(self.mat_frame, "Coefficient de convection [W / m².K]", "h", 3) # Coefficient de convection
+        self.entry(self.mat_frame, "Coefficient de convection du matériau [W / m².K]", "h", 3) # Coefficient de convection
 
 
     def resolution(self):
@@ -353,71 +373,103 @@ class Interface:
 
         Retourne : -
         """
-        # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
-        self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
-        self.e=self.variables["e"].get()
-        self.T_plaque = self.variables["T_plaque"].get()
-        self.T_amb=self.variables["T_amb"].get()
-        self.h=self.variables["h"].get()
-        self.P=self.variables["P"].get()
-        self.T_simul=self.variables["T_simul"].get()
-        self.rho=self.variables["rho"].get()
-        self.cp=self.variables["cp"].get()
-        self.k=self.variables["k"].get()
-        self.dx=self.variables["dx"].get()
-        self.dy=self.variables["dy"].get()
-        self.dt=self.variables["dt"].get()
-        self.R_depo=self.variables["R_depo"].get()
-        self.T_depo=self.variables["T_depo"].get()
-        self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
-        self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
+        try:
+            # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
+            self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
+            self.e=self.variables["e"].get()
+            self.T_plaque = self.variables["T_plaque"].get()
+            self.T_amb=self.variables["T_amb"].get()
+            self.h=self.variables["h"].get()
+            self.P=self.variables["P"].get()
+            self.T_simul=self.variables["T_simul"].get()
+            self.rho=self.variables["rho"].get()
+            self.cp=self.variables["cp"].get()
+            self.k=self.variables["k"].get()
+            self.dx=self.variables["dx"].get()
+            self.dy=self.variables["dy"].get()
+            self.dt=self.variables["dt"].get()
+            self.R_depo=self.variables["R_depo"].get()
+            self.T_depo=self.variables["T_depo"].get()
+            self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
+            self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
 
-        # Quantité d'itérations
-        self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
-        self.N = 10 * self.saut
+            if self.dim[0] <= 0 or self.dim[1] <= 0 or self.e <= 0:
+                # Si les dimensions entrées sont égales à zéro ou négatives
+                self.var_dim.grid()
 
-        # Sauvegarde des données mises à jour dans le JSON
-        self.data_fait = {
-            "dimensions": [self.dim[0],self.dim[1]], # [y,x]
-            "epaisseur": self.e,
-            "resolution_x": self.dx,
-            "resolution_y": self.dy,
-            "resolution_t": self.dt,
-            "temps_simulation": self.T_simul, # [s]
-            "densite": self.rho,
-            "cap_calorifique": self.cp,
-            "conduc_thermique": self.k,
-            "coef_convection": self.h,
-            "T_plaque": self.T_plaque,
-            "T_ambiante": self.T_amb,
-            "puissance_actuateur": self.P,
-            "puissance_R": self.R_depo,
-            "puissance_ajoutee": self.T_depo,
-            "position_puissance": [self.T_pos[0], self.T_pos[1]], # [y,x]
-            "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
-        }
-        self.sauvegarder_json()
+                # Retourne la présence d'une erreur
+                return False
+            
+            if self.dx <= 0 or self.dy <= 0 or self.dt <= 0:
+                # Si les résolutions entrées sont égales à zéro ou négatives
+                self.var_res.grid()
 
-        # Initialise la simulation
-        self.Ma_plaque = mega_simulation.Plaque(
-            dimensions=(self.dim[0], self.dim[1]), # (y,x)
-            epaisseur=self.e,
-            resolution_x=self.dx,
-            resolution_y=self.dy,
-            resolution_t=self.dt,
-            T_plaque=self.T_plaque,
-            T_ambiante=self.T_amb,
-            densite=self.rho,
-            cap_calorifique=self.cp,
-            conduc_thermique=self.k,
-            coef_convection=self.h,
-            puissance_actuateur=self.P,
-            perturbations=[
-                [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
-                [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
-                ],
-            T_simul=self.T_simul
-            )
+                # Retourne la présence d'une erreur
+                return False
+            
+            if self.h <= 0 or self.rho <= 0 or self.cp <= 0 or self.k <= 0:
+                # Si les paramètres du matériau entrés sont égales à zéro ou négatives
+                self.var_par.grid()
+
+                # Retourne la présence d'une erreur
+                return False
+        except:
+            # Si les variables entrées ne sont pas numériques
+            self.var_num.grid()
+
+            # Retourne la présence d'une erreur
+            return False
+        else:
+            # Pas d'erreur
+            self.var_num.grid_remove()
+            self.var_dim.grid_remove()
+
+            # Quantité d'itérations
+            self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
+            self.N = 10 * self.saut
+
+            # Sauvegarde des données mises à jour dans le JSON
+            self.data_fait = {
+                "dimensions": [self.dim[0],self.dim[1]], # [y,x]
+                "epaisseur": self.e,
+                "resolution_x": self.dx,
+                "resolution_y": self.dy,
+                "resolution_t": self.dt,
+                "temps_simulation": self.T_simul, # [s]
+                "densite": self.rho,
+                "cap_calorifique": self.cp,
+                "conduc_thermique": self.k,
+                "coef_convection": self.h,
+                "T_plaque": self.T_plaque,
+                "T_ambiante": self.T_amb,
+                "puissance_actuateur": self.P,
+                "puissance_R": self.R_depo,
+                "puissance_ajoutee": self.T_depo,
+                "position_puissance": [self.T_pos[0], self.T_pos[1]], # [y,x]
+                "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
+            }
+            self.sauvegarder_json()
+
+            # Initialise la simulation
+            self.Ma_plaque = mega_simulation.Plaque(
+                dimensions=(self.dim[0], self.dim[1]), # (y,x)
+                epaisseur=self.e,
+                resolution_x=self.dx,
+                resolution_y=self.dy,
+                resolution_t=self.dt,
+                T_plaque=self.T_plaque,
+                T_ambiante=self.T_amb,
+                densite=self.rho,
+                cap_calorifique=self.cp,
+                conduc_thermique=self.k,
+                coef_convection=self.h,
+                puissance_actuateur=self.P,
+                perturbations=[
+                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
+                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
+                    ],
+                T_simul=self.T_simul
+                )
 
 
     def no_graphique(self):
@@ -431,7 +483,12 @@ class Interface:
         Retourne : -
         """
         # Initialise la simulation
-        self.submit()
+        if self.submit() == False:
+            return
+        
+        # Voir le boutton arrêt
+        self.etat_OK.grid_remove()
+        self.etat_arret.grid()
 
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.T_simul)
@@ -439,7 +496,10 @@ class Interface:
         # Roule l'interface selon la quantité d'itérations
         for n in range(self.N):
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
+            self.inter.update_idletasks()
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
+                self.etat_arret.grid_remove() # Voir le boutton OK
+                self.etat_OK.grid()
                 break # Arrêt de la simulation
             else:
                 for k in range(self.saut):
@@ -447,11 +507,6 @@ class Interface:
 
         # Enregistre un CSV            
         self.Ma_plaque.enregistre_rep_echelon()
-
-    
-    def no_graphique_clique(self):
-        #Thread(target=self.no_graphique, daemon=True).start()
-        self.no_graphique()
 
 
     def yes_graphique(self):
@@ -468,13 +523,20 @@ class Interface:
         # Initialise la simulation
         self.submit()
 
+        # Voir le boutton arrêt
+        self.etat_OK.grid_remove()
+        self.etat_arret.grid()
+
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.T_simul)
 
         # Roule l'interface selon la quantité d'itérations
         for n in range(self.N):
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
+            self.inter.update_idletasks()
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
+                self.etat_arret.grid_remove() # Voir le boutton OK
+                self.etat_OK.grid()
                 break # Arrêt de la simulation
             else:
                 self.Ma_plaque.show() # Réitère les graphiques
@@ -483,11 +545,12 @@ class Interface:
         self.Ma_plaque.enregistre_rep_echelon()
 
 
-    def yes_graphique_clique(self):
-        #Thread(target=self.yes_graphique, daemon=True).start()
-        self.yes_graphique()
-
+    def arret(self):
+        # Voir le boutton OK
+        self.etat_arret.grid_remove()
+        self.etat_OK.grid()
     
+
     def graphique_plaque(self):
         """
         Description :

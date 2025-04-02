@@ -1,4 +1,5 @@
 classdef Interface_matlab < matlab.apps.AppBase
+    
 
     properties (Access = public)
         UIFigure             matlab.ui.Figure
@@ -41,7 +42,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         UIAxes               matlab.ui.control.UIAxes
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
-        ModelName            string = "simulateur_matlab_version39"; 
+        ModelName            string = "simulateur_matlab_version41"; 
     end
 
     properties (Access = private)
@@ -77,6 +78,13 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.updatePlot();
         end
 
+        function Ouverture(app)
+            %Ouvre le simulink
+            if ~bdIsLoaded(app.ModelName)
+                load_system(app.ModelName);
+            end
+        end
+
         function Initialisation(app)
             % Initialise en boucle ferme et active ou non le PWM
             assignin('base', 'boucleouverte', false);
@@ -107,6 +115,8 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'tempsReg', tempsReg);
             Puissancefermer = 0;
             assignin('base', 'Puissancefermer', Puissancefermer);
+            set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
+            assignin('base', 'appInstance', app);
         end
 
         function set_Graphique(app)
@@ -197,7 +207,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             
                 writetable(nom_des_colones, fichier);
             catch
-                warndlg('Pas de valeurs à enregistrer', 'WARNING');
+                warndlg('Pas de valeurs  enregistrer', 'WARNING');
                 return;
             end
         end
@@ -234,12 +244,12 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'pwm_ouvert', false);
             app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
-            set_param('simulateur_matlab_version39/PWM/PWM Generator1','Commented','through')
+            set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
         else
             assignin('base', 'pwm_ouvert', true);
             app.PwmButton.Text = "activ"+char(233);
             app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
-            set_param('simulateur_matlab_version39/PWM/PWM Generator1','Commented', 'off')
+            set_param(app.ModelName+'/PWM/PWM Generator1','Commented', 'off')
         end
     end
 
@@ -473,6 +483,8 @@ classdef Interface_matlab < matlab.apps.AppBase
 
     methods (Access = public)
         function app = Interface_matlab()
+            % Ouvre le simulink
+            app.Ouverture()
             % Initialise les variables
             app.Initialisation()
 
@@ -516,7 +528,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
 
-            % SECTION PLAQUE (boucle fermée)
+            % SECTION PLAQUE (boucle ferme)
             t_plaque = uitab(tabs,"Title","Plaque");
             %t_plaque.Scrollable = 'on';
 
