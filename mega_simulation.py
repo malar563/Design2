@@ -170,7 +170,7 @@ class Plaque:
         """
         if not hasattr(self, 'fig') or self.fig is None:
             # Enlève les anciennes figures
-            #plt.close('all')
+            # plt.close('all')
 
             # Graphique 3D
             self.temp = []
