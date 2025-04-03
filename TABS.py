@@ -9,7 +9,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
 
-# pour faire jouer la simulation
+# pour faire jouer la simulation 
 import mega_simulation
 
 # pour afficher un graphique
@@ -38,7 +38,7 @@ class Interface:
 
         # Lire un JSON si possible, sinon lire celui de base
         self.lire_json()
-        
+
         # Initialisation des variables depuis JSON ou valeurs par défaut
         self.dim = self.data_lu.get("dimensions", [11.6,6.15]) #[y,x] doit être plus grand que zéro
         self.e = self.data_lu.get("epaisseur", 0.156) # doit être plus grand que zéro
@@ -57,6 +57,9 @@ class Interface:
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+        
+        # Quantité de perturbations additionnelles
+        self.N_perturb = 0
 
         # Bouton d'arrêt
         self.var_arret = False
@@ -68,13 +71,16 @@ class Interface:
 
         # Initier toutes les entrées de l'interface
         self.variables = {key: tk.DoubleVar(value=val) for key, val in {
-            "dimy": self.dim[0], "dimx": self.dim[1], "e": self.e, "dx": self.dx,
-            "dy": self.dy, "dt": self.dt, "rho": self.rho, "cp": self.cp, 
-            "k": self.k, "h": self.h, "T_plaque": self.T_plaque,
-            "T_amb": self.T_amb, "P": self.P, "R_depo": self.R_depo,
+            "dimy": self.dim[0], "dimx": self.dim[1], "e": self.e,
+            "dx": self.dx, "dy": self.dy, "dt": self.dt,
+            "T_simul": self.T_simul,
+            "rho": self.rho, "cp": self.cp, 
+            "k": self.k, "h": self.h,
+            "T_plaque": self.T_plaque, "T_amb": self.T_amb,
+            "P": self.P, "R_depo": self.R_depo,
             "T_depo": self.T_depo, "T_posy": self.T_pos[0], "T_posx": self.T_pos[1],
             "T_lony": self.T_lon[0], "T_lonx": self.T_lon[1],
-            "T_simul": self.T_simul
+            "N_perturb": self.N_perturb
         }.items()}
 
         # Initialisation l'interface!
@@ -187,7 +193,7 @@ class Interface:
         self.plaque() # Dimensions de la plaque
         self.mat() # Paramètres du matériau de la plaque
         self.resolution() # Résolutions de la simulation de la plaque
-        self.T_dep() # Contrôle de la puissance déposée
+        self.perturb() # Contrôle de la puissance déposée
 
         # Initialisation des boutons OK et Graphique
         self.etat_OK = ttk.Button(self.inter,text = 'OK', command = self.no_graphique)
@@ -212,8 +218,8 @@ class Interface:
             "num": "Les variables entrées doivent être numériques",
             "dim": "Les dimensions doivent être plus grandes que zéro",
             "res": "Les résolutions doivent être plus grandes que zéro",
-            "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "temps": "Le temps de simulation doit être plus grand que zéro",
+            "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "actuateur": "La puissance de l'actuateur doit se situer entre -5 et 5 [W]"
         }
 
@@ -315,7 +321,7 @@ class Interface:
         self.entry(self.reso_frame, "Résolution en temps [s]", "dt", 2) # Résolution de temps
 
 
-    def T_dep(self):
+    def perturb(self):
         """
         Description :
         Créer le cinquième onglet de l'interface, permettant
@@ -326,20 +332,24 @@ class Interface:
         Retourne : -
         """
         # Initialisation de l'onglet Contrôle des perturbations
-        self.T_dep_frame = ttk.Frame(self.tabs, padding=10)
-        self.T_dep_frame.grid()
-        self.tabs.add(self.T_dep_frame, text="Contrôle des perturbations")
+        self.perturb_frame = ttk.Frame(self.tabs, padding=10)
+        self.perturb_frame.grid()
+        self.tabs.add(self.perturb_frame, text="Contrôle des perturbations")
 
         # Initialisation des entrées
-        self.entry(self.T_dep_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0) # Résistance de perturbation
-        self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 1) # Puissance de la perturbation
-        self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 2) # Position de la perturbation
-        self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 3)
-        self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 4) # Dimensions de la perturbation
-        self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 5)
+        self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0) # Résistance de perturbation
+        self.entry(self.perturb_frame, "Nombre de perturbations à ajouter [-]", "N_perturb", 1) # Nombre de perturbation à ajouter
+        
+        ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations).grid(column=0, row=2, pady=5, columnspan=2,)
+
+        # self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 1) # Puissance de la perturbation
+        # self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 2) # Position de la perturbation
+        # self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 3)
+        # self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 4) # Dimensions de la perturbation
+        # self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 5)
 
         # Initialisation du graphique permettant de voir la position des perturbations
-        ttk.Button(self.T_dep_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=6, column=0, columnspan=2, pady=5)
+        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=3, column=0, columnspan=2, pady=5)
 
 
     def sauvegarder_json(self):
@@ -378,26 +388,39 @@ class Interface:
         # Enlève les anciens messages d'erreurs
         for key, message in self.var_messages.items():
             self.var_labels[key].grid_remove()
-
+        
+        # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
         try:
-            # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
-            self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
-            self.e=self.variables["e"].get()
+            # Contrôle de base
             self.T_plaque = self.variables["T_plaque"].get()
             self.T_amb=self.variables["T_amb"].get()
-            self.h=self.variables["h"].get()
             self.P=self.variables["P"].get()
             self.T_simul=self.variables["T_simul"].get()
+
+            # Dimensions de la plaque
+            self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
+            self.e=self.variables["e"].get() 
+
+            # Paramètres du matériau de la plaque
             self.rho=self.variables["rho"].get()
             self.cp=self.variables["cp"].get()
             self.k=self.variables["k"].get()
+            self.h=self.variables["h"].get()
+
+            # Résolution de la simulation de la plaque
             self.dx=self.variables["dx"].get()
             self.dy=self.variables["dy"].get()
             self.dt=self.variables["dt"].get()
+
+            # Contrôle des perturbations
             self.R_depo=self.variables["R_depo"].get()
-            self.T_depo=self.variables["T_depo"].get()
+            self.N_perturb=self.variables["N_perturb"].get()
+
             self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
             self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
+
+            self.T_depo=self.variables["T_depo"].get()
+            
 
             # les dimensions entrées doivent être plus grandes que zéro
             if any(d <= 0 for d in (self.dim[0], self.dim[1], self.e)):
@@ -624,14 +647,17 @@ class Interface:
         axy.set_ylabel("Position en y (cm)")
 
         # Intégration à l'interface
-        self.canvas = FigureCanvasTkAgg(figy, master=self.T_dep_frame)
+        self.canvas = FigureCanvasTkAgg(figy, master=self.perturb_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=1, column=2, sticky="nsew", rowspan=6)
 
         # Le graphique est bien placé dans l'interface
-        self.T_dep_frame.grid_rowconfigure(0, weight=1)
-        self.T_dep_frame.grid_columnconfigure(0, weight=1)
+        self.perturb_frame.grid_rowconfigure(0, weight=1)
+        self.perturb_frame.grid_columnconfigure(0, weight=1)
 
+
+    def perturbations(self):
+        return
 
 
 Inter= Interface()
