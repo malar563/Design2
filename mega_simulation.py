@@ -46,8 +46,11 @@ class Plaque:
             conduc_thermique=167,
             coef_convection=12,
             puissance_actuateur = 1.5,
-            perturbations = [], # position_enregistrement [y,x]
-            T_simul=600
+            pos_actuateur = (0,0),
+            t_applique_actuateur = (0,72.5), # aussi mettre temps de fermeture, mais mettre que par défaut, dépend de temps simul et impossible NOUVEAU-----------------------------------------------
+            perturbations = [], # position_enregistrement (y,x), P, (longueur, largeur), (t_debut, t_fin)  -------------------------------------------------------------
+            T_simul=600,
+            pos_thermistances = [] #(),(),() IDEALEMENT METTRE LES VALEURS PAR DEFAUT ICI, MAIS BUGG CAR RIEN DE DEFINI ENCORE ALORS COMMENT ------------------------------------------------------------------------------------
             ):
         # Dimensions et propriétés physiques
         self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
@@ -61,11 +64,17 @@ class Plaque:
         self.k = conduc_thermique  # Conductivité thermique (W/m.K)
         self.h = coef_convection  # Coefficient de convection (W/m².K)
         self.T_simul = T_simul # Durée de la simulation
+        self.t = 0 # Temps écoulé depuis le début de la simulation
 
-        # Position des thermistances
-        self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
-        self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
-        self.pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
+        # Position des thermistances ESTCE QUE CEST OK -----------------------------------------------------------------
+        if len(pos_thermistances) == 0:
+            self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
+            self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
+            self.pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
+        else:
+            self.pos_thermi1 = (int(pos_thermistances[0][0]/(self.dy*100)), int(pos_thermistances[0][1]/(self.dx*100)))
+            self.pos_thermi2 = (int(pos_thermistances[1][0]/(self.dy*100)), int(pos_thermistances[1][1]/(self.dx*100)))
+            self.pos_thermi3 = (int(pos_thermistances[2][0]/(self.dy*100)), int(pos_thermistances[2][1]/(self.dx*100)))
         
         # Initialisation de la grille de température (matrice remplie avec la température initiale)
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
@@ -84,7 +93,7 @@ class Plaque:
         self.P_act = puissance_actuateur  # Puissance fournie par l'actuateur (W)
         self.actuateur = np.ones((int(0.015 / self.dy), int(0.015 / self.dx)))  # Taille de l'actuateur discret
         T_actuateur = (self.dt / (self.rho * self.cp)) * (self.P_act / self.actuateur.size) / (self.dx * self.dy * self.e) # Conversion de la puissance en température sur chaque élément
-        self.actuateur_pos, self.T_actuateur = self.place_actuateur(T_actuateur)
+        self.actuateur_pos, self.T_actuateur, self.t_actuateur = self.place_actuateur(pos_actuateur, T_actuateur, t_applique_actuateur)
         
         # Initialisation des perturbations thermiques
         self.perturbations = perturbations
@@ -108,12 +117,14 @@ class Plaque:
         Modifie self.perturbations en mettant à jour les tuples de la liste des perturbations thermiques. 
         Chaque perturbation est décrite par un tuple d'indices de position et un objet de type np.ndarray contenant la température de chaque élément.
         """
-        self.nouv_pertur = True
-        if self.perturbations[1][1] == 0:
-            self.nouv_pertur = False
+        ## Ce bout de code ne marche pas-------------------------------------------------------------------
+        # self.nouv_pertur = True
+        # if self.perturbations[1][1] == 0:
+        #     self.nouv_pertur = False
         nouvelles_perturbations = []
         for perturb in self.perturbations:
-            (pos_y, pos_x), puissance, (longueur, largeur) = perturb
+            # Mettre que (t_debut, fin) na pas besoin d'être là et si c'est ça, mettre par défaut début et fin simul
+            (pos_y, pos_x), puissance, (longueur, largeur), (t_debut, t_fin) = perturb
             iy, ix = int(pos_y/self.dy), int(pos_x/self.dx)
             longueur, largeur = int(longueur/self.dy), int(largeur/self.dx)
 
@@ -125,12 +136,12 @@ class Plaque:
             T_applique = (self.dt / (self.rho * self.cp)) * (puissance / (longueur * largeur)) / (self.dx * self.dy * self.e) * np.ones((longueur, largeur))
         
             # La position spécifiée de la perturbation correspond à la position de son coin bas gauche sur la plaque
-            nouvelles_perturbations.append(((iy, iy+longueur, ix, ix+largeur), T_applique))
+            nouvelles_perturbations.append(((iy, iy+longueur, ix, ix+largeur), T_applique, (t_debut, t_fin)))
             # nouvelles_perturbations.append(((iy-longueur//2, iy+longueur//2+1, ix-longueur//2, ix+largeur//2+1), T_applique))
     
         self.perturbations = nouvelles_perturbations
 
-    def place_actuateur(self, T_actuateur):
+    def place_actuateur(self, pos_actuateur, T_actuateur, t_applique_actuateur):
         """
         place_actuateur(self, T_actuateur: np.ndarray) -> tuple[tuple[int, int, int, int], np.ndarray]
 
@@ -145,6 +156,7 @@ class Plaque:
         Une tuple de 4 entiers représentant la position de l’actuateur (iy_debut, iy_fin, ix_debut, ix_fin).
         La température appliquée par l’actuateur (np.ndarray).
         """
+        # FAIRE QQCH POUR POS_ACTUATEUR
         # Le centre de l'actuateur est en y = 0.015m et x = 0.03m
         Ly, Lx = self.grille.shape
         # L'actuateur mesure y = 0.015m et x = 0.015m 
@@ -161,83 +173,93 @@ class Plaque:
         iy_fin = iy_centre + act_dim_y // 2 + 1  # +1 pour inclure le dernier indice
 
         # Retourne les indices de positionnement de l'actuateur et la température  
-        return (iy_debut,iy_fin,ix_debut,ix_fin), T_actuateur
-
+        return (iy_debut,iy_fin,ix_debut,ix_fin), T_actuateur, t_applique_actuateur 
 
     def show(self):
         """
         Affiche la répartition de la température sur la plaque.
         """
-        if not hasattr(self, 'fig') or self.fig is None:
-            # Enlève les anciennes figures
-            plt.close('all')
+        T_celsius = self.grille - 273.15
+        plt.imshow(T_celsius, cmap="inferno", origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))#plt.cm.jet
+        plt.colorbar()
+        plt.xlabel("Position en x (cm)")
+        plt.ylabel("Position en y (cm)")
+        plt.show()
 
-            # Graphique 3D
-            self.temp = []
-            self.fig = plt.figure()
-            self.ax = self.fig.add_subplot(121, projection='3d')
-            self.ax2 = self.fig.add_subplot(122)
-            self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
-            self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
-            self.x, self.y = np.meshgrid(self.y, self.x) 
-            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
-            self.ax.set_xlabel('x (cm)')
-            self.ax.set_ylabel('y (cm)')
-            self.ax.set_zlabel('Température (K)')
-            self.ax.set_title("Température de la plaque après simulation")
-            # self.fig.colorbar(self.surface, ax=self.ax)
+    # def show(self):
+    #     """
+    #     Affiche la répartition de la température sur la plaque.
+    #     """
+    #     if not hasattr(self, 'fig') or self.fig is None:
+    #         # Enlève les anciennes figures
+    #         plt.close('all')
 
-            # Chrono
-            self.t0 = time.time()  # Démarrer le chrono
-            self.chrono_text = self.fig.text(0.05, 0.05, "Temps écoulé : 0.00 s", fontsize=12, color='black')
+    #         # Graphique 3D
+    #         self.temp = []
+    #         self.fig = plt.figure()
+    #         self.ax = self.fig.add_subplot(121, projection='3d')
+    #         self.ax2 = self.fig.add_subplot(122)
+    #         self.x = np.linspace(0, 100 * self.dim[0], self.grille.shape[0])  
+    #         self.y = np.linspace(0, 100 * self.dim[1], self.grille.shape[1])  
+    #         self.x, self.y = np.meshgrid(self.y, self.x) 
+    #         self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k')  
+    #         self.ax.set_xlabel('x (cm)')
+    #         self.ax.set_ylabel('y (cm)')
+    #         self.ax.set_zlabel('Température (K)')
+    #         self.ax.set_title("Température de la plaque après simulation")
+    #         # self.fig.colorbar(self.surface, ax=self.ax)
 
-            # Graphique 2D
-            self.t = [0] 
-            self.temp1 = [self.grille[self.pos_thermi1]]
-            self.temp2 = [self.grille[self.pos_thermi2]]
-            self.temp3 = [self.grille[self.pos_thermi3]]
-            self.ax2.plot(self.t, self.temp1, color='b')
-            self.ax2.plot(self.t, self.temp2, color='g')
-            self.ax2.plot(self.t, self.temp3, color='r')
-            self.ax2.set_xlabel('Temps (s)')
-            self.ax2.set_ylabel('Température (K)')
-            self.ax2.set_title("Température des thermistances en fonction du temps ")
+    #         # Chrono
+    #         self.t0 = time.time()  # Démarrer le chrono
+    #         self.chrono_text = self.fig.text(0.05, 0.05, "Temps écoulé : 0.00 s", fontsize=12, color='black')
 
-            # Mettre la figure en plein écran
-            mng = plt.get_current_fig_manager()
-            mng.window.state('zoomed')
+    #         # Graphique 2D
+    #         self.t = [0] 
+    #         self.temp1 = [self.grille[self.pos_thermi1]]
+    #         self.temp2 = [self.grille[self.pos_thermi2]]
+    #         self.temp3 = [self.grille[self.pos_thermi3]]
+    #         self.ax2.plot(self.t, self.temp1, color='b')
+    #         self.ax2.plot(self.t, self.temp2, color='g')
+    #         self.ax2.plot(self.t, self.temp3, color='r')
+    #         self.ax2.set_xlabel('Temps (s)')
+    #         self.ax2.set_ylabel('Température (K)')
+    #         self.ax2.set_title("Température des thermistances en fonction du temps ")
 
-        else:
-            # Graphique 3D
-            self.surface.remove()  
-            self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
+    #         # Mettre la figure en plein écran
+    #         mng = plt.get_current_fig_manager()
+    #         mng.window.state('zoomed')
 
-            # Chrono
-            elapsed_time = time.time() - self.t0
-            self.chrono_text.set_text(f"Temps écoulé : {elapsed_time:.2f} s")
+    #     else:
+    #         # Graphique 3D
+    #         self.surface.remove()  
+    #         self.surface = self.ax.plot_surface(self.x, self.y, self.grille, cmap="plasma", edgecolor='k') 
 
-            # Graphique 2D
-            self.t.append(self.t[-1] + self.saut*self.dt)
-            self.temp1.append(self.grille[self.pos_thermi1])
-            self.temp2.append(self.grille[self.pos_thermi2])
-            self.temp3.append(self.grille[self.pos_thermi3])
-            self.ax2.clear() 
-            self.ax2.plot(self.t, self.temp1, color='b')
-            self.ax2.plot(self.t, self.temp2, color='g')
-            self.ax2.plot(self.t, self.temp3, color='r')
-            legend_elements = [
-                Patch(facecolor='blue', label="Thermistance à l'actuateur"),
-                Patch(facecolor='green', label="Thermistance au milieu"),
-                Patch(facecolor='red', label="Thermistance au laser")
-            ]
+    #         # Chrono
+    #         elapsed_time = time.time() - self.t0
+    #         self.chrono_text.set_text(f"Temps écoulé : {elapsed_time:.2f} s")
 
-            self.ax2.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(0, 1))
-            self.ax2.set_xlabel('Temps (s)')
-            self.ax2.set_ylabel('Température (K)')
-            self.ax2.set_title("Température des thermistances en fonction du temps ")
+    #         # Graphique 2D
+    #         self.t.append(self.t[-1] + self.saut*self.dt)
+    #         self.temp1.append(self.grille[self.pos_thermi1])
+    #         self.temp2.append(self.grille[self.pos_thermi2])
+    #         self.temp3.append(self.grille[self.pos_thermi3])
+    #         self.ax2.clear() 
+    #         self.ax2.plot(self.t, self.temp1, color='b')
+    #         self.ax2.plot(self.t, self.temp2, color='g')
+    #         self.ax2.plot(self.t, self.temp3, color='r')
+    #         legend_elements = [
+    #             Patch(facecolor='blue', label="Thermistance à l'actuateur"),
+    #             Patch(facecolor='green', label="Thermistance au milieu"),
+    #             Patch(facecolor='red', label="Thermistance au laser")
+    #         ]
 
-        self.fig.canvas.flush_events()
-        plt.pause(0.001) 
+    #         self.ax2.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(0, 1))
+    #         self.ax2.set_xlabel('Temps (s)')
+    #         self.ax2.set_ylabel('Température (K)')
+    #         self.ax2.set_title("Température des thermistances en fonction du temps ")
+
+    #     self.fig.canvas.flush_events()
+    #     plt.pause(0.001) 
 
 
     def iteration(self):
@@ -309,23 +331,24 @@ class Plaque:
         "Section puissance déposée"
         self.grille = new_grille
         
-        # Contribution thermique de l'actuateur positionné au bon endroit 
-        self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
+        # Contribution thermique de l'actuateur positionné au bon endroit
+        if self.t >= self.t_actuateur[0] and self.t <= self.t_actuateur[1] : # Applique l'actuateur au temps désiré
+            self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
 
         # Contribution thermique des perturbations positionné au bon endroit
         for perturb in self.perturbations:
-            self.grille[perturb[0][0]:perturb[0][1], perturb[0][2]:perturb[0][3]] += perturb[1]
+            if self.t >= perturb[2][0] and self.t <= perturb[2][1] :
+                self.grille[perturb[0][0]:perturb[0][1], perturb[0][2]:perturb[0][3]] += perturb[1]
         
         "Enregistrement de la température"
         # Enregistrement de la température aux position des thermistances dans une liste de listes
-        pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, x=3cm
-        pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, x=3cm
-        pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, x=3cm
         self.rep_echelon[0].append(self.rep_echelon[0][-1]+self.dt) # Temps d'échantillonnage
         self.rep_echelon[1].append(self.P_act) # Puissance appliquée à l'actuateur
-        self.rep_echelon[2].append(self.grille[pos_thermi1[0], pos_thermi1[1]]) # Température à la thermistance 1
-        self.rep_echelon[3].append(self.grille[pos_thermi2[0], pos_thermi2[1]]) # Température à la thermistance 2
-        self.rep_echelon[4].append(self.grille[pos_thermi3[0], pos_thermi3[1]]) # Température à la thermistance 3
+        self.rep_echelon[2].append(self.grille[self.pos_thermi1[0], self.pos_thermi1[1]]) # Température à la thermistance 1
+        self.rep_echelon[3].append(self.grille[self.pos_thermi2[0], self.pos_thermi2[1]]) # Température à la thermistance 2
+        self.rep_echelon[4].append(self.grille[self.pos_thermi3[0], self.pos_thermi3[1]]) # Température à la thermistance 3
+        
+        self.t += self.dt
         
         return self.grille
     
@@ -359,27 +382,40 @@ class Plaque:
 
 
 
-# Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3) # TUPLE (Y, X)
+Ma_plaque = Plaque(T_plaque=22, T_ambiante=24, resolution_t=None, puissance_actuateur=3, t_applique_actuateur=(7,72.5)) #, perturbations=[((0.015+0.021-0.003, (0.06/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]
+Ma_plaque.perturbations = [((0.015+0.021-0.003, (Ma_plaque.dim[1]/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]#¨k ça ça veut pas
+Ma_plaque.convertir_perturbations()
 
-# Ma_plaque.deposer_T(40, (0.10, 0.04))
-# Ma_plaque.deposer_T(12, (0.02, 0.02))
-# Ma_plaque.iteration()
-# Ma_plaque.show()
-# Ma_plaque.iteration()
-# Ma_plaque.show()
+Ma_plaque.iteration()
+Ma_plaque.show()
+Ma_plaque.iteration()
+Ma_plaque.show()
 
 
 "ICII"
-# start = time.time()
-# for n in tqdm(range(100)):
-#     for k in range(20): 
-#         Ma_plaque.iteration()
-        # Ma_plaque.show()
-# end = time.time()
-# print(end-start)
+from tqdm import tqdm
+start = time.time()
+for n in tqdm(range(1000)):
+    for k in range(20): 
+        Ma_plaque.iteration()
+end = time.time()
+print(end-start)
 # Ma_plaque.enregistre_rep_echelon()
-# Ma_plaque.show()
-# print(Ma_plaque.dt)
+Ma_plaque.show()
+print(Ma_plaque.t)
+print(Ma_plaque.dt)
+
+from tqdm import tqdm
+start = time.time()
+for n in tqdm(range(1000)):
+    for k in range(20): 
+        Ma_plaque.iteration()
+end = time.time()
+print(end-start)
+# Ma_plaque.enregistre_rep_echelon()
+Ma_plaque.show()
+print(Ma_plaque.t)
+print(Ma_plaque.dt)
 
 # print(Ma_plaque.grille.size)
 # print(Ma_plaque.grille.shape)
