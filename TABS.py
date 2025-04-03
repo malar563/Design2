@@ -40,23 +40,26 @@ class Interface:
         self.lire_json()
         
         # Initialisation des variables depuis JSON ou valeurs par défaut
-        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) #[y,x]
-        self.e = self.data_lu.get("epaisseur", 0.156) 
-        self.dx = self.data_lu.get("resolution_x", 0.15) 
-        self.dy = self.data_lu.get("resolution_y", 0.1) 
-        self.dt = self.data_lu.get("resolution_t", None)
-        self.T_simul = self.data_lu.get("temps_simulation", 600) # [s]
-        self.rho = self.data_lu.get("densite", 2700) 
-        self.cp = self.data_lu.get("cap_calorifique", 897.0)
-        self.k = self.data_lu.get("conduc_thermique", 167.0) 
-        self.h = self.data_lu.get("coef_convection", 12) 
+        self.dim = self.data_lu.get("dimensions", [11.6,6.15]) #[y,x] doit être plus grand que zéro
+        self.e = self.data_lu.get("epaisseur", 0.156) # doit être plus grand que zéro
+        self.dx = self.data_lu.get("resolution_x", 0.15) # doit être plus grand que zéro
+        self.dy = self.data_lu.get("resolution_y", 0.1) # doit être plus grand que zéro
+        self.dt = self.data_lu.get("resolution_t", None) # doit être plus grand que zéro
+        self.T_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que zéro
+        self.rho = self.data_lu.get("densite", 2700) # doit être plus grand que zéro
+        self.cp = self.data_lu.get("cap_calorifique", 897.0) # doit être plus grand que zéro
+        self.k = self.data_lu.get("conduc_thermique", 167.0)  # doit être plus grand que zéro
+        self.h = self.data_lu.get("coef_convection", 12)  # doit être plus grand que zéro
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
         self.T_amb = self.data_lu.get("T_ambiante", 25.0)
-        self.P = self.data_lu.get("puissance_actuateur", 1.5)
+        self.P = self.data_lu.get("puissance_actuateur", 1.5) # doit être entre -5 et 5 W
         self.R_depo = self.data_lu.get("puissance_R", 0)
         self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
         self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
         self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+
+        # Bouton d'arrêt
+        self.var_arret = False
 
         # Initier variables avec calculs
         self.alpha = self.k/(self.rho*self.cp)
@@ -181,7 +184,7 @@ class Interface:
 
         # Initialisation des différents onglets
         self.controle_frame() # Contrôle de base
-        self.plaque() # Variables de la plaque
+        self.plaque() # Dimensions de la plaque
         self.mat() # Paramètres du matériau de la plaque
         self.resolution() # Résolutions de la simulation de la plaque
         self.T_dep() # Contrôle de la puissance déposée
@@ -191,7 +194,7 @@ class Interface:
         self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew")
         ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=1, row=3, pady=5, sticky="ew")
         
-        # Initialisation du boutton Arrêt
+        # Initialisation du bouton Arrêt
         self.etat_arret = ttk.Button(self.inter,text = 'Arrêt', command = self.arret)
         self.etat_arret.grid(column=0, row=3, pady=5, sticky="ew")
         self.etat_arret.grid_remove()
@@ -201,28 +204,26 @@ class Interface:
         self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
         self.progres.grid(column=1, row=4, padx=10, pady=5, sticky="ew")
 
-        # Initialise et cache les messages d'erreurs
+        # Initialise l'endroit où les erreurs s'afficherons
         tk.Label(self.inter, text="Erreur : ").grid(column=0, row=5, padx=10, pady=5, sticky="ew")
-        
-        # Si les variables ne sont pas numériques
-        self.var_num = tk.Label(self.inter, text="Variables entrées ne sont pas numériques")
-        self.var_num.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
-        self.var_num.grid_remove()
 
-        # Si les dimensions ne sont pas réalistes
-        self.var_dim = tk.Label(self.inter, text="Dimensions entrées ne sont pas plus grandes que zéro")
-        self.var_dim.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
-        self.var_dim.grid_remove()
+        # Création d'un dictionnaire pour stocker les messages d'erreurs
+        self.var_messages = {
+            "num": "Les variables entrées doivent être numériques",
+            "dim": "Les dimensions doivent être plus grandes que zéro",
+            "res": "Les résolutions doivent être plus grandes que zéro",
+            "par": "Les paramètres du matériau doivent être plus grands que zéro",
+            "temps": "Le temps de simulation doit être plus grand que zéro",
+            "actuateur": "La puissance de l'actuateur doit se situer entre -5 et 5 [W]"
+        }
 
-        # Si les résolutions ne sont pas réalistes
-        self.var_res = tk.Label(self.inter, text="Résolutions entrées ne sont pas plus grandes que zéro")
-        self.var_res.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
-        self.var_res.grid_remove()
-
-        # Si les paramètres du matériau ne sont pas réalistes
-        self.var_par = tk.Label(self.inter, text="Les paramètres du matériau ne sont pas plus grands que zéro")
-        self.var_par.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
-        self.var_par.grid_remove()
+        # Création d'un dictionnaire pour créer des Labels
+        self.var_labels = {}
+        for key, message in self.var_messages.items():
+            label = tk.Label(self.inter, text=message)
+            label.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+            label.grid_remove() # Cacher l'erreur
+            self.var_labels[key] = label
 
         # Roulons l'interface!
         self.inter.mainloop()
@@ -260,10 +261,10 @@ class Interface:
 
         Retourne : -
         """
-        # Initialisation de l'onglet Variables de la plaque
+        # Initialisation de l'onglet Dimensions de la plaque
         self.plaque_frame = ttk.Frame(self.tabs, padding=10)
         self.plaque_frame.grid()
-        self.tabs.add(self.plaque_frame, text="Variables de la plaque")
+        self.tabs.add(self.plaque_frame, text="Dimensions de la plaque")
 
         # Initialisation des entrées
         self.entry(self.plaque_frame, "Longueur en x de la plaque [cm]", "dimx", 0) # Dimensions de la plaque
@@ -368,11 +369,16 @@ class Interface:
         Description :
         Initialise la simulation avec les variables modifiées par l'utilisateur
             dans l'interface et sauvegarde un nouveau JSON avec celles-ci
+        Regarde si les variables respectent les conditions limites
 
         Arguments : -
 
         Retourne : -
         """
+        # Enlève les anciens messages d'erreurs
+        for key, message in self.var_messages.items():
+            self.var_labels[key].grid_remove()
+
         try:
             # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
             self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
@@ -393,37 +399,35 @@ class Interface:
             self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
             self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
 
-            if self.dim[0] <= 0 or self.dim[1] <= 0 or self.e <= 0:
-                # Si les dimensions entrées sont égales à zéro ou négatives
-                self.var_dim.grid()
-
-                # Retourne la présence d'une erreur
+            # les dimensions entrées doivent être plus grandes que zéro
+            if any(d <= 0 for d in (self.dim[0], self.dim[1], self.e)):
+                self.var_labels["dim"].grid()
                 return False
             
-            if self.dx <= 0 or self.dy <= 0 or self.dt <= 0:
-                # Si les résolutions entrées sont égales à zéro ou négatives
-                self.var_res.grid()
-
-                # Retourne la présence d'une erreur
+            # les résolutions entrées doivent être plus grandes que zéro
+            elif any(r <= 0 for r in (self.dx, self.dy, self.dt)):
+                self.var_labels["res"].grid()
                 return False
             
-            if self.h <= 0 or self.rho <= 0 or self.cp <= 0 or self.k <= 0:
-                # Si les paramètres du matériau entrés sont égales à zéro ou négatives
-                self.var_par.grid()
-
-                # Retourne la présence d'une erreur
+            # les paramètres du matériau entrés doivent être plus grands que zéro
+            elif any(p <= 0 for p in (self.h, self.rho, self.cp, self.k)):
+                self.var_labels["par"].grid()
+                return False
+            
+            # le temps de simulation entré doit être plus grand que zéro
+            elif self.T_simul <= 0:
+                self.var_labels["temps"].grid()
+                return False
+            
+            # la puissance de l'actuateur entrée doit être entre -5 et 5 W
+            elif self.P < -5 or self.P > 5:
+                self.var_labels["actuateur"].grid()
                 return False
         except:
             # Si les variables entrées ne sont pas numériques
-            self.var_num.grid()
-
-            # Retourne la présence d'une erreur
+            self.var_labels["num"].grid()
             return False
         else:
-            # Pas d'erreur
-            self.var_num.grid_remove()
-            self.var_dim.grid_remove()
-
             # Quantité d'itérations
             self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
             self.N = 10 * self.saut
@@ -485,10 +489,6 @@ class Interface:
         # Initialise la simulation
         if self.submit() == False:
             return
-        
-        # Voir le boutton arrêt
-        self.etat_OK.grid_remove()
-        self.etat_arret.grid()
 
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.T_simul)
@@ -498,7 +498,7 @@ class Interface:
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
             self.inter.update_idletasks()
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
-                self.etat_arret.grid_remove() # Voir le boutton OK
+                self.etat_arret.grid_remove() # Voir le bouton OK
                 self.etat_OK.grid()
                 break # Arrêt de la simulation
             else:
@@ -523,7 +523,7 @@ class Interface:
         # Initialise la simulation
         self.submit()
 
-        # Voir le boutton arrêt
+        # Voir le bouton arrêt
         self.etat_OK.grid_remove()
         self.etat_arret.grid()
 
@@ -535,18 +535,32 @@ class Interface:
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
             self.inter.update_idletasks()
             if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
-                self.etat_arret.grid_remove() # Voir le boutton OK
+                self.etat_arret.grid_remove() # Voir le bouton OK
                 self.etat_OK.grid()
                 break # Arrêt de la simulation
             else:
                 self.Ma_plaque.show() # Réitère les graphiques
                 for k in range(self.saut):
                     self.Ma_plaque.iteration()
+            if self.var_arret is True: # Si le bouton arrêt est cliqué
+                self.var_arret = False
+                break # Arrêt de la simulation
         self.Ma_plaque.enregistre_rep_echelon()
 
 
     def arret(self):
-        # Voir le boutton OK
+        """
+        Description :
+        Arrête la simulation
+        Affiche le bouton OK
+
+        Arguments : -
+
+        Retourne : -
+        """
+        self.var_arret = True
+
+        # Voir le bouton OK
         self.etat_arret.grid_remove()
         self.etat_OK.grid()
     
