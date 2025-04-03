@@ -46,7 +46,7 @@ class Plaque:
             conduc_thermique=167,
             coef_convection=12,
             puissance_actuateur = 1.5,
-            pos_actuateur = (0,0),
+            pos_actuateur = None,
             t_applique_actuateur = (0,72.5), # aussi mettre temps de fermeture, mais mettre que par défaut, dépend de temps simul et impossible NOUVEAU-----------------------------------------------
             perturbations = [], # position_enregistrement (y,x), P, (longueur, largeur), (t_debut, t_fin)  -------------------------------------------------------------
             T_simul=600,
@@ -165,6 +165,9 @@ class Plaque:
         # Trouver le centre cible
         ix_centre = int(Lx / 2)  # Centre en x
         iy_centre = int(Ly * 1 / 8)  # Centre en y
+
+        if pos_actuateur is not None:
+            ix_centre, iy_centre = pos_actuateur # ------------------------------------------------------------------
 
         # Déterminer les indices de début et de fin en soustrayant la moitié de la taille de T_actuateur
         ix_debut = ix_centre - act_dim_x // 2
