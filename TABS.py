@@ -19,6 +19,29 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Interface:
+    """
+        Classe représentant une interface permettant de contrôler une plaque chauffante utilisée pour modéliser l'évolution de la température.
+    
+        Attributs principaux :
+        - dimensions : Tuple représentant la longueur et largeur (y, x) de la plaque (centimètres)
+        - epaisseur : Épaisseur de la plaque (centimètres)
+        - resolution_x, resolution_y : Résolution spatiale de la grille de simulation (centimètres)
+        - resolution_t : Résolution temporelle (secondes), calculée si non spécifiée pour éviter la divergence de la solution
+        - t_simul : Durée de la simulation (s)
+        - T_plaque : Température initiale de la plaque (Celsius)
+        - T_ambiante : Température ambiante (Celsius)
+        - densite : Masse volumique de la plaque (kg/m³).
+        - cap_calorifique : Capacité calorifique massique de la plaque (J/kg·K).
+        - conduc_thermique : Conductivité thermique de la plaque (W/m·K).
+        - coef_convection : Coefficient de convection (W/m²K)
+        - puissance_actuateur : Puissance fournie par l'élément chauffant (Watts)
+        - position_actuateur : Tuple correspondant au centre de l'actuateur (y, x) cm
+        - grosseur_actuateur : Tuple (y, x) cm
+        - temps_actuateur : Tuple du temps d'application de l'actuateur tel que (temps_allumage, temps_fermeture)
+        - perturbations : Liste des perturbations thermiques appliquées sous forme [(position_y, position_x), puissance, (grosseur_y, grosseur_x), (temps_allumage, temps_fermeture)] en cm
+        - position_thermistances : Liste des positions des thermistances tel que [(y,x),(y,x),(y,x)] pour T1, T2, T3 en cm 
+    """
+
     def __init__(self):
         """
         Description :
@@ -45,7 +68,7 @@ class Interface:
         self.dx = self.data_lu.get("resolution_x", 0.15) # doit être plus grand que zéro
         self.dy = self.data_lu.get("resolution_y", 0.1) # doit être plus grand que zéro
         self.dt = self.data_lu.get("resolution_t", None) # doit être plus grand que zéro
-        self.T_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que zéro
+        self.t_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que zéro
         self.rho = self.data_lu.get("densite", 2700) # doit être plus grand que zéro
         self.cp = self.data_lu.get("cap_calorifique", 897.0) # doit être plus grand que zéro
         self.k = self.data_lu.get("conduc_thermique", 167.0)  # doit être plus grand que zéro
@@ -54,9 +77,15 @@ class Interface:
         self.T_amb = self.data_lu.get("T_ambiante", 25.0)
         self.P = self.data_lu.get("puissance_actuateur", 1.5) # doit être entre -5 et 5 W
         self.R_depo = self.data_lu.get("puissance_R", 0)
-        self.T_depo = self.data_lu.get("puissance_ajoutee", 0)
-        self.T_pos = self.data_lu.get("position_puissance", [0,0]) # [y,x]
-        self.T_lon = self.data_lu.get("longueur_puissance", [0.5,0.5]) # [y,x]
+        self.R_delais = self.data_lu.get("delais_R", 0)
+        self.R_fin = self.data_lu.get("fin_R", 10)
+        self.N_perturb = self.data_lu.get("N_perturb", 0)
+
+        # Initialisation des variables par rapport aux perturbations
+        self.P_add = self.data_lu.get("puissance_add", [1])
+        self.pos_add = self.data_lu.get("position_add", [[1,1]]) # [[y,x], [y,x]...]
+        self.dim_add = self.data_lu.get("dimensions_add", [[1,1]]) # [[y,x], [y,x]...]
+        self.temps_add = self.data_lu.get("temps_add", [[0, 10]])
         
         # Quantité de perturbations additionnelles
         self.N_perturb = 0
@@ -73,15 +102,24 @@ class Interface:
         self.variables = {key: tk.DoubleVar(value=val) for key, val in {
             "dimy": self.dim[0], "dimx": self.dim[1], "e": self.e,
             "dx": self.dx, "dy": self.dy, "dt": self.dt,
-            "T_simul": self.T_simul,
+            "t_simul": self.t_simul,
             "rho": self.rho, "cp": self.cp, 
             "k": self.k, "h": self.h,
             "T_plaque": self.T_plaque, "T_amb": self.T_amb,
             "P": self.P, "R_depo": self.R_depo,
-            "T_depo": self.T_depo, "T_posy": self.T_pos[0], "T_posx": self.T_pos[1],
-            "T_lony": self.T_lon[0], "T_lonx": self.T_lon[1],
+            "R_delais": self.R_delais, "R_fin": self.R_fin,
             "N_perturb": self.N_perturb
         }.items()}
+
+        # Initier les entrées par rapport aux perturbations
+        for i in range(1, int(self.N_perturb)):
+            self.variables[f"P_add_{i}"] = tk.DoubleVar(value=self.P_add[i])
+            self.variables[f"posx_add_{i}"] = tk.DoubleVar(value=self.pos_add[i][1])
+            self.variables[f"posy_add_{i}"] = tk.DoubleVar(value=self.pos_add[i][0])
+            self.variables[f"dimx_add_{i}"] = tk.DoubleVar(value=self.dim_add[i][1])
+            self.variables[f"dimy_add_{i}"] = tk.DoubleVar(value=self.dim_add[i][0])
+            self.variables[f"delais_add_{i}"] = tk.DoubleVar(value=self.delais_add[i])
+            self.variables[f"fin_add_{i}"] = tk.DoubleVar(value=self.fin_add[i])
 
         # Initialisation l'interface!
         self.main()
@@ -143,9 +181,13 @@ class Interface:
             "T_ambiante": 25,
             "puissance_actuateur": 1.5,
             "puissance_R": 0,
-            "puissance_ajoutee": 0,
-            "position_puissance": [0,0], # [y,x]
-            "longueur_puissance": [0.5,0.5] # [y,x]
+            "delais_R": 0,
+            "fin_R": 10,
+            "N_perturb": 0,
+            "puissance_add": [1],
+            "position_add": [[1,1]], # [[y,x], [y,x]...]
+            "dimensions_add": [[1,1]], # [[y,x], [y,x]...]
+            "temps_add": [[0,10]]
         }
 
 
@@ -254,7 +296,7 @@ class Interface:
         self.entry(self.frame, "Température initiale de la plaque [°C]", "T_plaque", 0) # Température initiale de la plaque
         self.entry(self.frame, "Température ambiante [°C]", "T_amb", 1) # Température ambiante
         self.entry(self.frame, "Puissance appliquée [W]", "P", 2) # Puissance appliquée
-        self.entry(self.frame, "Durée de la simulation [s]", "T_simul", 3) # Durée de la simulation
+        self.entry(self.frame, "Durée de la simulation [s]", "t_simul", 3) # Durée de la simulation
 
 
     def plaque(self):
@@ -338,18 +380,16 @@ class Interface:
 
         # Initialisation des entrées
         self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0) # Résistance de perturbation
-        self.entry(self.perturb_frame, "Nombre de perturbations à ajouter [-]", "N_perturb", 1) # Nombre de perturbation à ajouter
+        self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 1)
+        self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 2)
+        self.entry(self.perturb_frame, "Nombre de perturbations à ajouter [-]", "N_perturb", 3) # Nombre de perturbation à ajouter
         
-        ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations).grid(column=0, row=2, pady=5, columnspan=2,)
-
-        # self.entry(self.T_dep_frame, "Puissance déposée [W]", "T_depo", 1) # Puissance de la perturbation
-        # self.entry(self.T_dep_frame, "Position en x de la puissance déposée [cm]", "T_posx", 2) # Position de la perturbation
-        # self.entry(self.T_dep_frame, "Position en y de la puissance déposée [cm]", "T_posy", 3)
-        # self.entry(self.T_dep_frame, "Longueur en x de la puissance déposée [cm]", "T_lonx", 4) # Dimensions de la perturbation
-        # self.entry(self.T_dep_frame, "Longueur en y de la puissance déposée [cm]", "T_lony", 5)
+        # Initialisation du bouton OK
+        self.bouton_OK = ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations)
+        self.bouton_OK.grid(column=0, row=4, pady=5, columnspan=2,)
 
         # Initialisation du graphique permettant de voir la position des perturbations
-        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=3, column=0, columnspan=2, pady=5)
+        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=5, column=0, columnspan=2, pady=5)
 
 
     def sauvegarder_json(self):
@@ -395,7 +435,7 @@ class Interface:
             self.T_plaque = self.variables["T_plaque"].get()
             self.T_amb=self.variables["T_amb"].get()
             self.P=self.variables["P"].get()
-            self.T_simul=self.variables["T_simul"].get()
+            self.t_simul=self.variables["t_simul"].get()
 
             # Dimensions de la plaque
             self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
@@ -414,13 +454,18 @@ class Interface:
 
             # Contrôle des perturbations
             self.R_depo=self.variables["R_depo"].get()
-            self.N_perturb=self.variables["N_perturb"].get()
+            self.R_delais=self.variables["R_delais"].get()
+            self.R_fin=self.variables["R_fin"].get()
 
-            self.T_pos=[self.variables["T_posy"].get(), self.variables["T_posx"].get()] # [y,x]
-            self.T_lon=[self.variables["T_lony"].get(), self.variables["T_lonx"].get()] # [y,x]
-
-            self.T_depo=self.variables["T_depo"].get()
-            
+            self.P_add = []
+            self.pos_add = []
+            self.dim_add = []
+            self.temps_add = []
+            for i in range(1, int(self.N_perturb)+1):
+                self.P_add.append(self.variables[f"P_add_{i}"].get())
+                self.pos_add.append([self.variables[f"posy_add_{i}"].get(), self.variables[f"posx_add_{i}"].get()]) # [y,x]
+                self.dim_add.append([self.variables[f"dimy_add_{i}"].get(), self.variables[f"dimx_add_{i}"].get()]) # [y,x]
+                self.temps_add.append([self.variables[f"delais_add_{i}"].get(), self.variables[f"fin_add_{i}"].get()]) # [début, fin]
 
             # les dimensions entrées doivent être plus grandes que zéro
             if any(d <= 0 for d in (self.dim[0], self.dim[1], self.e)):
@@ -438,7 +483,7 @@ class Interface:
                 return False
             
             # le temps de simulation entré doit être plus grand que zéro
-            elif self.T_simul <= 0:
+            elif self.t_simul <= 0:
                 self.var_labels["temps"].grid()
                 return False
             
@@ -452,7 +497,7 @@ class Interface:
             return False
         else:
             # Quantité d'itérations
-            self.saut = round(( self.T_simul / (10 * self.dt))**(1/2))
+            self.saut = round(( self.t_simul / (10 * self.dt))**(1/2))
             self.N = 10 * self.saut
 
             # Sauvegarde des données mises à jour dans le JSON
@@ -462,7 +507,7 @@ class Interface:
                 "resolution_x": self.dx,
                 "resolution_y": self.dy,
                 "resolution_t": self.dt,
-                "temps_simulation": self.T_simul, # [s]
+                "temps_simulation": self.t_simul, # [s]
                 "densite": self.rho,
                 "cap_calorifique": self.cp,
                 "conduc_thermique": self.k,
@@ -471,11 +516,28 @@ class Interface:
                 "T_ambiante": self.T_amb,
                 "puissance_actuateur": self.P,
                 "puissance_R": self.R_depo,
-                "puissance_ajoutee": self.T_depo,
-                "position_puissance": [self.T_pos[0], self.T_pos[1]], # [y,x]
-                "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
+                "delais_R": self.R_delais,
+                "fin_R": self.R_fin,
+                "N_perturb": self.N_perturb,
+                "puissance_add": self.P_add,
+                "position_add": self.pos_add, # [y,x]
+                "dimensions_add": self.dim_add, # [y,x]
+                "temps_add": self.temps_add
             }
             self.sauvegarder_json()
+
+            # Créer une variable perturbation pour gérer les perturbations dans la simulation
+            # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
+            perturbations=[
+                [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6, 0.3), (self.R_delais, self.R_fin)], # Résistance de perturbation
+                ]
+            for i in range(int(self.N_perturb)):
+                perturbations.append([
+                    (self.pos_add[i][1], self.pos_add[i][0]), # (y,x)
+                    self.P_add[i],
+                    (self.dim_add[i][1], self.dim_add[i][0]), # (y,x)
+                    (self.temps_add[i][0], self.temps_add[i][1]) # (début, fin)
+                    ])
 
             # Initialise la simulation
             self.Ma_plaque = mega_simulation.Plaque(
@@ -491,11 +553,8 @@ class Interface:
                 conduc_thermique=self.k,
                 coef_convection=self.h,
                 puissance_actuateur=self.P,
-                perturbations=[
-                    [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6/100, 0.3/100)], # Résistance de perturbation
-                    [(self.T_pos[0]/100, self.T_pos[1]/100), self.T_depo, (self.T_lon[0]/100, self.T_lon[1]/100)] # Perturbation additionnelle
-                    ],
-                T_simul=self.T_simul
+                t_simul=self.t_simul,
+                perturbations=perturbations
                 )
 
 
@@ -512,15 +571,18 @@ class Interface:
         # Initialise la simulation
         if self.submit() == False:
             return
+        
+        # Remet le bouton OK dans l'onglet perturbations
+        self.bouton_OK.grid()
 
         # Définit le maximum de la barre de progression
-        self.progres.configure(maximum=self.T_simul)
+        self.progres.configure(maximum=self.t_simul)
 
         # Roule l'interface selon la quantité d'itérations
         for n in range(self.N):
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
             self.inter.update_idletasks()
-            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
+            if self.Ma_plaque.rep_echelon[0][-1] > self.t_simul: # Si le temps de simulation est dépassé
                 self.etat_arret.grid_remove() # Voir le bouton OK
                 self.etat_OK.grid()
                 break # Arrêt de la simulation
@@ -546,18 +608,21 @@ class Interface:
         # Initialise la simulation
         self.submit()
 
+        # Remet le bouton OK dans l'onglet perturbations
+        self.bouton_OK.grid()
+
         # Voir le bouton arrêt
         self.etat_OK.grid_remove()
         self.etat_arret.grid()
 
         # Définit le maximum de la barre de progression
-        self.progres.configure(maximum=self.T_simul)
+        self.progres.configure(maximum=self.t_simul)
 
         # Roule l'interface selon la quantité d'itérations
         for n in range(self.N):
             self.progres["value"] = self.Ma_plaque.rep_echelon[0][-1] # Avance la barre de progression
             self.inter.update_idletasks()
-            if self.Ma_plaque.rep_echelon[0][-1] > self.T_simul: # Si le temps de simulation est dépassé
+            if self.Ma_plaque.rep_echelon[0][-1] > self.t_simul: # Si le temps de simulation est dépassé
                 self.etat_arret.grid_remove() # Voir le bouton OK
                 self.etat_OK.grid()
                 break # Arrêt de la simulation
@@ -619,14 +684,10 @@ class Interface:
         for t in thermistances:
             plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
 
-        # Couleur les perturbations rouge seulement si elles existent
-        if self.Ma_plaque.nouv_pertur is True:
-            for p in self.Ma_plaque.perturbations: # Si il existe plusieurs perturbations
-                (iy1,iy2,ix1,ix2), T = p
-                plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
-        else:
-            (iy1,iy2,ix1,ix2), T = self.Ma_plaque.perturbations[0] # Si il existe seulement la résistance de perturbation
-            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]
+        # Couleur les perturbations rouge 
+        for p in self.Ma_plaque.perturbations: # Si il existe plusieurs perturbations
+            (iy1,iy2,ix1,ix2), T = p
+            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
 
         # Affichage
         figy = plt.figure()
@@ -657,7 +718,57 @@ class Interface:
 
 
     def perturbations(self):
-        return
+        # Sauvegarde le nombre de perturbations antérieur
+        self.ancien_N_perturb = self.N_perturb
 
+        # Regarde le nombre de perturbations voulues
+        self.N_perturb=self.variables["N_perturb"].get()
+
+        # Enlever le bouton OK
+        self.bouton_OK.grid_remove()
+
+        # Conditions limites
+        if self.N_perturb < 0:
+            raise KeyError # perturb doit etre pos
+        elif self.N_perturb == 0:
+            raise KeyError # pas de perturb ajoutee
+        
+        # Initialisation des onglets
+        self.perturb_tabs = ttk.Notebook(self.perturb_frame)
+        self.perturb_tabs.grid(column=3, row=0, rowspan=4, columnspan=2)
+
+        # Stocker les références des frames
+        self.perturb_frames = []
+
+        # Initier les entrées par rapport aux perturbations
+        if self.ancien_N_perturb < self.N_perturb:
+            for i in range(int(self.ancien_N_perturb)+1, int(self.N_perturb)+1):
+                self.variables[f"P_add_{i}"] = tk.DoubleVar(value=1)
+                self.variables[f"posx_add_{i}"] = tk.DoubleVar(value=1)
+                self.variables[f"posy_add_{i}"] = tk.DoubleVar(value=1)
+                self.variables[f"dimx_add_{i}"] = tk.DoubleVar(value=1)
+                self.variables[f"dimy_add_{i}"] = tk.DoubleVar(value=1)
+                self.variables[f"delais_add_{i}"] = tk.DoubleVar(value=0)
+                self.variables[f"fin_add_{i}"] = tk.DoubleVar(value=10)
+
+        for i in range(1, int(self.N_perturb)+1):
+            # Création d'une frame pour chaque perturbation
+            frame = ttk.Frame(self.perturb_tabs, padding=10)
+            frame.grid()
+
+            # Ajout de la frame à l'onglet
+            self.perturb_tabs.add(frame, text=f"Perturbation #{i}")
+
+            # Stocker la frame dans la liste
+            self.perturb_frames.append(frame)
+
+            # Ajout de la puissance, position et grosseur
+            self.entry(frame, "Puissance déposée [W]", f"P_add_{i}", 1) # Puissance de la perturbation
+            self.entry(frame, "Position en x de la puissance déposée [cm]", f"posx_add_{i}", 2) # Position de la perturbation
+            self.entry(frame, "Position en y de la puissance déposée [cm]", f"posy_add_{i}", 3)
+            self.entry(frame, "Longueur en x de la puissance déposée [cm]", f"dimx_add_{i}", 4) # Dimensions de la perturbation
+            self.entry(frame, "Longueur en y de la puissance déposée [cm]", f"dimy_add_{i}", 5)
+            self.entry(frame, "Délais avant l'application [s]", f"delais_add_{i}", 6) # Durée de l'application de la perturbation
+            self.entry(frame, "Délais avant la fin de l'application [s]", f"fin_add_{i}", 7)
 
 Inter= Interface()

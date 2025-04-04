@@ -22,6 +22,7 @@ class Plaque:
         - epaisseur : Épaisseur de la plaque (centimètres)
         - resolution_x, resolution_y : Résolution spatiale de la grille de simulation (centimètres)
         - resolution_t : Résolution temporelle (secondes), calculée si non spécifiée pour éviter la divergence de la solution
+        - t_simul : Durée de la simulation (s)
         - T_plaque : Température initiale de la plaque (Celsius)
         - T_ambiante : Température ambiante (Celsius)
         - densite : Masse volumique de la plaque (kg/m³).
@@ -43,7 +44,7 @@ class Plaque:
             resolution_x=0.15,
             resolution_y=0.1,
             resolution_t=None,
-            t_simul=600, # J'ai changé T_simul pour t_simul
+            t_simul=600,
             T_plaque=25,
             T_ambiante=25,
             densite=2700,
@@ -126,17 +127,19 @@ class Plaque:
         Modifie self.perturbations en mettant à jour les tuples de la liste des perturbations thermiques. 
         Chaque perturbation est décrite par un tuple d'indices de position, un objet de type np.ndarray contenant la température de chaque élément et un tuple le moment de l'allumage/fermeture.
         """
-        ## Ce bout de code ne marche pas-------------------------------------------------------------------
-        # self.nouv_pertur = True
+        self.nouv_pertur = True
+        print(self.perturbations)
+
         # if self.perturbations[1][1] == 0:
         #     self.nouv_pertur = False
         nouvelles_perturbations = []
         for perturb in self.perturbations:
-            (pos_y, pos_x), puissance, (longueur, largeur), temps = perturb
+            (pos_y, pos_x), puissance, (longueur, largeur), (debut, fin) = perturb
 
             longueur, largeur = int(longueur/(100*self.dy)), int(largeur/(100*self.dx))
 
             # Répartir la puissance sur toute la zone de la perturbation
+            print(perturb)
             if largeur < self.dx or longueur < self.dy:
                 raise ValueError(f"Erreur : La perturbation est trop petite pour être représentée ")
             T_applique = (self.dt / (self.rho * self.cp)) * (puissance / (longueur * largeur)) / (self.dx * self.dy * self.e) * np.ones((longueur, largeur))
@@ -153,12 +156,13 @@ class Plaque:
             # iy_fin = iy_centre + perturb_dim_y // 2 + 1  # +1 pour inclure le dernier indice
 
             # Temps d'application de chaque perturbation par défaut
-            t_debut, t_fin = (0, self.t_simul)
-            if temps is not None:  # Changement du temps d'allumage de la perturbation si spécifié
-                t_debut, t_fin = temps
+            # t_debut, t_fin = (0, self.t_simul)
+
+            # if temps is not None:  # Changement du temps d'allumage de la perturbation si spécifié
+            #     t_debut, t_fin = temps
         
             # La position spécifiée de la perturbation correspond à la position de son coin bas gauche sur la plaque
-            nouvelles_perturbations.append(((iy, iy+longueur, ix, ix+largeur), T_applique, (t_debut, t_fin)))
+            nouvelles_perturbations.append(((iy, iy+longueur, ix, ix+largeur), T_applique, (debut, fin)))
             # nouvelles_perturbations.append(((iy_debut,iy_fin,ix_debut,ix_fin), T_applique, (t_debut, t_fin))) # Associé avec le test
     
         self.perturbations = nouvelles_perturbations
@@ -403,89 +407,89 @@ class Plaque:
         df = pd.DataFrame(np.array(self.rep_echelon).T)
         df.to_csv(new_nom, index=False) # temps, entrée, T1, T2, T3
 
-    def affiche_initial(self):
-        """
-        Affiche la répartition des composants sur la plaque.
+    # def affiche_initial(self):
+    #     """
+    #     Affiche la répartition des composants sur la plaque.
     
-        - La plaque est en gris
-        - L'actuateur est en rouge
-        - Les thermistances sont en vert
-        - Les perturbations sont en bleu
-        """
-        size = self.grille.shape
-        plaque = np.ones((*size, 3)) * 0.5  # Fond gris
+    #     - La plaque est en gris
+    #     - L'actuateur est en rouge
+    #     - Les thermistances sont en vert
+    #     - Les perturbations sont en bleu
+    #     """
+    #     size = self.grille.shape
+    #     plaque = np.ones((*size, 3)) * 0.5  # Fond gris
 
-        # Positions des différents éléments 
-        # Actuateur
-        iy1, iy2, ix1, ix2 = self.actuateur_pos
-        # Thermistances
-        thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
+    #     # Positions des différents éléments 
+    #     # Actuateur
+    #     iy1, iy2, ix1, ix2 = self.actuateur_pos
+    #     # Thermistances
+    #     thermistances = [self.pos_thermi1, self.pos_thermi2, self.pos_thermi3]
 
-        # Affectation des couleurs
-        plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
-        for t in thermistances:
-            plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
-        for p in self.perturbations:
-            (iy1,iy2,ix1,ix2), Temp, t = p
-            plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
+    #     # Affectation des couleurs
+    #     plaque[iy1:iy2,ix1:ix2] = [0, 1, 0]  # Vert pour l'actuateur
+    #     for t in thermistances:
+    #         plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
+    #     for p in self.perturbations:
+    #         (iy1,iy2,ix1,ix2), Temp, t = p
+    #         plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
 
-        # Affichage avec imshow
-        fig, ax = plt.subplots()
-        ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
+    #     # Affichage avec imshow
+    #     fig, ax = plt.subplots()
+    #     ax.imshow(plaque, origin = "lower", extent=(0, 100*self.dim[1], 0, 100*self.dim[0]))
 
-        # Ajout de la légende
-        from matplotlib.patches import Patch
-        legend_elements = [
-            Patch(facecolor=[0, 0, 1], label='Thermistances'),
-            Patch(facecolor=[0, 1, 0], label='Actuateur'),
-            Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
-            Patch(facecolor='gray', label='Plaque')]
+    #     # Ajout de la légende
+    #     from matplotlib.patches import Patch
+    #     legend_elements = [
+    #         Patch(facecolor=[0, 0, 1], label='Thermistances'),
+    #         Patch(facecolor=[0, 1, 0], label='Actuateur'),
+    #         Patch(facecolor=[1, 0, 0], label='Perturbation(s)'),
+    #         Patch(facecolor='gray', label='Plaque')]
 
-        ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-        ax.set_xlabel("Position en x (cm)")
-        ax.set_ylabel("Position en y (cm)")
+    #     ax.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
+    #     ax.set_xlabel("Position en x (cm)")
+    #     ax.set_ylabel("Position en y (cm)")
 
-        plt.show()
-
-
-
-Ma_plaque = Plaque(T_plaque=24, T_ambiante=24, resolution_t=None, puissance_actuateur=2, temps_actuateur=(7,72.5), position_actuateur=(10,3), position_thermistances=[(1,1),(4,6),(11.2,3)], grosseur_actuateur=(2.75,3)) #, perturbations=[((0.015+0.021-0.003, (0.06/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]
-Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), None)]
-Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), (7, 72.5))] # Pour avoir exactement comme la résistance de perturbation 
-Ma_plaque.convertir_perturbations()
-
-Ma_plaque.affiche_initial()
-
-Ma_plaque.iteration()
-Ma_plaque.affiche()
-Ma_plaque.iteration()
-Ma_plaque.affiche()
+    #     plt.show()
 
 
-"ICII"
-from tqdm import tqdm
-start = time.time()
-for n in tqdm(range(1000)):
-    for k in range(20): 
-        Ma_plaque.iteration()
-end = time.time()
-print(end-start)
-# Ma_plaque.enregistre_rep_echelon()
-Ma_plaque.affiche()
-print(Ma_plaque.t)
-print(Ma_plaque.dt)
 
-from tqdm import tqdm
-start = time.time()
-for n in tqdm(range(1000)):
-    for k in range(20): 
-        Ma_plaque.iteration()
-end = time.time()
-print(end-start)
-# Ma_plaque.enregistre_rep_echelon()
-Ma_plaque.affiche()
-print(Ma_plaque.t)
-print(Ma_plaque.dt)
+# Ma_plaque = Plaque(T_plaque=24, T_ambiante=24, resolution_t=None, puissance_actuateur=2, temps_actuateur=(7,72.5), position_actuateur=(10,3), position_thermistances=[(1,1),(4,6),(11.2,3)], grosseur_actuateur=(2.75,3)) #, perturbations=[((0.015+0.021-0.003, (0.06/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]
+# Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), None)]
+# Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), (7, 72.5))] # Pour avoir exactement comme la résistance de perturbation 
+# Ma_plaque.convertir_perturbations()
+
+# # Ma_plaque.affiche_initial()
+
+# # Ma_plaque.iteration()
+# # Ma_plaque.affiche()
+# # Ma_plaque.iteration()
+# # Ma_plaque.affiche()
+
+
+# # "ICII"
+# from tqdm import tqdm
+# start = time.time()
+# for n in tqdm(range(1000)):
+#     for k in range(20): 
+#         Ma_plaque.iteration()
+# end = time.time()
+# print(end-start)
+# # Ma_plaque.enregistre_rep_echelon()
+# Ma_plaque.affiche()
+# print(Ma_plaque.t)
+# print(Ma_plaque.dt)
+
+# from tqdm import tqdm
+# start = time.time()
+# for n in tqdm(range(1000)):
+#     for k in range(20): 
+#         Ma_plaque.iteration()
+# end = time.time()
+# print(end-start)
+# # Ma_plaque.enregistre_rep_echelon()
+# Ma_plaque.affiche()
+# print(Ma_plaque.t)
+# print(Ma_plaque.dt)
 
 # print(Ma_plaque.grille.size)
 # print(Ma_plaque.grille.shape)
