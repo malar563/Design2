@@ -29,7 +29,11 @@ class Plaque:
         - conduc_thermique : Conductivité thermique de la plaque (W/m·K).
         - coef_convection : Coefficient de convection (W/m²K)
         - puissance_actuateur : Puissance fournie par l'élément chauffant (Watts)
-        - perturbations : Liste des perturbations thermiques appliquées sous forme (position_y, position_x), puissance, (grosseur_y, grosseur_x)
+        - position_actuateur : Tuple correspondant au centre de l'actuateur (y, x) cm
+        - grosseur_actuateur : Tuple (y, x) cm
+        - temps_actuateur : Tuple du temps d'application de l'actuateur tel que (temps_allumage, temps_fermeture)
+        - perturbations : Liste des perturbations thermiques appliquées sous forme [(position_y, position_x), puissance, (grosseur_y, grosseur_x), (temps_allumage, temps_fermeture)] en cm
+        - position_thermistances : Liste des positions des thermistances tel que [(y,x),(y,x),(y,x)] pour T1, T2, T3 en cm 
     """
 
     def __init__(
@@ -51,7 +55,7 @@ class Plaque:
             grosseur_actuateur = None, # Tuple (y, x) cm
             temps_actuateur = None, # Tuple du temps d'application de l'actuateur (t_debut, t_fin)
             perturbations = [], # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
-            pos_thermistances = None # Liste contenant trois tuples de positions[(y,x),(y,x),(y,x)] pour T1, T2, T3 en cm 
+            position_thermistances = None # Liste contenant trois tuples de positions[(y,x),(y,x),(y,x)] pour T1, T2, T3 en cm 
             ):
         # Dimensions et propriétés physiques
         self.dim = [dimensions[0]/100, dimensions[1]/100]  # (longueur, largeur) en m
@@ -67,14 +71,14 @@ class Plaque:
         self.t_simul = t_simul # Durée de la simulation
         self.t = 0 # Temps écoulé depuis le début de la simulation
 
-        # Position des thermistances
+        # Position des thermistances par défaut
         self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, centré en x
         self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, centré en x
         self.pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, centré en x
-        if pos_thermistances is not None:
-            self.pos_thermi1 = (int(pos_thermistances[0][0]/(self.dy*100)), int(pos_thermistances[0][1]/(self.dx*100)))
-            self.pos_thermi2 = (int(pos_thermistances[1][0]/(self.dy*100)), int(pos_thermistances[1][1]/(self.dx*100)))
-            self.pos_thermi3 = (int(pos_thermistances[2][0]/(self.dy*100)), int(pos_thermistances[2][1]/(self.dx*100)))
+        if position_thermistances is not None: # Changement de position des thermistances si spécifié
+            self.pos_thermi1 = (int(position_thermistances[0][0]/(self.dy*100)), int(position_thermistances[0][1]/(self.dx*100)))
+            self.pos_thermi2 = (int(position_thermistances[1][0]/(self.dy*100)), int(position_thermistances[1][1]/(self.dx*100)))
+            self.pos_thermi3 = (int(position_thermistances[2][0]/(self.dy*100)), int(position_thermistances[2][1]/(self.dx*100)))
         
         # Initialisation de la grille de température (matrice remplie avec la température initiale)
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 
@@ -120,7 +124,7 @@ class Plaque:
 
         Retourne : None 
         Modifie self.perturbations en mettant à jour les tuples de la liste des perturbations thermiques. 
-        Chaque perturbation est décrite par un tuple d'indices de position et un objet de type np.ndarray contenant la température de chaque élément.
+        Chaque perturbation est décrite par un tuple d'indices de position, un objet de type np.ndarray contenant la température de chaque élément et un tuple le moment de l'allumage/fermeture.
         """
         ## Ce bout de code ne marche pas-------------------------------------------------------------------
         # self.nouv_pertur = True
@@ -445,7 +449,7 @@ class Plaque:
 
 
 
-Ma_plaque = Plaque(T_plaque=24, T_ambiante=24, resolution_t=None, puissance_actuateur=2, temps_actuateur=(7,72.5), position_actuateur=(10,3), pos_thermistances=[(1,1),(4,6),(11.2,3)], grosseur_actuateur=(2.75,3)) #, perturbations=[((0.015+0.021-0.003, (0.06/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]
+Ma_plaque = Plaque(T_plaque=24, T_ambiante=24, resolution_t=None, puissance_actuateur=2, temps_actuateur=(7,72.5), position_actuateur=(10,3), position_thermistances=[(1,1),(4,6),(11.2,3)], grosseur_actuateur=(2.75,3)) #, perturbations=[((0.015+0.021-0.003, (0.06/2)-0.0015), 2, (0.006,0.003), (7, 72.5))]
 Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), None)]
 Ma_plaque.perturbations = [((1.5+2.1-0.3, (100*Ma_plaque.dim[1]/2)-0.15), 2, (0.6,0.3), (7, 72.5))] # Pour avoir exactement comme la résistance de perturbation 
 Ma_plaque.convertir_perturbations()
