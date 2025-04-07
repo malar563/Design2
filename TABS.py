@@ -686,7 +686,7 @@ class Interface:
 
         # Couleur les perturbations rouge 
         for p in self.Ma_plaque.perturbations: # Si il existe plusieurs perturbations
-            (iy1,iy2,ix1,ix2), T = p
+            (iy1,iy2,ix1,ix2), Temp, t = p
             plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
 
         # Affichage
