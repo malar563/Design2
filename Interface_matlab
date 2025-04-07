@@ -51,6 +51,22 @@ classdef Interface_matlab < matlab.apps.AppBase
         Bit_dacField         matlab.ui.control.NumericEditField
         Bit_adcLabel         matlab.ui.control.Label
         Bit_adcField         matlab.ui.control.NumericEditField
+        R_0Label             matlab.ui.control.Label
+        R_0Field             matlab.ui.control.NumericEditField
+        P_0Label             matlab.ui.control.Label
+        P_0Field             matlab.ui.control.NumericEditField
+        BLabel               matlab.ui.control.Label
+        BField               matlab.ui.control.NumericEditField
+        Ampli_diffLabel      matlab.ui.control.Label
+        Ampli_diffField      matlab.ui.control.NumericEditField
+        Plus_petiteLabel     matlab.ui.control.Label
+        Plus_petitefield     matlab.ui.control.NumericEditField
+        Gain_filtreLabel     matlab.ui.control.Label
+        Gain_filtrefield     matlab.ui.control.NumericEditField
+        V_refLabel           matlab.ui.control.Label
+        V_reffield           matlab.ui.control.NumericEditField
+        Cte_filtreLabel      matlab.ui.control.Label
+        Cte_filtrefield      matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
@@ -67,7 +83,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version46"; 
+        ModelName            string = "simulateur_matlab_version47"; 
     end
 
     properties (Access = private)
@@ -164,7 +180,17 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'T_0', T_0);
             B = 3984;
             assignin('base', 'B', B);
-            
+            ampli_diff = 3.075;
+            assignin('base', 'ampli_diff', ampli_diff);
+            plus_petite = 1.735;
+            assignin('base', 'plus_petite', plus_petite);
+            Gain_filtre = 0.3668;
+            assignin('base', 'Gain_filtre', Gain_filtre);
+            V_ref = 2.5426;
+            assignin('base', 'V_ref', V_ref);
+            Cte_filtre = 0.00944;
+            assignin('base', 'Cte_filtre', Cte_filtre);
+
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
         end
@@ -725,7 +751,32 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Bit_adcLabel = labelly_tab(app, t_bit, 'Nombre de bits du ADC',[10 140 300 20]);        
             app.Bit_adcField = fielddy_tab(app, t_bit, "bit_adc", [10 110 140 30]);    
 
+            t_thermistance = uitab(tabs, "Title", "Param�tre des thermistances");
+
+            app.R_0Label = labelly_tab(app, t_thermistance, 'R�sistance de r�f�rence',[10 200 300 20]);       
+            app.R_0Field = fielddy_tab(app, t_thermistance, "R_0", [10 170 140 30]);           
+            app.P_0Label = labelly_tab(app, t_thermistance, 'Temp�rature de r�f�rence',[10 140 300 20]);          
+            app.P_0Field = fielddy_tab(app, t_thermistance, "T_0", [10 110 140 30]);     
+            app.BLabel  = labelly_tab(app, t_thermistance, 'Valeur de la constante beta',[10 80 300 20]);  
+            app.BField  = fielddy_tab(app, t_thermistance, "B", [10 50 140 30]);  
+
+            t_ampli = uitab(tabs, "Title", "Param�tre de l'amplificateur différentiel");
+
+            app.Ampli_diffLabel = labelly_tab(app, t_ampli, 'Gain ampli diférentiel',[10 200 300 20]);      
+            app.Ampli_diffField = fielddy_tab(app, t_ampli, "ampli_diff", [10 170 140 30]);  
+            app.Plus_petiteLabel  = labelly_tab(app, t_ampli, "Offset de l'ampli différentiel", [10 140 300 30]); 
+            app.Plus_petitefield   = fielddy_tab(app, t_ampli, "plus_petite", [10 110 140 30]);    
           
+            t_filtre  = uitab(tabs, "Title", "Param�tre du filtre à la sortie de l'Arduino");
+
+            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du filtre',[10 200 300 20]);    
+            app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_filtre", [10 170 140 30]);    
+            app.V_refLabel = labelly_tab(app, t_filtre, 'tension de téférence',[10 140 300 20]);          
+            app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30]);           
+            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'constante de temps du filtre',[10 80 300 20]);     
+            app.Cte_filtrefield = fielddy_tab(app, t_filtre, "Cte_filtre", [10 50 140 30]);        
+
+
             % Timer
             app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
 
