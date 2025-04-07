@@ -55,6 +55,11 @@ class Interface:
         self.inter = tk.Tk()
         self.inter.title('Contrôle de la simulation Python')
 
+        # Fixe la grosseur de la fenêtre
+        self.screen_width = self.inter.winfo_screenwidth()
+        self.screen_height = self.inter.winfo_screenheight()
+        self.inter.geometry(f"{int(self.screen_width)}x{int(self.screen_height)}") # Fixe la taille de la fenêtre à la taille de l'écran
+
         # Permet les onglets dans l'interface
         style = ttk.Style()
         style.configure("TNotebook.Tab", padding=[5, 5])
@@ -229,6 +234,7 @@ class Interface:
         # Initialisation des onglets
         self.tabs = ttk.Notebook(self.inter)
         self.tabs.grid(column=0, row=0, rowspan=2, columnspan=2, sticky="nsew")
+        self.tabs.config(width=int(self.screen_width * 0.5), height=int(self.screen_height * 0.7))
 
         # Initialisation des différents onglets
         self.controle_frame() # Contrôle de base
@@ -382,14 +388,20 @@ class Interface:
         self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0) # Résistance de perturbation
         self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 1)
         self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 2)
-        self.entry(self.perturb_frame, "Nombre de perturbations à ajouter [-]", "N_perturb", 3) # Nombre de perturbation à ajouter
+
+        # Nombre de perturbation à ajouter
+        self.label_N_perturb = ttk.Label(self.perturb_frame, text="Nombre de perturbations à ajouter [-]")
+        self.label_N_perturb.grid(column=0, row=3, padx=5, pady=5, sticky="w")
+        self.entry_N_perturb = ttk.Entry(self.perturb_frame, textvariable=self.variables["N_perturb"])
+        self.entry_N_perturb.grid(column=1, row=3, padx=5, pady=5, sticky="ew") 
+        # self.entry(self.perturb_frame, "Nombre de perturbations à ajouter [-]", "N_perturb", 3) # Nombre de perturbation à ajouter
         
         # Initialisation du bouton OK
         self.bouton_OK = ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations)
-        self.bouton_OK.grid(column=0, row=4, pady=5, columnspan=2,)
+        self.bouton_OK.grid(column=0, row=5, pady=5, columnspan=2,)
 
         # Initialisation du graphique permettant de voir la position des perturbations
-        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=5, column=0, columnspan=2, pady=5)
+        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=6, column=0, columnspan=2, pady=5)
 
 
     def sauvegarder_json(self):
@@ -572,8 +584,14 @@ class Interface:
         if self.submit() == False:
             return
         
-        # Remet le bouton OK dans l'onglet perturbations
+        # Remet le bouton OK et l'ajout de perturbations dans l'onglet perturbations
         self.bouton_OK.grid()
+        self.label_N_perturb.grid()
+        self.entry_N_perturb.grid()
+
+        # Supprimer l'ancien canvas s'il existe
+        if hasattr(self, "canvas"):
+            self.canvas.get_tk_widget().grid_forget() 
 
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.t_simul)
@@ -608,8 +626,14 @@ class Interface:
         # Initialise la simulation
         self.submit()
 
-        # Remet le bouton OK dans l'onglet perturbations
+        # Remet le bouton OK et l'ajout de perturbations dans l'onglet perturbations
         self.bouton_OK.grid()
+        self.label_N_perturb.grid()
+        self.entry_N_perturb.grid()
+
+        # Supprimer l'ancien canvas s'il existe
+        if hasattr(self, "canvas"):
+            self.canvas.get_tk_widget().grid_forget() 
 
         # Voir le bouton arrêt
         self.etat_OK.grid_remove()
@@ -708,9 +732,9 @@ class Interface:
         axy.set_ylabel("Position en y (cm)")
 
         # Intégration à l'interface
-        self.canvas = FigureCanvasTkAgg(figy, master=self.perturb_frame)
+        self.canvas = FigureCanvasTkAgg(figy, master=self.inter)
         self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=1, column=2, sticky="nsew", rowspan=6)
+        self.canvas.get_tk_widget().grid(row=0, column=5, rowspan=5)
 
         # Le graphique est bien placé dans l'interface
         self.perturb_frame.grid_rowconfigure(0, weight=1)
@@ -718,31 +742,43 @@ class Interface:
 
 
     def perturbations(self):
+        """
+        Description :
+        Affiche un onglet pour chaque perturbation permettant de contrôler
+            sa puissance, sa position, sa taille et son temps d'application
+
+        Arguments : -
+
+        Retourne : -
+        """
         # Sauvegarde le nombre de perturbations antérieur
         self.ancien_N_perturb = self.N_perturb
 
         # Regarde le nombre de perturbations voulues
-        self.N_perturb=self.variables["N_perturb"].get()
+        self.N_perturb = self.variables["N_perturb"].get()
 
-        # Enlever le bouton OK
+        # Enlever le bouton OK et la possibilité d'ajouter des perturbations
         self.bouton_OK.grid_remove()
+        self.label_N_perturb.grid_remove()
+        self.entry_N_perturb.grid_remove()
 
         # Conditions limites
         if self.N_perturb < 0:
-            raise KeyError # perturb doit etre pos
+            raise KeyError  # perturb doit être positif
         elif self.N_perturb == 0:
-            raise KeyError # pas de perturb ajoutee
-        
+            raise KeyError  # pas de perturbation ajoutée
+
         # Initialisation des onglets
         self.perturb_tabs = ttk.Notebook(self.perturb_frame)
-        self.perturb_tabs.grid(column=3, row=0, rowspan=4, columnspan=2)
+        self.perturb_tabs.grid(column=2, row=0, rowspan=4, columnspan=2)
 
         # Stocker les références des frames
         self.perturb_frames = []
+        self.perturb_noms = []
 
         # Initier les entrées par rapport aux perturbations
         if self.ancien_N_perturb < self.N_perturb:
-            for i in range(int(self.ancien_N_perturb)+1, int(self.N_perturb)+1):
+            for i in range(int(self.ancien_N_perturb) + 1, int(self.N_perturb) + 1):
                 self.variables[f"P_add_{i}"] = tk.DoubleVar(value=1)
                 self.variables[f"posx_add_{i}"] = tk.DoubleVar(value=1)
                 self.variables[f"posy_add_{i}"] = tk.DoubleVar(value=1)
@@ -751,24 +787,72 @@ class Interface:
                 self.variables[f"delais_add_{i}"] = tk.DoubleVar(value=0)
                 self.variables[f"fin_add_{i}"] = tk.DoubleVar(value=10)
 
-        for i in range(1, int(self.N_perturb)+1):
+        for i in range(1, int(self.N_perturb) + 1):
             # Création d'une frame pour chaque perturbation
             frame = ttk.Frame(self.perturb_tabs, padding=10)
             frame.grid()
 
             # Ajout de la frame à l'onglet
             self.perturb_tabs.add(frame, text=f"Perturbation #{i}")
+            self.perturb_noms.append(f"Perturbation #{i}")
 
             # Stocker la frame dans la liste
             self.perturb_frames.append(frame)
 
+            # Ajout du nom de la perturbation
+            tk.Label(frame, text=f"Perturbation #{i}").grid(column=0, row=0, padx=5, pady=5, sticky="ew")
+
             # Ajout de la puissance, position et grosseur
-            self.entry(frame, "Puissance déposée [W]", f"P_add_{i}", 1) # Puissance de la perturbation
-            self.entry(frame, "Position en x de la puissance déposée [cm]", f"posx_add_{i}", 2) # Position de la perturbation
+            self.entry(frame, "Puissance déposée [W]", f"P_add_{i}", 1)  # Puissance de la perturbation
+            self.entry(frame, "Position en x de la puissance déposée [cm]", f"posx_add_{i}", 2)  # Position de la perturbation
             self.entry(frame, "Position en y de la puissance déposée [cm]", f"posy_add_{i}", 3)
-            self.entry(frame, "Longueur en x de la puissance déposée [cm]", f"dimx_add_{i}", 4) # Dimensions de la perturbation
+            self.entry(frame, "Longueur en x de la puissance déposée [cm]", f"dimx_add_{i}", 4)  # Dimensions de la perturbation
             self.entry(frame, "Longueur en y de la puissance déposée [cm]", f"dimy_add_{i}", 5)
-            self.entry(frame, "Délais avant l'application [s]", f"delais_add_{i}", 6) # Durée de l'application de la perturbation
+            self.entry(frame, "Délais avant l'application [s]", f"delais_add_{i}", 6)  # Durée de l'application de la perturbation
             self.entry(frame, "Délais avant la fin de l'application [s]", f"fin_add_{i}", 7)
+
+        # Faire un menu des perturbations
+        self.tab_selector = ttk.Combobox(self.perturb_frame, state="readonly")
+        self.tab_selector.grid(column=0, row=4, pady=5, columnspan=2)
+        self.tab_selector["values"] = self.perturb_noms
+
+        # Faire un menu déroulant
+        self.tab_selector.current(0)
+        self.tab_selector.bind("<<ComboboxSelected>>", self.changer_tab)
+
+        # Cacher les perturbations sauf la première
+        self.perturb_tabs.grid_remove()
+        self.changer_tab()
+
+
+    def changer_tab(self, event=None):
+        """
+        Description :
+        Affiche un onglet et cache les autres
+
+        Arguments : -
+
+        Retourne : -
+        """
+        self.perturb_tabs.grid()
+
+        selected_tab = self.tab_selector.get()
+        tab_index = list(self.perturb_noms).index(selected_tab)
+
+        print(selected_tab, tab_index)
+
+        # Cache toutes les frames
+        for i, frame in enumerate(self.perturb_frames):
+            if i != tab_index:
+                frame.grid_forget()
+
+        # Affiche la frame correspondant à l'onglet sélectionné
+        self.perturb_frames[tab_index].grid()
+
+        # Sélectionner l'onglet
+        self.perturb_tabs.select(tab_index)
+
+
+
 
 Inter= Interface()

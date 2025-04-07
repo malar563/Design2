@@ -127,11 +127,6 @@ class Plaque:
         Modifie self.perturbations en mettant à jour les tuples de la liste des perturbations thermiques. 
         Chaque perturbation est décrite par un tuple d'indices de position, un objet de type np.ndarray contenant la température de chaque élément et un tuple le moment de l'allumage/fermeture.
         """
-        self.nouv_pertur = True
-        print(self.perturbations)
-
-        # if self.perturbations[1][1] == 0:
-        #     self.nouv_pertur = False
         nouvelles_perturbations = []
         for perturb in self.perturbations:
             (pos_y, pos_x), puissance, (longueur, largeur), (debut, fin) = perturb
@@ -139,31 +134,14 @@ class Plaque:
             longueur, largeur = int(longueur/(100*self.dy)), int(largeur/(100*self.dx))
 
             # Répartir la puissance sur toute la zone de la perturbation
-            print(perturb)
             if largeur < self.dx or longueur < self.dy:
                 raise ValueError(f"Erreur : La perturbation est trop petite pour être représentée ")
             T_applique = (self.dt / (self.rho * self.cp)) * (puissance / (longueur * largeur)) / (self.dx * self.dy * self.e) * np.ones((longueur, largeur))
 
             iy, ix = int(pos_y/(100*self.dy)), int(pos_x/(100*self.dx))
-
-            # # test ici : Je ne comprends pas pourquoi les perturbations centrées ne marchent pas
-            # perturb_dim_y, perturb_dim_x = T_applique.shape
-            # iy_centre, ix_centre = int(pos_y/(100*self.dy)), int(pos_x/(100*self.dx))
-            # Déterminer les indices de début et de fin en soustrayant la moitié de la taille de T_actuateur
-            # ix_debut = ix_centre - perturb_dim_x // 2
-            # ix_fin = ix_centre + perturb_dim_x // 2 + 1  # +1 pour inclure le dernier indice
-            # iy_debut = iy_centre - perturb_dim_y // 2
-            # iy_fin = iy_centre + perturb_dim_y // 2 + 1  # +1 pour inclure le dernier indice
-
-            # Temps d'application de chaque perturbation par défaut
-            # t_debut, t_fin = (0, self.t_simul)
-
-            # if temps is not None:  # Changement du temps d'allumage de la perturbation si spécifié
-            #     t_debut, t_fin = temps
         
             # La position spécifiée de la perturbation correspond à la position de son coin bas gauche sur la plaque
             nouvelles_perturbations.append(((iy, iy+longueur, ix, ix+largeur), T_applique, (debut, fin)))
-            # nouvelles_perturbations.append(((iy_debut,iy_fin,ix_debut,ix_fin), T_applique, (t_debut, t_fin))) # Associé avec le test
     
         self.perturbations = nouvelles_perturbations
 
