@@ -27,6 +27,26 @@ classdef Interface_matlab < matlab.apps.AppBase
         tempsField           matlab.ui.control.NumericEditField
         PuissancefermerLabel matlab.ui.control.Label
         PuissancefermerField matlab.ui.control.NumericEditField
+        Cte_temps_T1Label    matlab.ui.control.Label
+        Cte_temps_T1Field    matlab.ui.control.NumericEditField
+        Cte_temps_T2Label    matlab.ui.control.Label
+        Cte_temps_T2Field    matlab.ui.control.NumericEditField
+        Cte_temps_T3Label    matlab.ui.control.Label
+        Cte_temps_T3Field    matlab.ui.control.NumericEditField
+        Gain_T1Label         matlab.ui.control.Label
+        Gain_T1Field         matlab.ui.control.NumericEditField
+        Gain_T2Label         matlab.ui.control.Label
+        Gain_T2Field         matlab.ui.control.NumericEditField
+        Gain_T3Label         matlab.ui.control.Label
+        Gain_T3Field         matlab.ui.control.NumericEditField
+        Cte_perturbT1Label   matlab.ui.control.Label
+        Cte_perturbT1Field    matlab.ui.control.NumericEditField
+        Cte_perturbT2Label    matlab.ui.control.Label
+        Cte_perturbT2Field    matlab.ui.control.NumericEditField
+        Gain_perturbT1Label   matlab.ui.control.Label
+        Gain_perturbT1Field    matlab.ui.control.NumericEditField
+        Gain_perturbT2Label    matlab.ui.control.Label
+        Gain_perturbT2Field    matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
@@ -43,7 +63,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version41"; 
+        ModelName            string = "simulateur_matlab_version45"; 
     end
 
     properties (Access = private)
@@ -110,6 +130,27 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'tempsReg', tempsReg);
             Puissancefermer = 0;
             assignin('base', 'Puissancefermer', Puissancefermer);
+            Gain_perturbation = 6.1526;
+            assignin('base', 'Gain_perturbation', Gain_perturbation);
+            Gain_perturbationT2 = 5.5789;
+            assignin('base', 'Gain_perturbationT2', Gain_perturbationT2);
+            Gain_T1 = 8.192;
+            assignin('base', 'Gain_T1', Gain_T1);
+            Gain_T2 = 0.745;
+            assignin('base', 'Gain_T2', Gain_T2);
+            Gain_T3 = 0.854;
+            assignin('base', 'Gain_T3', Gain_T3);
+            Cte_perturbation = 150.4664;
+            assignin('base', 'Cte_perturbation', Cte_perturbation);
+            Cte_perturbationT2 = 150.3737;
+            assignin('base', 'Cte_perturbationT2', Cte_perturbationT2);
+            Cte_T1 = 97.656;
+            assignin('base', 'Cte_T1', Cte_T1);
+            Cte_T2 = 38.431;
+            assignin('base', 'Cte_T2', Cte_T2);
+            Cte_T3 = 20.268;
+            assignin('base', 'Cte_T3', Cte_T3);
+
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
         end
@@ -123,7 +164,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             
             graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'sortie PWM', "Tension T 3", "Sortie ampli / entr\'ee TEC", ...
                  "Temp\'erature T 1", "Temp\'erature T 1", "Entr\'ee ampli", 'Sortie TEC', ...
-                 "R\'esistance T 3", "Tension T 2", "Tension T 1", "Résistance T 2", "Résistance T 1", 'perturbation' };
+                 "R\'esistance T 3", "Tension T 2", "Tension T 1", "Rsistance T 2", "Rsistance T 1", 'perturbation' };
     
             n = numel(graphique);
             colonne = 3;
@@ -160,8 +201,8 @@ classdef Interface_matlab < matlab.apps.AppBase
 
             % Imprime le graphique de base
 
-            if evalin('base', 'exist("Temperature_simulation", "var")')  
-                Data = evalin('base', "Temperature_simulation");
+            if evalin('base', 'exist("temperature3", "var")')  
+                Data = evalin('base', "temperature3");
                 time = Data.Time;
                 temp = Data.Data;
                 Data_predit = evalin('base', 'Temperature_predit');
@@ -301,7 +342,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'sortie PWM', "Tension thermistance 3", "Sortie ampli / entr\'ee TEC", ...
                  "Temp\'erature thermistance 1", "Temp\'erature thermistance 1", "Entr\'ee ampli", 'Sortie TEC', ...
-                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "Résistance thermistance 2", "Résistance thermistance 1", 'perturbation' };
+                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "Rsistance thermistance 2", "Rsistance thermistance 1", 'perturbation' };
 
     
         figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{numero_graph}), 'Position', [150 150 500 400]);
@@ -410,7 +451,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Tension à l'entrée de l'amplificateur ",'Interpreter','latex');
+                    title(ax, "Tension  l'entre de l'amplificateur ",'Interpreter','latex');
                     xlabel(ax, 'Temps [s]','Interpreter','latex');
                     ylabel(ax, "Tnsion [V]",'Interpreter','latex');
                     grid(ax, 'on');
@@ -575,7 +616,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30]);
             app.FinalTempField.ValueChangedFcn = @(src,event) eval(...
                 "if src.Value > 38 || src.Value < 15, " + ...
-                "evalin('caller', 'app.ErrorLabel.Text = ""La temp�rature doit �tre comprise entre 15 �C et 38 �C.""'); " + ...
+                "evalin('caller', 'app.ErrorLabel.Text = ""La temprature doit tre comprise entre 15 C et 38 C.""'); " + ...
                 "src.Value = evalin('base', 'finalTemp'); " + ...
                 "else, " + ...
                 "evalin('caller', 'app.ErrorLabel.Text = """"'); " + ...
@@ -632,6 +673,37 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Temps de simulation
             app.tempsLabel = labelly_tab(app, t_controle, "Temps de simulation [s]", [10 200 150 20]);
             app.tempsField = fielddy_tab(app, t_controle, "temps", [10 170 140 30]);
+
+
+            t_cte_plaque = uitab(tabs, "Title", "Constante de temps de la plaque");
+
+            app.Cte_temps_T1Label = labelly_tab(app, t_cte_plaque, 'Constante de temps pour T1 [s]',[10 200 180 20]);
+            app.Cte_temps_T1Field = fielddy_tab(app, t_cte_plaque, "Cte_T1", [10 170 140 30]);
+            app.Cte_temps_T2Label = labelly_tab(app, t_cte_plaque, 'Constante de temps pour T2 [s]',[10 140 180 20]);
+            app.Cte_temps_T2Field = fielddy_tab(app, t_cte_plaque, "Cte_T2", [10 110 140 30]);  
+            app.Cte_temps_T3Label = labelly_tab(app, t_cte_plaque, 'Constante de temps pour T3 [s]',[10 80 180 20]);   
+            app.Cte_temps_T3Field = fielddy_tab(app, t_cte_plaque, "Cte_T3", [10 50 140 30]);    
+            
+            t_gain_plaque = uitab(tabs, "Title", "Gain de la plaque");
+            
+            app.Gain_T1Label = labelly_tab(app, t_gain_plaque, 'Gain pour T1 ',[10 200 180 20]);        
+            app.Gain_T1Field = fielddy_tab(app, t_gain_plaque, "Gain_T1", [10 170 140 30]); 
+            app.Gain_T2Label = labelly_tab(app, t_gain_plaque, 'Gain pour T2 ',[10 140 180 20]);
+            app.Gain_T2Field = fielddy_tab(app, t_gain_plaque, "Gain_T2", [10 110 140 30]);       
+            app.Gain_T3Label = labelly_tab(app, t_gain_plaque, 'Gain pour T3 ',[10 80 180 20]);      
+            app.Gain_T3Field = fielddy_tab(app, t_gain_plaque, "Gain_T3", [10 50 140 30]);      
+
+            t_perturb_plaque = uitab(tabs, "Title", "Constante de temps et gain de la perturbation");
+
+            app.Cte_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Constante de temps de la perturbation pour T1 [s]',[10 200 300 20]);
+            app.Cte_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Cte_perturbation", [10 170 140 30]);
+            app.Cte_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Constante de temps de la perturbation pour T2 [s]',[10 145 300 20]);   
+            app.Cte_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Cte_perturbationT2", [10 115 200 30]);
+            app.Gain_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Gain de la perturbation pour T1 [s]',[10 90 300 20]); 
+            app.Gain_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbation", [10 60 200 30]); 
+            app.Gain_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Gain de la perturbation pour T2 [s]',[10 35 300 20]);
+            app.Gain_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbationT2", [10 5 200 30]);
+
           
             % Timer
             app.TimerLabel = labelly(app, string(evalin('base', 'temps_fin') - evalin('base','temps_debut'))+ "\textbf{ [s]}", [1000 60 150 30]);
