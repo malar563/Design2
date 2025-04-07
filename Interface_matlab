@@ -40,13 +40,17 @@ classdef Interface_matlab < matlab.apps.AppBase
         Gain_T3Label         matlab.ui.control.Label
         Gain_T3Field         matlab.ui.control.NumericEditField
         Cte_perturbT1Label   matlab.ui.control.Label
-        Cte_perturbT1Field    matlab.ui.control.NumericEditField
-        Cte_perturbT2Label    matlab.ui.control.Label
-        Cte_perturbT2Field    matlab.ui.control.NumericEditField
-        Gain_perturbT1Label   matlab.ui.control.Label
-        Gain_perturbT1Field    matlab.ui.control.NumericEditField
-        Gain_perturbT2Label    matlab.ui.control.Label
-        Gain_perturbT2Field    matlab.ui.control.NumericEditField
+        Cte_perturbT1Field   matlab.ui.control.NumericEditField
+        Cte_perturbT2Label   matlab.ui.control.Label
+        Cte_perturbT2Field   matlab.ui.control.NumericEditField
+        Gain_perturbT1Label  matlab.ui.control.Label
+        Gain_perturbT1Field  matlab.ui.control.NumericEditField
+        Gain_perturbT2Label  matlab.ui.control.Label
+        Gain_perturbT2Field  matlab.ui.control.NumericEditField
+        Bit_dacLabel         matlab.ui.control.Label
+        Bit_dacField         matlab.ui.control.NumericEditField
+        Bit_adcLabel         matlab.ui.control.Label
+        Bit_adcField         matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
@@ -63,7 +67,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version45"; 
+        ModelName            string = "simulateur_matlab_version46"; 
     end
 
     properties (Access = private)
@@ -150,7 +154,17 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'Cte_T2', Cte_T2);
             Cte_T3 = 20.268;
             assignin('base', 'Cte_T3', Cte_T3);
-
+            bit_dac = 1024;
+            assignin('base', 'bit_dac', bit_dac);
+            bit_adc = 1024;
+            assignin('base', 'bit_adc', bit_adc);
+            R_0 = 10000;
+            assignin('base', 'R_0', R_0);
+            T_0 = 298.15;
+            assignin('base', 'T_0', T_0);
+            B = 3984;
+            assignin('base', 'B', B);
+            
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
         end
@@ -703,6 +717,13 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Gain_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbation", [10 60 200 30]); 
             app.Gain_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Gain de la perturbation pour T2 [s]',[10 35 300 20]);
             app.Gain_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbationT2", [10 5 200 30]);
+
+            t_bit = uitab(tabs, "Title", "nombre de bit pour le DAC et ADC");
+            
+            app.Bit_dacLabel = labelly_tab(app, t_bit, 'Nombre de bits du DAC',[10 200 300 20]);
+            app.Bit_dacField = fielddy_tab(app, t_bit, "bit_dac", [10 170 140 30]);
+            app.Bit_adcLabel = labelly_tab(app, t_bit, 'Nombre de bits du ADC',[10 140 300 20]);        
+            app.Bit_adcField = fielddy_tab(app, t_bit, "bit_adc", [10 110 140 30]);    
 
           
             % Timer
