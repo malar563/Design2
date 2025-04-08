@@ -1,0 +1,93 @@
+
+python = readmatrix('Python_25_degre.csv');
+
+t = python(2:end,1);
+u = python(2:end,2);
+y1 = python(2:end,3)-273.15;
+y2 = python(2:end,4)-273.15;
+y3 = python(2:end,5)-273.15;
+
+% Retrait des points d'opération
+u_id = u - u(1);
+y_id1 = y1 - y1(1);
+y_id2 = y2 - y2(1);
+y_id3 = y3 - y3(1);
+
+
+% Calcul des erreurs : Somme des erreurs au carré
+% Version fonction de transfert du 1er ordre
+fonction_erreur = @(params, entree, sortie, t) ...
+    sum((lsim(tf(params(1), [params(2), 1]), entree, t) - sortie).^2);
+% Fit des données expérimentales avec la tf identifiée : covariance
+fonction_R2 = @(y_data, y_tf) 1 - sum((y_data - y_tf).^2) / sum((y_data - mean(y_data)).^2);
+
+% Estimation initiale [k, T]
+params_init = [1, 50];
+
+% Section P->T1
+% Recherche des meilleurs param�tres gr�ce � fminsearch
+erreur_G1 = @(params) fonction_erreur(params, u_id, y_id1, t);
+params_G1 = fminsearch(erreur_G1, params_init);
+% R�sultat
+k1 = params_G1(1)
+T1 = params_G1(2)
+G1 = tf(k1, [T1, 1])
+% Calcul de la sortie mod�le pour G1
+y_modele1 = lsim(G1, u_id, t);
+R2 = fonction_R2(y_id1, y_modele1);
+fprintf("R² = %.4f\n", 100*R2);
+
+
+% Section T1->T2
+% Recherche des meilleurs param�tres gr�ce � fminsearch
+erreur_G2 = @(params) fonction_erreur(params, y_id1, y_id2, t);
+params_G2 = fminsearch(erreur_G2, params_init);
+% R�sultat
+k2 = params_G2(1)
+T2 = params_G2(2)
+G2 = tf(k2, [T2, 1])
+% Calcul de la sortie mod�le pour G2
+y_modele2 = lsim(G2, y_id1, t);
+R2 = fonction_R2(y_id2, y_modele2);
+fprintf("R² = %.4f\n", 100*R2);
+
+
+% Section T2->T3
+% Recherche des meilleurs param�tres gr�ce � fminsearch
+erreur_G3 = @(params) fonction_erreur(params, y_id2, y_id3, t);
+params_G3 = fminsearch(erreur_G3, params_init);
+% R�sultat
+k3 = params_G3(1)
+T3 = params_G3(2)
+G3 = tf(k3, [T3, 1])
+% Calcul de la sortie mod�le pour G1
+y_modele3 = lsim(G3, y_id2, t);
+R2 = fonction_R2(y_id3, y_modele3);
+fprintf("R² = %.4f\n", 100*R2);
+
+
+% Affichage de la r�ponse (À ENLEVER, JUSTE POUR VISUALISER)
+plot(t, y_id1, 'b', t, y_modele1, 'r--');
+legend('Sortie mesur�e', 'Sortie du mod�le');
+xlabel('Temps'); ylabel('Amplitude');
+title('Identification de la fonction de transfert');
+
+
+% Section P->T3
+% Calcul des erreurs : Somme des erreurs au carré
+% Version fonction de transfert du 1er ordre AVEC retard
+fonction_erreur = @(params, entree, sortie, t) ...
+    sum((lsim(tf(params(1), [params(2), 1],'InputDelay',  abs(params(3))), entree, t) - sortie).^2);
+% Estimation initiale [k, T]
+params_init = [1, 50, 20];
+% Recherche des meilleurs param�tres gr�ce � fminsearch
+erreur_Gtot = @(params) fonction_erreur(params, u_id, y_id3, t);
+params_Gtot = fminsearch(erreur_Gtot, params_init);
+% R�sultat
+ktot = params_Gtot(1)
+Ttot = params_Gtot(2)
+ret = params_Gtot(3)
+G1 = tf(ktot, [Ttot, 1], 'InputDelay', abs(ret))
+
+
+
