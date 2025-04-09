@@ -192,7 +192,7 @@ class Interface:
             "coef_convection": 12,
             "puissance_actuateur": 1.5,
             "position_actuateur": [1.5, 3],
-            "grosseur_actuateur": [1.5, 1], # [y, x]
+            "grosseur_actuateur": [1.5, 1.5], # [y, x]
             "temps_actuateur": 0,
             "puissance_R": 0,
             "delais_R": 0,
@@ -404,15 +404,17 @@ class Interface:
         self.tabs.add(self.perturb_frame, text="Contrôle des perturbations")
 
         # Initialisation des entrées
-        self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0, 0) # Résistance de perturbation
-        self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 0, 1)
-        self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 0, 2)
+        self.label_R = ttk.Label(self.perturb_frame, text="Résistance de perturbation")
+        self.label_R.grid(column=0, row=0, padx=5, pady=5, sticky='new')
+        self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0, 1) # Résistance de perturbation
+        self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 0, 2)
+        self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 0, 3)
 
         # Nombre de perturbation à ajouter
         self.label_N_perturb = ttk.Label(self.perturb_frame, text="Nombre de perturbations à ajouter [-]")
-        self.label_N_perturb.grid(column=0, row=3, padx=5, pady=5, sticky='n')
+        self.label_N_perturb.grid(column=0, row=4, padx=5, pady=5, sticky='ew')
         self.entry_N_perturb = ttk.Entry(self.perturb_frame, textvariable=self.variables["N_perturb"])
-        self.entry_N_perturb.grid(column=1, row=3, padx=5, pady=5, sticky='n') 
+        self.entry_N_perturb.grid(column=1, row=4, padx=5, pady=5, sticky='ew') 
         
         # Initialisation du bouton OK
         self.bouton_OK = ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations)
