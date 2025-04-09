@@ -53,8 +53,8 @@ class Plaque:
             coef_convection=12,
             puissance_actuateur = 1.5,
             position_actuateur = None, # Tuple correspondant au centre de l'actuateur (y, x) cm
-            grosseur_actuateur = None, # Tuple (y, x) cm
-            temps_actuateur = None, # Tuple du temps d'application de l'actuateur (t_debut, t_fin)
+            grosseur_actuateur = (1.5, 1), # Tuple (y, x) cm
+            temps_actuateur = 0, # Tuple du temps d'application de l'actuateur (t_debut, t_fin)
             perturbations = [], # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
             position_thermistances = None # Liste contenant trois tuples de positions[(y,x),(y,x),(y,x)] pour T1, T2, T3 en cm 
             ):
@@ -63,14 +63,15 @@ class Plaque:
         self.e = epaisseur/100  # Épaisseur de la plaque en m
         self.dx = resolution_x/100  # Résolution spatiale en x en m
         self.dy = resolution_y/100  # Résolution spatiale en y en m
+        self.dt = resolution_t # Pas temporel optimal pour assurer la stabilité numérique (s)
         self.T_amb = T_ambiante + 273.15  # Conversion en Kelvin
         self.T_plaque = T_plaque + 273.15  # Conversion en Kelvin
         self.rho = densite  # Masse volumique (kg/m³)
         self.cp = cap_calorifique  # Capacité thermique massique (J/kg.K)
         self.k = conduc_thermique  # Conductivité thermique (W/m.K)
         self.h = coef_convection  # Coefficient de convection (W/m².K)
-        self.t_simul = t_simul # Durée de la simulation
-        self.t = 0 # Temps écoulé depuis le début de la simulation
+        self.t_simul = t_simul # Durée de la simulation (s)
+        self.temps = 0 # Temps écoulé depuis le début de la simulation (s)
 
         # Position des thermistances par défaut
         self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, centré en x
@@ -87,22 +88,15 @@ class Plaque:
         # Calcul du coefficient de diffusivité thermique
         self.alpha = self.k/(self.rho*self.cp)
         
-        # Calcul du pas temporel optimal pour assurer la stabilité numérique
-        self.dt = min(self.dx**2 / (4 * self.alpha), self.dy**2 / (4 * self.alpha)) if resolution_t is None else resolution_t
-
         # Itérations des graphiques
         self.saut = round(( self.t_simul / (10 * self.dt))**(1/2))
         self.N = 10 * self.saut
         
         # Paramètres de l'actuateur (chauffage)
         self.P_act = puissance_actuateur  # Puissance fournie par l'actuateur (W)
-        self.actuateur = np.ones((int(0.015 / self.dy), int(0.015 / self.dx))) # Grosseur de l'actuateur par défaut
-        if grosseur_actuateur is not None: # Changement de la grosseur de l'actuateur si spécifié
-            self.actuateur = np.ones((int(grosseur_actuateur[0]/(100*self.dy)), int(grosseur_actuateur[1]/(100*self.dx))))
+        self.actuateur = np.ones((int(grosseur_actuateur[0]/(100*self.dy)), int(grosseur_actuateur[1]/(100*self.dx))))
         T_actuateur = (self.dt / (self.rho * self.cp)) * (self.P_act / self.actuateur.size) / (self.dx * self.dy * self.e) # Conversion de la puissance en température sur chaque élément
-        self.t_actuateur = (0, self.t_simul) # temps où l'actuateur fonctionne par défaut
-        if temps_actuateur is not None: # Changement du temps de fonctionnement de l'actuateur si spécifié
-            self.t_actuateur = temps_actuateur
+        self.t_actuateur = (temps_actuateur, self.t_simul) # temps où l'actuateur fonctionne
         self.actuateur_pos, self.T_actuateur = self.place_actuateur(position_actuateur, T_actuateur)
         
         # Initialisation des perturbations thermiques
@@ -339,12 +333,12 @@ class Plaque:
         self.grille = new_grille
         
         # Contribution thermique de l'actuateur positionné au bon endroit
-        if self.t >= self.t_actuateur[0] and self.t <= self.t_actuateur[1] : # Applique l'actuateur au temps désiré
+        if self.temps >= self.t_actuateur[0] and self.temps <= self.t_actuateur[1] : # Applique l'actuateur au temps désiré
             self.grille[self.actuateur_pos[0]:self.actuateur_pos[1], self.actuateur_pos[2]:self.actuateur_pos[3]] += self.T_actuateur
 
         # Contribution thermique des perturbations positionné au bon endroit
         for perturb in self.perturbations:
-            if self.t >= perturb[2][0] and self.t <= perturb[2][1] :
+            if self.temps >= perturb[2][0] and self.temps <= perturb[2][1] :
                 self.grille[perturb[0][0]:perturb[0][1], perturb[0][2]:perturb[0][3]] += perturb[1]
         
         "Enregistrement de la température"
@@ -355,7 +349,7 @@ class Plaque:
         self.rep_echelon[3].append(self.grille[self.pos_thermi2[0], self.pos_thermi2[1]]) # Température à la thermistance 2
         self.rep_echelon[4].append(self.grille[self.pos_thermi3[0], self.pos_thermi3[1]]) # Température à la thermistance 3
         
-        self.t += self.dt
+        self.temps += self.dt
         
         return self.grille
     
