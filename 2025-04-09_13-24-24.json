@@ -7,7 +7,7 @@
     "resolution_x": 0.15,
     "resolution_y": 0.1,
     "resolution_t": 0.003625598802395209,
-    "temps_simulation": 100.0,
+    "temps_simulation": 600.0,
     "T_plaque": 25.0,
     "T_ambiante": 25.0,
     "densite": 2700.0,
@@ -21,45 +21,15 @@
     ],
     "grosseur_actuateur": [
         1.5,
-        1.0
+        1.5
     ],
     "temps_actuateur": 0.0,
     "puissance_R": 0.0,
     "delais_R": 0.0,
     "fin_R": 10.0,
-    "N_perturb": 2.0,
-    "puissance_add": [
-        1.0,
-        1.0
-    ],
-    "position_add": [
-        [
-            1.0,
-            1.0
-        ],
-        [
-            1.0,
-            1.0
-        ]
-    ],
-    "dimensions_add": [
-        [
-            1.0,
-            1.0
-        ],
-        [
-            1.0,
-            1.0
-        ]
-    ],
-    "temps_add": [
-        [
-            0.0,
-            10.0
-        ],
-        [
-            0.0,
-            10.0
-        ]
-    ]
+    "N_perturb": 0,
+    "puissance_add": [],
+    "position_add": [],
+    "dimensions_add": [],
+    "temps_add": []
 }

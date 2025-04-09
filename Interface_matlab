@@ -503,9 +503,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Calcul du gain
             gain = 0.28181818181818*initial_temp-3.04454545454;
             % Procede
-            
+            kp = gain*4.695;
             % Regulateur
-            kc = 
+            kc = T / (kp * (Ttot + ret));
+            Ti = Ttot;
         end
 
 
@@ -791,14 +792,6 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Temprature finale
             app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature finale [$^\circ$C]", [10 140 150 20]);
             app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30], 'numeric');
-            app.FinalTempField.ValueChangedFcn = @(src,event) eval(...
-                "if src.Value > 38 || src.Value < 15, " + ...
-                "evalin('caller', 'app.ErrorLabel.Text = ""La temprature doit tre comprise entre 15 C et 38 C.""'); " + ...
-                "src.Value = evalin('base', 'finalTemp'); " + ...
-                "else, " + ...
-                "evalin('caller', 'app.ErrorLabel.Text = """"'); " + ...
-                "assignin('base', 'finalTemp', src.Value); " + ...
-                "end");
 
             % Temps d'chantillonnage
             app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [300 200 160 20]);
