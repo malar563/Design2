@@ -88,7 +88,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version49"; 
+        ModelName            string = "simulateur_matlab_version54"; 
     end
 
     properties (Access = private)
@@ -197,6 +197,11 @@ classdef Interface_matlab < matlab.apps.AppBase
 
             Nom_import = "NomDuCSV";
             assignin('base', 'NomDuCSV', Nom_import);
+
+            Ti = 130;
+            assignin('base', 'Ti', Ti);
+            kc = 0.1;
+            assignin('base', 'kc', kc);
 
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
@@ -495,7 +500,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             ktot = params_Gtot(1);
             Ttot = params_Gtot(2);
             ret = params_Gtot(3);
-            G1 = tf(ktot, [Ttot, 1], 'InputDelay', abs(ret));
+            %G1 = tf(ktot, [Ttot, 1], 'InputDelay', abs(ret));
 
             % Section V->T3 
             % Extraire la temperature initiale
@@ -505,8 +510,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Procede
             kp = gain*4.695;
             % Regulateur
-            kc = T / (kp * (Ttot + ret));
+            kc = Ttot / (kp * (Ttot + ret));
             Ti = Ttot;
+            assignin('base', 'kc', kc);
+            assignin('base', 'Ti', Ti);
         end
 
 
