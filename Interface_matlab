@@ -67,6 +67,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         V_reffield           matlab.ui.control.NumericEditField
         Cte_filtreLabel      matlab.ui.control.Label
         Cte_filtrefield      matlab.ui.control.NumericEditField
+        ProportionT2Label    matlab.ui.control.Label
+        ProportionT2field    matlab.ui.control.NumericEditField
         StatusLabel          matlab.ui.control.Label
         PlaqueLabel          matlab.ui.control.Label
         ResistanceLabel      matlab.ui.control.Label
@@ -80,6 +82,12 @@ classdef Interface_matlab < matlab.apps.AppBase
         PwmLabel             matlab.ui.control.Label
         PwmButton            matlab.ui.control.Button
         UIAxes               matlab.ui.control.UIAxes
+        Temp_addLabel        matlab.ui.control.Label
+        Temp_addButton       matlab.ui.control.Button
+        Temp_addiLabel       matlab.ui.control.Label
+        Temp_addiField       matlab.ui.control.NumericEditField
+        Temps_addiLabel       matlab.ui.control.Label
+        Temps_addiField       matlab.ui.control.NumericEditField
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
         CSVFigure            matlab.ui.Figure
@@ -88,7 +96,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version54"; 
+        ModelName            string = "simulateur_matlab_version56"; 
     end
 
     properties (Access = private)
@@ -140,6 +148,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'initialTemp', initialTemp);
             finalTemp = 25;
             assignin('base', 'finalTemp', finalTemp);
+            final_final = 19;
+            assignin('base', 'final_final', final_final);
+            final_temps = 500;
+            assignin('base', 'final_temps', final_temps);
             samplingTime = 3;
             assignin('base', 'samplingTime', samplingTime);
             initialPower = 0;
@@ -148,9 +160,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'finalPower', finalPower);
             initialTime = 0;
             assignin('base', 'initialTime', initialTime);
-            gainReg = 0.044317;
+            gainReg = 0.1;
             assignin('base', 'gainReg', gainReg);
-            tempsReg = 146.07;
+            tempsReg = 130;
             assignin('base', 'tempsReg', tempsReg);
             Puissancefermer = 0;
             assignin('base', 'Puissancefermer', Puissancefermer);
@@ -194,14 +206,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'V_ref', V_ref);
             Cte_filtre = 0.00944;
             assignin('base', 'Cte_filtre', Cte_filtre);
+            ProportionT2 = 1;
+            assignin('base', 'ProportionT2', ProportionT2);
+
 
             Nom_import = "NomDuCSV";
             assignin('base', 'NomDuCSV', Nom_import);
 
-            Ti = 130;
-            assignin('base', 'Ti', Ti);
-            kc = 0.1;
-            assignin('base', 'kc', kc);
+            
 
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
@@ -375,6 +387,16 @@ classdef Interface_matlab < matlab.apps.AppBase
                 set_param(app.ModelName+'/PWM/PWM Generator1','Commented', 'off')
             end
         end
+
+        function toggleDesiree(app)
+            % Voir la 2e temperature desiree
+            set(app.Temp_addiLabel, 'Visible', 'on');
+            set(app.Temp_addiField, 'Visible', 'on');
+
+            % Voir le temps d'application de la 2e temperature desiree
+            set(app.Temps_addiLabel, 'Visible', 'on');
+            set(app.Temps_addiField, 'Visible', 'on');
+        end
     
         function NomLabel = labelly(app, textLabel, Position)
             NomLabel = uilabel(app.UIFigure, 'Text', textLabel);  
@@ -448,13 +470,15 @@ classdef Interface_matlab < matlab.apps.AppBase
             % R�sultat
             k1 = params_G1(1);
             T1 = params_G1(2);
-            % G1 = tf(k1, [T1, 1]);
+            % G1 = tf(k1, [T1, 1])
             % Calcul de la sortie mod�le pour G1
             % y_modele1 = lsim(G1, u_id, t);
             % R2 = fonction_R2(y_id1, y_modele1);
             % Changer les variables du simulateur
             assignin('base', 'Gain_T1', k1);
+            app.Gain_T1Field.Value = k1;
             assignin('base', 'Cte_T1', T1);
+            app.Cte_temps_T1Field.Value = T1;
          
             % Section T1->T2
             % Recherche des meilleurs param�tres gr�ce � fminsearch
@@ -463,13 +487,15 @@ classdef Interface_matlab < matlab.apps.AppBase
             % R�sultat
             k2 = params_G2(1);
             T2 = params_G2(2);
-            % G2 = tf(k2, [T2, 1]);
+            % G2 = tf(k2, [T2, 1])
             % Calcul de la sortie mod�le pour G2
             % y_modele2 = lsim(G2, y_id1, t);
             % R2 = fonction_R2(y_id2, y_modele2);
             % Changer les variables du simulateur
             assignin('base', 'Gain_T2', k2);
+            app.Gain_T2Field.Value = k2;
             assignin('base', 'Cte_T2', T2);
+            app.Cte_temps_T2Field.Value = T2;
             
             % Section T2->T3
             % Recherche des meilleurs param�tres gr�ce � fminsearch
@@ -478,13 +504,15 @@ classdef Interface_matlab < matlab.apps.AppBase
             % R�sultat
             k3 = params_G3(1);
             T3 = params_G3(2);
-            % G3 = tf(k3, [T3, 1]);
+            % G3 = tf(k3, [T3, 1])
             % Calcul de la sortie mod�le pour G1
             % y_modele3 = lsim(G3, y_id2, t);
             % R2 = fonction_R2(y_id3, y_modele3);
             % Changer les variables du simulateur
             assignin('base', 'Gain_T3', k3);
+            app.Gain_T3Field.Value = k3;
             assignin('base', 'Cte_T3', T3);
+            app.Cte_temps_T3Field.Value = T3;
             
             % Section P->T3
             % Calcul des erreurs : Somme des erreurs au carré
@@ -512,8 +540,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Regulateur
             kc = Ttot / (kp * (Ttot + ret));
             Ti = Ttot;
-            assignin('base', 'kc', kc);
-            assignin('base', 'Ti', Ti);
+            assignin('base', 'gainReg', kc);
+            app.GainRegField.Value = kc;
+            assignin('base', 'tempsReg', Ti);
+            app.TempsRegField.Value = Ti;
         end
 
 
@@ -523,7 +553,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'sortie PWM', "Tension thermistance 3", "Sortie ampli / entr\'ee TEC", ...
                  "Temp\'erature thermistance 1", "Temp\'erature thermistance 1", "Entr\'ee ampli", 'Sortie TEC', ...
-                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "Rsistance thermistance 2", "Rsistance thermistance 1", 'perturbation' };
+                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "R\'esistance thermistance 2", "R\'esistance thermistance 1", 'perturbation' };
 
     
         figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{numero_graph}), 'Position', [150 150 500 400]);
@@ -742,10 +772,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Initialisation()
 
             % Initialise l'interface
-            app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1300 350]);
+            app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1400 350]);
             app.ErrorLabel = uilabel(app.UIFigure, 'Position', [50 320 400 30], ...
                 'Text', '', 'FontColor', [1 0 0]);
-             tabs = uitabgroup(app.UIFigure, 'Position', [500 30 750 250]);
+             tabs = uitabgroup(app.UIFigure, 'Position', [500 30 850 250]);
 
 
             % Bouton de dmarrage
@@ -781,6 +811,10 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.CSV_importLabel = labelly(app, "Importer un CSV", [935 300 200 30]);
             app.CSV_importButton = buttonny(app, "X", [1040 300 30 30], @(~,~)app.Nom_csv());
 
+            % Bouton pour ajouter une 2e temperature desiree
+            app.Temp_addLabel = labelly(app, "Ajouter une autre temp\'erature d\'esir\'ee", [1100 300 300 30]);
+            app.Temp_addButton = buttonny(app, "X", [1320 300 30 30], @(~,~)app.toggleDesiree());
+
             % Graphique
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
             title(app.UIAxes, 'Temp\''erature au laser','Interpreter','latex');
@@ -792,13 +826,25 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_plaque = uitab(tabs,"Title","Plaque");
             %t_plaque.Scrollable = 'on';
 
-            % Temprature initiale
-            app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature initiale [$^\circ$C]", [10 200 150 20]);
+            % Temprature ambiante
+            app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature ambiante [$^\circ$C]", [10 200 160 20]);
             app.InitialTempField = fielddy_tab(app, t_plaque, "initialTemp", [10 170 140 30], 'numeric');
+            app.InitialTempField.ValueChangedFcn = @(src,event) eval( ...
+                "if src.Value < 10 || src.Value > 30, " + ...
+                "src.Value = evalin('base','initialTemp'); " + ...
+                 "else, " + ...
+                 "assignin('base','initialTemp',src.Value); " + ...
+                 "end");
 
-            % Temprature finale
-            app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature finale [$^\circ$C]", [10 140 150 20]);
+            % Temperature desiree
+            app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature d\'esir\'ee [$^\circ$C]", [10 140 150 20]);
             app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30], 'numeric');
+
+            % 2e temperature desiree
+            app.Temp_addiLabel = labelly_tab(app, t_plaque, "Deuxième temp\'erature d\'esir\'ee [$^\circ$C]", [10 80 200 20]);
+            app.Temp_addiField = fielddy_tab(app, t_plaque, "final_final", [10 50 140 30], 'numeric');
+            set(app.Temp_addiLabel, 'Visible', 'off');
+            set(app.Temp_addiField, 'Visible', 'off');
 
             % Temps d'chantillonnage
             app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [300 200 160 20]);
@@ -807,6 +853,12 @@ classdef Interface_matlab < matlab.apps.AppBase
             % Temps de simulation
             app.tempsLabel = labelly_tab(app, t_plaque, "Temps de simulation [s]", [300 140 150 20]);
             app.tempsField = fielddy_tab(app, t_plaque, "temps", [300 110 140 30], 'numeric');
+
+            % Temps d'application de la 2e temperature
+            app.Temps_addiLabel = labelly_tab(app, t_plaque, "Temps lorsque la deuxième temp\'erature est d\'esir\'ee [s]", [300 80 310 20]);
+            app.Temps_addiField = fielddy_tab(app, t_plaque, "final_temps", [300 50 140 30], 'numeric');
+            set(app.Temps_addiLabel, 'Visible', 'off');
+            set(app.Temps_addiField, 'Visible', 'off');
 
 
             % SECTION PLAQUE (boucle ouverte)
@@ -858,11 +910,11 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T3Field = fielddy_tab(app, t_plaque_fct, "Cte_T3", [10 50 140 30], 'numeric');   
 
             %Gains de la plaque
-            app.Gain_T1Label = labelly_tab(app, t_plaque_fct, 'Gain pour T1 ',[300 200 180 20]);        
+            app.Gain_T1Label = labelly_tab(app, t_plaque_fct, 'Gain pour T1 [-]',[300 200 180 20]);        
             app.Gain_T1Field = fielddy_tab(app, t_plaque_fct, "Gain_T1", [300 170 140 30], 'numeric'); 
-            app.Gain_T2Label = labelly_tab(app, t_plaque_fct, 'Gain pour T2 ',[300 140 180 20]);
+            app.Gain_T2Label = labelly_tab(app, t_plaque_fct, 'Gain pour T2 [-]',[300 140 180 20]);
             app.Gain_T2Field = fielddy_tab(app, t_plaque_fct, "Gain_T2", [300 110 140 30], 'numeric');       
-            app.Gain_T3Label = labelly_tab(app, t_plaque_fct, 'Gain pour T3 ',[300 80 180 20]);      
+            app.Gain_T3Label = labelly_tab(app, t_plaque_fct, 'Gain pour T3 [-]',[300 80 180 20]);      
             app.Gain_T3Field = fielddy_tab(app, t_plaque_fct, "Gain_T3", [300 50 140 30], 'numeric');  
 
             
@@ -876,9 +928,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Cte_perturbationT2", [10 110 140 30], 'numeric');
             
             % Gains de la perturbation
-            app.Gain_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T1 [s]',[300 200 180 20]); 
+            app.Gain_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T1 [-]',[300 200 180 20]); 
             app.Gain_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbation", [300 170 140 30], 'numeric'); 
-            app.Gain_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T2 [s]',[300 140 180 20]);
+            app.Gain_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T2 [-]',[300 140 180 20]);
             app.Gain_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbationT2", [300 110 140 30], 'numeric');
 
 
@@ -886,9 +938,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_bit = uitab(tabs, "Title", "Nombres de bit");
             
             % Nombre de bit pour le DAC et ADC
-            app.Bit_dacLabel = labelly_tab(app, t_bit, 'Nombre de bits du DAC',[10 200 300 20]);
+            app.Bit_dacLabel = labelly_tab(app, t_bit, 'Nombre de bits du DAC [-]',[10 200 300 20]);
             app.Bit_dacField = fielddy_tab(app, t_bit, "bit_dac", [10 170 140 30], 'numeric');
-            app.Bit_adcLabel = labelly_tab(app, t_bit, 'Nombre de bits du ADC',[10 140 300 20]);        
+            app.Bit_adcLabel = labelly_tab(app, t_bit, 'Nombre de bits du ADC [-]',[10 140 300 20]);        
             app.Bit_adcField = fielddy_tab(app, t_bit, "bit_adc", [10 110 140 30], 'numeric');
 
 
@@ -896,11 +948,11 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_thermistance = uitab(tabs, "Title", "Param"+char(232)+"tres des thermistances");
 
             % Paramtre des thermistances
-            app.R_0Label = labelly_tab(app, t_thermistance, 'Rsistance de rfrence',[10 200 300 20]);       
+            app.R_0Label = labelly_tab(app, t_thermistance, "R\'esistance de r\'ef\'erence [Ohm]",[10 200 300 20]);       
             app.R_0Field = fielddy_tab(app, t_thermistance, "R_0", [10 170 140 30], 'numeric');           
-            app.P_0Label = labelly_tab(app, t_thermistance, 'Temprature de rfrence',[10 140 300 20]);          
+            app.P_0Label = labelly_tab(app, t_thermistance, "Temp\'erature de r\'ef\'erence [$^\circ$C]",[10 140 300 20]);          
             app.P_0Field = fielddy_tab(app, t_thermistance, "T_0", [10 110 140 30], 'numeric');     
-            app.BLabel  = labelly_tab(app, t_thermistance, 'Valeur de la constante beta',[10 80 300 20]);  
+            app.BLabel  = labelly_tab(app, t_thermistance, 'Valeur de la constante Beta [K]',[10 80 300 20]);  
             app.BField  = fielddy_tab(app, t_thermistance, "B", [10 50 140 30], 'numeric');  
 
 
@@ -908,9 +960,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_ampli = uitab(tabs, "Title", "Param"+char(232)+"tres de l'amplificateur diff"+char(233)+"rentiel");
 
             % Paramtre de l'amplificateur diffrentiel
-            app.Ampli_diffLabel = labelly_tab(app, t_ampli, 'Gain ampli difrentiel',[10 200 300 20]);      
+            app.Ampli_diffLabel = labelly_tab(app, t_ampli, "Gain ampli diff\'erentiel [-]",[10 200 300 20]);      
             app.Ampli_diffField = fielddy_tab(app, t_ampli, "ampli_diff", [10 170 140 30], 'numeric');  
-            app.Plus_petiteLabel  = labelly_tab(app, t_ampli, "Offset de l'ampli diffrentiel", [10 140 300 30]); 
+            app.Plus_petiteLabel  = labelly_tab(app, t_ampli, "Offset de l'ampli diff\'erentiel [-]", [10 140 300 30]); 
             app.Plus_petitefield   = fielddy_tab(app, t_ampli, "plus_petite", [10 110 140 30], 'numeric');    
 
 
@@ -918,12 +970,24 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_filtre  = uitab(tabs, "Title", "Param"+char(232)+"tre du filtre "+char(224)+" la sortie de l'Arduino");
 
             % Paramtre du filtre  la sortie de l'Arduino
-            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du filtre',[10 200 300 20]);    
+            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du filtre [-]',[10 200 300 20]);    
             app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_filtre", [10 170 140 30], 'numeric');    
-            app.V_refLabel = labelly_tab(app, t_filtre, 'tension de tfrence',[10 140 300 20]);          
+            app.V_refLabel = labelly_tab(app, t_filtre, "Tension de r\'ef\'erence [V]",[10 140 300 20]);          
             app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');           
-            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'constante de temps du filtre',[10 80 300 20]);     
+            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'Constante de temps du filtre [s]',[10 80 300 20]);     
             app.Cte_filtrefield = fielddy_tab(app, t_filtre, "Cte_filtre", [10 50 140 30], 'numeric');        
+
+            % controle des proportions
+            t_proportion = uitab(tabs, "Title", "Proportion pour la temp"+char(233)+"rature pr"+char(233)+"dit");
+            
+            app.ProportionT2Label = labelly_tab(app, t_proportion, "Pourcentage d'influence de la deuxi/'eme temp\'erature [%]",[10 200 300 20]);  
+            app.ProportionT2field = fielddy_tab(app, t_proportion, "ProportionT2", [10 170 140 30], 'numeric');
+            app.ProportionT2field.ValueChangedFcn = @(src,event) eval( ...
+                "if src.Value < 0 || src.Value > 1, " + ...
+                "src.Value = evalin('base','ProportionT2'); " + ...
+                 "else, " + ...
+                 "assignin('base','ProportionT2',src.Value); " + ...
+                 "end");
         end
     end
 end
