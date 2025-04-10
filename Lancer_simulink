@@ -1,0 +1,5 @@
+%Ouvre le simulink
+if ~bdIsLoaded('simulateur_matlab_version40')
+    load_system('simulateur_matlab_version40');
+end
+Ouvrir_interface = Interface_matlab();
