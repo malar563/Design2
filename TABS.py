@@ -71,8 +71,8 @@ class Interface:
         # Initialisation des variables depuis JSON ou valeurs par défaut
         self.dim = self.data_lu.get("dimensions", [11.6,6.15]) #[y,x] doit être plus grand que zéro
         self.e = self.data_lu.get("epaisseur", 0.156) # doit être plus grand que zéro
-        self.dx = self.data_lu.get("resolution_x", 0.15) # doit être plus grand que zéro
-        self.dy = self.data_lu.get("resolution_y", 0.1) # doit être plus grand que zéro
+        self.dx = self.data_lu.get("resolution_x", 0.15) # doit être entre [0.1, dim plaque]
+        self.dy = self.data_lu.get("resolution_y", 0.1) # doit être entre [0.1, dim plaque]
         self.dt = self.data_lu.get("resolution_t", None) # doit être plus grand que zéro
         self.t_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que zéro
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
@@ -89,7 +89,7 @@ class Interface:
         self.R_delais = self.data_lu.get("delais_R", 0) # doit être plus grand que zéro et plus petit que le temps de simulation
         self.R_fin = self.data_lu.get("fin_R", 10) # temps d'arrêt ne peut être plus petit que le temps d'application
         self.N_perturb = self.data_lu.get("N_perturb", 0) # doit être positif 
-        self.pos_therm = self.data_lu.get("position_thermistances", [[1.5, 20.5], [6, 20.5], [1.03, 20.5]]) # [y, x] ?????
+        self.pos_therm = self.data_lu.get("position_thermistances", None) # [y, x] 
         
         # Initialisation des variables par rapport aux perturbations
         self.P_add = self.data_lu.get("puissance_add", [1])
@@ -107,6 +107,12 @@ class Interface:
         self.alpha = self.k/(self.rho*self.cp)
         if self.dt is None:
             self.dt = min((self.dx/100)**2/(4*self.alpha), (self.dy/100)**2/(4*self.alpha)) 
+        if self.pos_therm is None:
+            self.pos_therm = [
+                [1.5, self.dim[1]/2],
+                [6, self.dim[1]/2],
+                [10.4, self.dim[1]/2]
+                ] # centrer les thermistances sur la plaque
 
         # Initier toutes les entrées de l'interface
         self.variables = {key: tk.DoubleVar(value=val) for key, val in {
@@ -207,7 +213,7 @@ class Interface:
             "position_add": [[1,1]], # [[y,x], [y,x]...]
             "dimensions_add": [[1,1]], # [[y,x], [y,x]...]
             "temps_add": [[0,10]],
-            "position_thermistances": [[1.5, 20.5], [6, 20.5], [1.03, 20.5]] # [y,x]
+            "position_thermistances": None
         }
     
 
@@ -272,8 +278,6 @@ class Interface:
 
         # Initialisation de la barre de progression
         tk.Label(self.inter, text="Progression :").grid(column=0, row=6, padx=10, pady=5, sticky="ew")
-        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
-        self.progres.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
 
         # Initialise l'endroit où les erreurs s'afficherons
         tk.Label(self.inter, text="Erreur : ").grid(column=0, row=7, padx=10, pady=5, sticky="ew")
@@ -282,7 +286,7 @@ class Interface:
         self.var_messages = {
             "num": "Les variables entrées doivent être numériques",
             "dim": "Les dimensions de la plaque doivent être plus grandes que zéro",
-            "res": "Les résolutions doivent être plus grandes que zéro",
+            "res": "Les résolutions doivent être entre 0.1 cm et les dimensions de la résistance de perturbation (x=0.3 et y=0.6) cm",
             "temps": "Le temps de simulation doit être plus grand que zéro",
             "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "P_actuateur": "La puissance de l'actuateur doit être entre -5 et 5 [W]",
@@ -300,7 +304,7 @@ class Interface:
         self.var_labels = {}
         for key, message in self.var_messages.items():
             label = tk.Label(self.inter, text=message)
-            label.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
+            label.grid(column=1, row=7, padx=10, pady=5, sticky="ew")
             label.grid_remove() # Cacher l'erreur
             self.var_labels[key] = label
 
@@ -396,7 +400,7 @@ class Interface:
         # Initialisation des entrées
         self.entry(self.reso_frame, "Résolution en x [cm]", "dx", 0, 0) # Résolutions de longueur
         self.entry(self.reso_frame, "Résolution en y [cm]", "dy", 0, 1)
-        self.entry(self.reso_frame, "Résolution en temps [s]", "dt", 0, 2) # Résolution de temps
+        # self.entry(self.reso_frame, "Résolution en temps [s]", "dt", 0, 2) # Résolution de temps
 
 
     def perturb(self):
@@ -550,7 +554,7 @@ class Interface:
             # Résolution de la simulation de la plaque
             self.dx=self.variables["dx"].get()
             self.dy=self.variables["dy"].get()
-            self.dt=self.variables["dt"].get()
+            # self.dt=self.variables["dt"].get()
 
             # Contrôle des perturbations
             self.N_perturb = self.variables["N_perturb"].get()
@@ -586,13 +590,24 @@ class Interface:
         except:
             self.var_labels["num"].grid()
             return False
+        
+        # Créer une variable perturbation pour gérer les perturbations dans la simulation
+        # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
+        perturbations=[[
+            ((3.3), ((self.dim[1]/2)-0.0015)),
+              self.R_depo,
+              (0.6, 0.3),
+              (self.R_delais, self.R_fin)
+              ]] # Résistance de perturbation
 
         # les dimensions entrées doivent être plus grandes que zéro
         if not self.condition_respectee(all(val > 0 for val in (self.dim[0], self.dim[1], self.e)), "dim"):
             return False
             
-        # les résolutions entrées doivent être plus grandes que zéro
-        if not self.condition_respectee(all(r > 0 for r in (self.dx, self.dy, self.dt)), "res"):
+        # les résolutions entrées doivent être plus grandes que zéro et plus petites que la R de perturbation
+        if not self.condition_respectee(all(r >= 0.1 for r in (self.dx, self.dy)), "res"):
+            return False
+        if not self.condition_respectee(self.dx < perturbations[0][2][1] and self.dy < perturbations[0][2][0], "res"):
             return False
             
         # les paramètres du matériau entrés doivent être plus grands que zéro
@@ -660,7 +675,7 @@ class Interface:
             "epaisseur": self.e,
             "resolution_x": self.dx,
             "resolution_y": self.dy,
-            "resolution_t": self.dt,
+            "resolution_t": None,
             "temps_simulation": self.t_simul, # [s]
             "T_plaque": self.T_plaque,
             "T_ambiante": self.T_amb,
@@ -684,14 +699,7 @@ class Interface:
         }
         self.sauvegarder_json()
 
-        # Créer une variable perturbation pour gérer les perturbations dans la simulation
-        # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
-        perturbations=[[
-            ((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)),
-              self.R_depo,
-              (0.6, 0.3),
-              (self.R_delais, self.R_fin)
-              ]] # Résistance de perturbation
+        # Ajouter les perturbations additionnelles
         for i in range(int(self.N_perturb)):
             perturbations.append([
                 (self.pos_add[i][1], self.pos_add[i][0]), # (y,x)
@@ -744,6 +752,10 @@ class Interface:
         if hasattr(self, "canvas"):
             self.canvas.get_tk_widget().grid_forget() 
 
+        # Initialise la barre de progression
+        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
+        self.progres.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
+
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.t_simul)
 
@@ -793,6 +805,10 @@ class Interface:
         # Voir le bouton arrêt
         self.etat_OK.grid_remove()
         self.etat_arret.grid()
+
+         # Initialise la barre de progression
+        self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
+        self.progres.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
 
         # Définit le maximum de la barre de progression
         self.progres.configure(maximum=self.t_simul)
@@ -867,8 +883,11 @@ class Interface:
         for t in thermistances:
             plaque[t] = [0, 0, 1]  # Bleu pour les thermistances
 
+        # Enlever les perturbations avec aucune puissance
         # Couleur les perturbations rouge 
         for p in self.Ma_plaque.perturbations: # Si il existe plusieurs perturbations
+            if p[1][0][0] == 0:
+                continue
             (iy1,iy2,ix1,ix2), Temp, t = p
             plaque[iy1:iy2,ix1:ix2] = [1, 0, 0]  # Rouge pour les perturbation 
 
