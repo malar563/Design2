@@ -65,6 +65,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         Gain_filtrefield     matlab.ui.control.NumericEditField
         V_refLabel           matlab.ui.control.Label
         V_reffield           matlab.ui.control.NumericEditField
+        Gain_puissanceLabel  matlab.ui.control.Label
+        Gain_puissanceField  matlab.ui.control.NumericEditField
         Cte_filtreLabel      matlab.ui.control.Label
         Cte_filtrefield      matlab.ui.control.NumericEditField
         ProportionT2Label    matlab.ui.control.Label
@@ -200,10 +202,12 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'ampli_diff', ampli_diff);
             plus_petite = 1.735;
             assignin('base', 'plus_petite', plus_petite);
-            Gain_circuit_sortie = 0.3668;
+            Gain_circuit_sortie = 0.24801;
             assignin('base', 'Gain_circuit_sortie', Gain_circuit_sortie);
-            V_ref = 2.5426;
+            V_ref = 2.521;
             assignin('base', 'V_ref', V_ref);
+            Gain_puissance = 3.2071;
+            assignin('base', 'Gain_puissance', Gain_puissance);
             Cte_filtre = 0.00944;
             assignin('base', 'Cte_filtre', Cte_filtre);
             ProportionT2 = 1;
@@ -970,17 +974,19 @@ classdef Interface_matlab < matlab.apps.AppBase
             t_filtre  = uitab(tabs, "Title", "Param"+char(232)+"tres du circuit de sortie de l'Arduino");
 
             % Paramtre du filtre  la sortie de l'Arduino
-            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du filtre [-]',[10 200 300 20]);    
+            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du circuit de sortie [-]',[10 200 300 20]);    
             app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_circuit_sortie", [10 170 140 30], 'numeric');    
             app.V_refLabel = labelly_tab(app, t_filtre, "Tension de r\'ef\'erence [V]",[10 140 300 20]);          
-            app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');           
-            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'Constante de temps du filtre [s]',[10 80 300 20]);     
-            app.Cte_filtrefield = fielddy_tab(app, t_filtre, "Cte_filtre", [10 50 140 30], 'numeric');        
+            app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');
+            app.Gain_puissanceLabel = labelly_tab(app, t_filtre, "Gain de l'amplificateur de puissance [-]",[300 200 300 20]);          
+            app.Gain_puissanceField = fielddy_tab(app, t_filtre, "Gain_puissance", [300 170 140 30], 'numeric');  
+            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'Constante de temps du filtre [s]',[300 140 300 20]);     
+            app.Cte_filtrefield = fielddy_tab(app, t_filtre, "Cte_filtre", [300 110 140 30], 'numeric');        
 
             % controle des proportions
             t_proportion = uitab(tabs, "Title", "Proportion pour la temp"+char(233)+"rature pr"+char(233)+"dit");
             
-            app.ProportionT2Label = labelly_tab(app, t_proportion, "Pourcentage d'influence de la deuxi/'eme temp\'erature [%]",[10 200 300 20]);  
+            app.ProportionT2Label = labelly_tab(app, t_proportion, "Influence de la deuxi"+ char(232)+"me temp\'erature [\%]",[10 200 300 20]);  
             app.ProportionT2field = fielddy_tab(app, t_proportion, "ProportionT2", [10 170 140 30], 'numeric');
             app.ProportionT2field.ValueChangedFcn = @(src,event) eval( ...
                 "if src.Value < 0 || src.Value > 1, " + ...
