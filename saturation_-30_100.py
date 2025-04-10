@@ -4,6 +4,30 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
+# VÉRIFIER LA VARIANCE
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\variance0025.csv"
+data_matl = pd.read_csv(fich_matl)
+
+##Matlab
+plt.plot(data_matl['Temps'],(data_matl['Temperature_a_lactuateur']-data_matl['Temperature_a_lactuateur'][0]),color="green", label="Simulateur")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]),color="green")
+plt.plot(data_matl['Temps'],(data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]),color="green")
+t_mat=data_matl['Temps']
+Th1_mat=data_matl['Temperature_a_lactuateur']-data_matl['Temperature_a_lactuateur'][0]
+Th2_mat=data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]
+Th3_mat=data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]
+
+ecart = np.std(Th1_mat[-101:])
+print(ecart)
+
+
+plt.xlabel("Temps (s)")
+plt.ylabel("Variation de température (°C)")
+plt.legend()
+plt.show()
+
+
+# IDENTIFIER LE TEC QUADRATIQUE
 def I_quadratique(I, a, b):
     return a*I**2 + b*I
 
