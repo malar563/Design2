@@ -98,7 +98,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version60"; 
+        ModelName            string = "simulateur_matlab_version61"; 
     end
 
     properties (Access = private)
@@ -135,9 +135,11 @@ classdef Interface_matlab < matlab.apps.AppBase
         %end
 
         function Initialisation(app)
-            % Initialise en boucle ferme et active ou non le PWM
+            % Initialise en boucle ferme, active ou non le PWM et
+            % initialise avec seulement une temp desiree
             assignin('base', 'boucleouverte', false);
             assignin('base' , 'pwm_ouvert', false);
+            assignin('base', 'temp_add', false);
             
             % Initialise les variables du Simulink
             temps_debut = 0;
@@ -152,7 +154,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'finalTemp', finalTemp);
             final_final = 19;
             assignin('base', 'final_final', final_final);
-            final_temps = 500;
+            final_temps = 1000;
             assignin('base', 'final_temps', final_temps);
             samplingTime = 3;
             assignin('base', 'samplingTime', samplingTime);
@@ -172,21 +174,21 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'Gain_perturbation', Gain_perturbation);
             Gain_perturbationT2 = 5.5789;
             assignin('base', 'Gain_perturbationT2', Gain_perturbationT2);
-            Gain_T1 = 8.192;
+            Gain_T1 = 7.5151;
             assignin('base', 'Gain_T1', Gain_T1);
-            Gain_T2 = 0.745;
+            Gain_T2 = 0.70588;
             assignin('base', 'Gain_T2', Gain_T2);
-            Gain_T3 = 0.854;
+            Gain_T3 = 0.9307;
             assignin('base', 'Gain_T3', Gain_T3);
             Cte_perturbation = 150.4664;
             assignin('base', 'Cte_perturbation', Cte_perturbation);
             Cte_perturbationT2 = 150.3737;
             assignin('base', 'Cte_perturbationT2', Cte_perturbationT2);
-            Cte_T1 = 97.656;
+            Cte_T1 = 109.21;
             assignin('base', 'Cte_T1', Cte_T1);
-            Cte_T2 = 38.431;
+            Cte_T2 = 44.90345;
             assignin('base', 'Cte_T2', Cte_T2);
-            Cte_T3 = 20.268;
+            Cte_T3 = 21.9298;
             assignin('base', 'Cte_T3', Cte_T3);
             bit_dac = 1024;
             assignin('base', 'bit_dac', bit_dac);
@@ -295,7 +297,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                     %delete(app.SimulationTimer);
                 %end
         
-                app.StatusLabel.Text = "�tat : Arr�t";
+                app.StatusLabel.Text = "tat : Arrt";
                 app.StatusLabel.Interpreter = 'latex';
                 drawnow;
             end
@@ -322,19 +324,19 @@ classdef Interface_matlab < matlab.apps.AppBase
             
                 writetable(nom_des_colones, fichier);
             catch
-                warning('Pas de valeurs enregistrées', 'WARNING');
+                warning('Pas de valeurs enregistr�es', 'WARNING');
                 return;
             end
         end
 
         function Nom_csv(app)
-            % Créer une fenêtre
+            % Cr�er une fen�tre
             app.CSVFigure = uifigure('Name', 'CSV', 'Position', [100 100 300 150]);
             
             % Texte
             app.CSV_nomLabel = labelly_tab(app, app.CSVFigure, 'Nom du fichier .csv:', [50, 90, 200, 20]);
             
-            % Entrée
+            % Entr�e
             app.CSV_importField = fielddy_tab(app, app.CSVFigure, 'NomDuCSV', [50, 60, 200, 20], 'text');
             
             % Bouton OK
@@ -342,13 +344,13 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
     
         function toggleOk(app)
-            % Récupérer l'entrée de l'utilisateur
+            % R�cup�rer l'entr�e de l'utilisateur
             filename = app.CSV_importField.Value;
 
             % Calcul les fonctions de transfert
             app.trouver_fct_transfert(filename)
 
-            % Fermer la fenêtre
+            % Fermer la fen�tre
             close(app.CSVFigure);
         end
 
@@ -393,13 +395,35 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
 
         function toggleDesiree(app)
-            % Voir la 2e temperature desiree
-            set(app.Temp_addiLabel, 'Visible', 'on');
-            set(app.Temp_addiField, 'Visible', 'on');
+            if evalin('base', 'temp_add') == true
+                assignin('base', 'temp_add', false);
 
-            % Voir le temps d'application de la 2e temperature desiree
-            set(app.Temps_addiLabel, 'Visible', 'on');
-            set(app.Temps_addiField, 'Visible', 'on');
+                % Pour que la 2e temperature n'est pas d'effet
+                assignin('base', 'final_temps', evalin('base', 'temps'));
+                app.Temps_addiField.Value = evalin('base', 'final_temps');
+
+                % Ne pas voir la 2e temperature desiree
+                set(app.Temp_addiLabel, 'Visible', 'off');
+                set(app.Temp_addiField, 'Visible', 'off');
+
+                % Ne pas voir le temps d'application de la 2e temperature desiree
+                set(app.Temps_addiLabel, 'Visible', 'off');
+                set(app.Temps_addiField, 'Visible', 'off');
+            else
+                assignin('base', 'temp_add', true);
+
+                % Pour que la 2e s'applique � un temps par defaut
+                assignin('base', 'final_temps', 500);
+                app.Temps_addiField.Value = evalin('base', 'final_temps');
+
+                % Voir la 2e temperature desiree
+                set(app.Temp_addiLabel, 'Visible', 'on');
+                set(app.Temp_addiField, 'Visible', 'on');
+
+                % Voir le temps d'application de la 2e temperature desiree
+                set(app.Temps_addiLabel, 'Visible', 'on');
+                set(app.Temps_addiField, 'Visible', 'on');
+            end
         end
     
         function NomLabel = labelly(app, textLabel, Position)
@@ -444,38 +468,38 @@ classdef Interface_matlab < matlab.apps.AppBase
             % lire le CSV
             data = readmatrix([filename, '.csv']);
 
-            % extraire les données du CSV
+            % extraire les donn�es du CSV
             t = data(2:end,1);
             u = data(2:end,2);
             y1 = data(2:end,3)-273.15;
             y2 = data(2:end,4)-273.15;
             y3 = data(2:end,5)-273.15;
             
-            % Retrait des points d'opération
+            % Retrait des points d'op�ration
             u_id = u - u(1);
             y_id1 = y1 - y1(1);
             y_id2 = y2 - y2(1);
             y_id3 = y3 - y3(1);
             
-            % Calcul des erreurs : Somme des erreurs au carré
+            % Calcul des erreurs : Somme des erreurs au carr�
             % Version fonction de transfert du 1er ordre
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1]), entree, t) - sortie).^2);
-            % Fit des données expérimentales avec la tf identifiée : covariance
+            % Fit des donn�es exp�rimentales avec la tf identifi�e : covariance
             fonction_R2 = @(y_data, y_tf) 1 - sum((y_data - y_tf).^2) / sum((y_data - mean(y_data)).^2);
             
             % Estimation initiale [k, T]
             params_init = [1, 50];
             
             % Section P->T1
-            % Recherche des meilleurs param�tres gr�ce � fminsearch
+            % Recherche des meilleurs paramtres grce  fminsearch
             erreur_G1 = @(params) fonction_erreur(params, u_id, y_id1, t);
             params_G1 = fminsearch(erreur_G1, params_init);
-            % R�sultat
+            % Rsultat
             k1 = params_G1(1);
             T1 = params_G1(2);
             % G1 = tf(k1, [T1, 1])
-            % Calcul de la sortie mod�le pour G1
+            % Calcul de la sortie modle pour G1
             % y_modele1 = lsim(G1, u_id, t);
             % R2 = fonction_R2(y_id1, y_modele1);
             % Changer les variables du simulateur
@@ -485,14 +509,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T1Field.Value = T1;
          
             % Section T1->T2
-            % Recherche des meilleurs param�tres gr�ce � fminsearch
+            % Recherche des meilleurs paramtres grce  fminsearch
             erreur_G2 = @(params) fonction_erreur(params, y_id1, y_id2, t);
             params_G2 = fminsearch(erreur_G2, params_init);
-            % R�sultat
+            % Rsultat
             k2 = params_G2(1);
             T2 = params_G2(2);
             % G2 = tf(k2, [T2, 1])
-            % Calcul de la sortie mod�le pour G2
+            % Calcul de la sortie modle pour G2
             % y_modele2 = lsim(G2, y_id1, t);
             % R2 = fonction_R2(y_id2, y_modele2);
             % Changer les variables du simulateur
@@ -502,14 +526,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T2Field.Value = T2;
             
             % Section T2->T3
-            % Recherche des meilleurs param�tres gr�ce � fminsearch
+            % Recherche des meilleurs paramtres grce  fminsearch
             erreur_G3 = @(params) fonction_erreur(params, y_id2, y_id3, t);
             params_G3 = fminsearch(erreur_G3, params_init);
-            % R�sultat
+            % Rsultat
             k3 = params_G3(1);
             T3 = params_G3(2);
             % G3 = tf(k3, [T3, 1])
-            % Calcul de la sortie mod�le pour G1
+            % Calcul de la sortie modle pour G1
             % y_modele3 = lsim(G3, y_id2, t);
             % R2 = fonction_R2(y_id3, y_modele3);
             % Changer les variables du simulateur
@@ -519,16 +543,16 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T3Field.Value = T3;
             
             % Section P->T3
-            % Calcul des erreurs : Somme des erreurs au carré
+            % Calcul des erreurs : Somme des erreurs au carr�
             % Version fonction de transfert du 1er ordre AVEC retard
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1],'InputDelay',  abs(params(3))), entree, t) - sortie).^2);
             % Estimation initiale [k, T]
             params_init = [1, 50, 20];
-            % Recherche des meilleurs param�tres gr�ce � fminsearch
+            % Recherche des meilleurs paramtres grce  fminsearch
             erreur_Gtot = @(params) fonction_erreur(params, u_id, y_id3, t);
             params_Gtot = fminsearch(erreur_Gtot, params_init);
-            % R�sultat
+            % Rsultat
             ktot = params_Gtot(1);
             Ttot = params_Gtot(2);
             ret = params_Gtot(3);
@@ -845,7 +869,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30], 'numeric');
 
             % 2e temperature desiree
-            app.Temp_addiLabel = labelly_tab(app, t_plaque, "Deuxième temp\'erature d\'esir\'ee [$^\circ$C]", [10 80 200 20]);
+            app.Temp_addiLabel = labelly_tab(app, t_plaque, "Deuxi"+char(232)+"me temp\'erature d\'esir\'ee [$^\circ$C]", [10 80 200 20]);
             app.Temp_addiField = fielddy_tab(app, t_plaque, "final_final", [10 50 140 30], 'numeric');
             set(app.Temp_addiLabel, 'Visible', 'off');
             set(app.Temp_addiField, 'Visible', 'off');
@@ -859,7 +883,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.tempsField = fielddy_tab(app, t_plaque, "temps", [300 110 140 30], 'numeric');
 
             % Temps d'application de la 2e temperature
-            app.Temps_addiLabel = labelly_tab(app, t_plaque, "Temps lorsque la deuxième temp\'erature est d\'esir\'ee [s]", [300 80 310 20]);
+            app.Temps_addiLabel = labelly_tab(app, t_plaque, "Temps lorsque la deuxi"+char(232)+"me temp\'erature est d\'esir\'ee [s]", [300 80 310 20]);
             app.Temps_addiField = fielddy_tab(app, t_plaque, "final_temps", [300 50 140 30], 'numeric');
             set(app.Temps_addiLabel, 'Visible', 'off');
             set(app.Temps_addiField, 'Visible', 'off');
@@ -868,7 +892,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             % SECTION PLAQUE (boucle ouverte)
 
             % Puissance / commande en watt
-            app.PuissancefermerLabel = labelly_tab(app, t_plaque, "Puissance de l'actuateur [W]", [10 140 160 20]);
+            app.PuissancefermerLabel = labelly_tab(app, t_plaque, "Courant entrant dans l'actuateur [A]", [10 140 160 20]);
             app.PuissancefermerField = fielddy_tab(app, t_plaque, "Puissancefermer", [10 110 140 30], 'numeric');
             set(app.PuissancefermerLabel, 'Visible', 'off');
             set(app.PuissancefermerField, 'Visible', 'off');
@@ -960,7 +984,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BField  = fielddy_tab(app, t_thermistance, "B", [10 50 140 30], 'numeric');  
 
 
-            % SECTION PARAMÈTRES DE L'AMPLIFICATEUR DIFFERENTIEL
+            % SECTION PARAM�TRES DE L'AMPLIFICATEUR DIFFERENTIEL
             t_ampli = uitab(tabs, "Title", "Param"+char(232)+"tres de l'amplificateur diff"+char(233)+"rentiel");
 
             % Paramtre de l'amplificateur diffrentiel
