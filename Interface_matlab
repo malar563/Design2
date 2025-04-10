@@ -98,7 +98,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version61"; 
+        ModelName            string = "simulateur_matlab_version64"; 
     end
 
     properties (Access = private)
@@ -219,6 +219,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             Nom_import = "NomDuCSV";
             assignin('base', 'NomDuCSV', Nom_import);
 
+            variance = 1;
+            assignin('base', 'variance', variance);
+
             
 
             set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
@@ -233,7 +236,7 @@ classdef Interface_matlab < matlab.apps.AppBase
     
             
             graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'Sortie PWM', "Tension T 3", "Sortie ampli", ...
-                 "Temp\'erature T 1", "Temp\'erature T 1", "Entr\'ee ampli", 'Sortie TEC', ...
+                 "Temp\'erature T 1", "Temp\'erature T 2", "Entr\'ee ampli", 'Sortie TEC', ...
                  "R\'esistance T 3", "Tension T 2", "Tension T 1", "R\'esistance T 2", "R\'esistance T 1", 'Perturbation' };
     
             n = numel(graphique);
@@ -297,7 +300,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                     %delete(app.SimulationTimer);
                 %end
         
-                app.StatusLabel.Text = "tat : Arrt";
+                app.StatusLabel.Text = "\'Etat : Arrt";
                 app.StatusLabel.Interpreter = 'latex';
                 drawnow;
             end
@@ -324,19 +327,19 @@ classdef Interface_matlab < matlab.apps.AppBase
             
                 writetable(nom_des_colones, fichier);
             catch
-                warning('Pas de valeurs enregistr�es', 'WARNING');
+                warning('Pas de valeurs enregistres', 'WARNING');
                 return;
             end
         end
 
         function Nom_csv(app)
-            % Cr�er une fen�tre
+            % Crer une fentre
             app.CSVFigure = uifigure('Name', 'CSV', 'Position', [100 100 300 150]);
             
             % Texte
             app.CSV_nomLabel = labelly_tab(app, app.CSVFigure, 'Nom du fichier .csv:', [50, 90, 200, 20]);
             
-            % Entr�e
+            % Entre
             app.CSV_importField = fielddy_tab(app, app.CSVFigure, 'NomDuCSV', [50, 60, 200, 20], 'text');
             
             % Bouton OK
@@ -344,13 +347,13 @@ classdef Interface_matlab < matlab.apps.AppBase
         end
     
         function toggleOk(app)
-            % R�cup�rer l'entr�e de l'utilisateur
+            % Rcuprer l'entre de l'utilisateur
             filename = app.CSV_importField.Value;
 
             % Calcul les fonctions de transfert
             app.trouver_fct_transfert(filename)
 
-            % Fermer la fen�tre
+            % Fermer la fentre
             close(app.CSVFigure);
         end
 
@@ -400,7 +403,7 @@ classdef Interface_matlab < matlab.apps.AppBase
 
                 % Pour que la 2e temperature n'est pas d'effet
                 assignin('base', 'final_temps', evalin('base', 'temps'));
-                app.Temps_addiField.Value = evalin('base', 'final_temps');
+                app.Temps_addiField.Value = evalin('base', 'final_temps')+1;
 
                 % Ne pas voir la 2e temperature desiree
                 set(app.Temp_addiLabel, 'Visible', 'off');
@@ -412,7 +415,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             else
                 assignin('base', 'temp_add', true);
 
-                % Pour que la 2e s'applique � un temps par defaut
+                % Pour que la 2e s'applique  un temps par defaut
                 assignin('base', 'final_temps', 500);
                 app.Temps_addiField.Value = evalin('base', 'final_temps');
 
@@ -468,24 +471,24 @@ classdef Interface_matlab < matlab.apps.AppBase
             % lire le CSV
             data = readmatrix([filename, '.csv']);
 
-            % extraire les donn�es du CSV
+            % extraire les donnes du CSV
             t = data(2:end,1);
             u = data(2:end,2);
             y1 = data(2:end,3)-273.15;
             y2 = data(2:end,4)-273.15;
             y3 = data(2:end,5)-273.15;
             
-            % Retrait des points d'op�ration
+            % Retrait des points d'opration
             u_id = u - u(1);
             y_id1 = y1 - y1(1);
             y_id2 = y2 - y2(1);
             y_id3 = y3 - y3(1);
             
-            % Calcul des erreurs : Somme des erreurs au carr�
+            % Calcul des erreurs : Somme des erreurs au carr
             % Version fonction de transfert du 1er ordre
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1]), entree, t) - sortie).^2);
-            % Fit des donn�es exp�rimentales avec la tf identifi�e : covariance
+            % Fit des donnes exprimentales avec la tf identifie : covariance
             fonction_R2 = @(y_data, y_tf) 1 - sum((y_data - y_tf).^2) / sum((y_data - mean(y_data)).^2);
             
             % Estimation initiale [k, T]
@@ -543,7 +546,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T3Field.Value = T3;
             
             % Section P->T3
-            % Calcul des erreurs : Somme des erreurs au carr�
+            % Calcul des erreurs : Somme des erreurs au carr
             % Version fonction de transfert du 1er ordre AVEC retard
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1],'InputDelay',  abs(params(3))), entree, t) - sortie).^2);
@@ -580,7 +583,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         % supplementaire
         
         graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'Sortie PWM', "Tension thermistance 3", "Sortie ampli", ...
-                 "Temp\'erature thermistance 1", "Temp\'erature thermistance 1", "Entr\'ee ampli", 'Sortie TEC', ...
+                 "Temp\'erature thermistance 1", "Temp\'erature thermistance 2", "Entr\'ee ampli", 'Sortie TEC', ...
                  "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "R\'esistance thermistance 2", "R\'esistance thermistance 1", 'Perturbation' };
 
     
@@ -645,8 +648,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 end
             
             case 5
-                if evalin('base', 'exist("ampli_entre", "var")')
-                    regulateur = evalin('base', 'ampli_entre');
+                if evalin('base', 'exist("Courant_TEC", "var")')
+                    regulateur = evalin('base', 'Courant_TEC');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -685,14 +688,14 @@ classdef Interface_matlab < matlab.apps.AppBase
                     warning("Les valeurs de la temperature ne sont pas enregistrees sur Matlab");
                 end
             case 8
-                if evalin('base', 'exist("Ampli", "var")')
-                    regulateur = evalin('base', 'Ampli');
+                if evalin('base', 'exist("Entree_Ampli", "var")')
+                    regulateur = evalin('base', 'Entree_Ampli');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Tension  l'entre de l'amplificateur ",'Interpreter','latex');
+                    title(ax, "Courant � l'entr�e du TEC",'Interpreter','latex');
                     xlabel(ax, 'Temps [s]','Interpreter','latex');
-                    ylabel(ax, "Tnsion [V]",'Interpreter','latex');
+                    ylabel(ax, "Courant [A]",'Interpreter','latex');
                     grid(ax, 'on');
                 else
                     warning("Les valeurs de la tension ne sont pas enregistrees sur Matlab");
@@ -711,8 +714,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                     warning("Les valeurs de la puissance ne sont pas enregistrees sur Matlab");
                 end
             case 10
-                if evalin('base', 'exist("resistance3_entre", "var")')
-                    regulateur = evalin('base', 'resistance3_entre');
+                if evalin('base', 'exist("resistance3_sortie", "var")')
+                    regulateur = evalin('base', 'resistance3_sortie');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -752,8 +755,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                     warning("Les valeurs du filtre d'entree ne sont pas enregistrees sur Matlab");
                 end
              case 13
-                if evalin('base', 'exist("resistance2_entre", "var")')
-                    regulateur = evalin('base', 'resistance2_entre');
+                if evalin('base', 'exist("resistance2_sortie", "var")')
+                    regulateur = evalin('base', 'resistance2_sortie');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -765,8 +768,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                     warning("Les valeurs de la resistance ne sont pas enregistrees sur Matlab");
                 end
              case 14
-                if evalin('base', 'exist("resistance1_entre", "var")')
-                    regulateur = evalin('base', 'resistance1_entre');
+                if evalin('base', 'exist("resistance1_sortie", "var")')
+                    regulateur = evalin('base', 'resistance1_sortie');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -984,7 +987,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.BField  = fielddy_tab(app, t_thermistance, "B", [10 50 140 30], 'numeric');  
 
 
-            % SECTION PARAM�TRES DE L'AMPLIFICATEUR DIFFERENTIEL
+            % SECTION PARAMTRES DE L'AMPLIFICATEUR DIFFERENTIEL
             t_ampli = uitab(tabs, "Title", "Param"+char(232)+"tres de l'amplificateur diff"+char(233)+"rentiel");
 
             % Paramtre de l'amplificateur diffrentiel
