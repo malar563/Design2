@@ -1,0 +1,40 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from scipy.optimize import curve_fit
+
+
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_-30_degre.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_100_degre.csv"
+fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
+
+
+# data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
+# data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
+data = pd.read_csv(fich, sep=';', encoding="latin1")
+data_sim = pd.read_csv(fich_sim)
+column_names = data.columns
+column_names_sim = data_sim.columns
+print(column_names)
+
+## Python
+plt.plot(data_sim["0"],(data_sim["2"]-data_sim["2"][0]),color="red", label="Simulateur")
+plt.plot(data_sim["0"],(data_sim["3"]-data_sim["3"][0]),color="red")
+plt.plot(data_sim["0"],(data_sim["4"]-data_sim["4"][0]),color="red")
+t_py=data_sim["0"]
+
+# # # Test_-30degre
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T1"][13:]-data["T1"][13], color="blue", label="Prototype")
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T2"][13:]-data["T2"][13], color="blue")
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T3"][13:]-data["T3"][13], color="blue")
+# # # Test_100degre
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T1"][10:]-data["T1"][10], color="blue", label="Prototype")
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T2"][10:]-data["T2"][10], color="blue")
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T3"][10:]-data["T3"][10], color="blue")
+
+
+
+plt.xlabel("Temps (s)")
+plt.ylabel("Variation de température (°C)")
+plt.legend()
+plt.show()
