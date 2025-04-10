@@ -96,7 +96,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version56"; 
+        ModelName            string = "simulateur_matlab_version60"; 
     end
 
     properties (Access = private)
@@ -200,8 +200,8 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'ampli_diff', ampli_diff);
             plus_petite = 1.735;
             assignin('base', 'plus_petite', plus_petite);
-            Gain_filtre = 0.3668;
-            assignin('base', 'Gain_filtre', Gain_filtre);
+            Gain_circuit_sortie = 0.3668;
+            assignin('base', 'Gain_circuit_sortie', Gain_circuit_sortie);
             V_ref = 2.5426;
             assignin('base', 'V_ref', V_ref);
             Cte_filtre = 0.00944;
@@ -226,9 +226,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             figGraph = uifigure('Name', 'Interface Graphique - Selection', 'Position', [100 100 600 400]);
     
             
-            graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'sortie PWM', "Tension T 3", "Sortie ampli / entr\'ee TEC", ...
+            graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'Sortie PWM', "Tension T 3", "Sortie ampli", ...
                  "Temp\'erature T 1", "Temp\'erature T 1", "Entr\'ee ampli", 'Sortie TEC', ...
-                 "R\'esistance T 3", "Tension T 2", "Tension T 1", "Rsistance T 2", "Rsistance T 1", 'perturbation' };
+                 "R\'esistance T 3", "Tension T 2", "Tension T 1", "R\'esistance T 2", "R\'esistance T 1", 'Perturbation' };
     
             n = numel(graphique);
             colonne = 3;
@@ -551,9 +551,9 @@ classdef Interface_matlab < matlab.apps.AppBase
         % Ouvre les fenetres individuelles de chaque graphique
         % supplementaire
         
-        graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'sortie PWM', "Tension thermistance 3", "Sortie ampli / entr\'ee TEC", ...
+        graphique = {"Entr\'ee r\'egulateur", "Sortie r\'egulateur", 'Sortie PWM', "Tension thermistance 3", "Sortie ampli", ...
                  "Temp\'erature thermistance 1", "Temp\'erature thermistance 1", "Entr\'ee ampli", 'Sortie TEC', ...
-                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "R\'esistance thermistance 2", "R\'esistance thermistance 1", 'perturbation' };
+                 "R\'esistance thermistance 3", "Tension thermistance 2", "Tension thermistance 1", "R\'esistance thermistance 2", "R\'esistance thermistance 1", 'Perturbation' };
 
     
         figNewGraph = uifigure('Name', sprintf('Interface Graphique: %s', graphique{numero_graph}), 'Position', [150 150 500 400]);
@@ -967,11 +967,11 @@ classdef Interface_matlab < matlab.apps.AppBase
 
 
             % SECTION PARAMETRES DU FILTRE A LA SORTIE DE LARDUINO
-            t_filtre  = uitab(tabs, "Title", "Param"+char(232)+"tre du filtre "+char(224)+" la sortie de l'Arduino");
+            t_filtre  = uitab(tabs, "Title", "Param"+char(232)+"tres du circuit de sortie de l'Arduino");
 
             % Paramtre du filtre  la sortie de l'Arduino
             app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du filtre [-]',[10 200 300 20]);    
-            app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_filtre", [10 170 140 30], 'numeric');    
+            app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_circuit_sortie", [10 170 140 30], 'numeric');    
             app.V_refLabel = labelly_tab(app, t_filtre, "Tension de r\'ef\'erence [V]",[10 140 300 20]);          
             app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');           
             app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'Constante de temps du filtre [s]',[10 80 300 20]);     
