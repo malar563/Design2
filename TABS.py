@@ -83,12 +83,13 @@ class Interface:
         self.h = self.data_lu.get("coef_convection", 12)  # doit être plus grand que zéro
         self.P = self.data_lu.get("puissance_actuateur", 1.5) # doit être entre -5 et 5 W
         self.actuateur_pos = self.data_lu.get("position_actuateur", [1.5, 3]) # actuateur doit être entièrement sur la plaque
-        self.actuateur_gros = self.data_lu.get("grosseur_actuateur", [1.5, 1])
+        self.actuateur_gros = self.data_lu.get("grosseur_actuateur", [1.5, 1]) # doivent être plus grandes que zéro
         self.t_actuateur = self.data_lu.get("temps_actuateur", 0) # doit être plus grand que zéro et plus petit que le temps de simulation
         self.R_depo = self.data_lu.get("puissance_R", 0) 
-        self.R_delais = self.data_lu.get("delais_R", 0)
-        self.R_fin = self.data_lu.get("fin_R", 10)
+        self.R_delais = self.data_lu.get("delais_R", 0) # doit être plus grand que zéro et plus petit que le temps de simulation
+        self.R_fin = self.data_lu.get("fin_R", 10) # temps d'arrêt ne peut être plus petit que le temps d'application
         self.N_perturb = self.data_lu.get("N_perturb", 0) # doit être positif 
+        self.pos_therm = self.data_lu.get("position_thermistances", [[1.5, 20.5], [6, 20.5], [1.03, 20.5]]) # [y, x] ?????
         
         # Initialisation des variables par rapport aux perturbations
         self.P_add = self.data_lu.get("puissance_add", [1])
@@ -119,18 +120,22 @@ class Interface:
             "act_grosy": self.actuateur_gros[0], "act_grosx": self.actuateur_gros[1],
             "act_t": self.t_actuateur,
             "R_depo": self.R_depo, "R_delais": self.R_delais, "R_fin": self.R_fin,
-            "N_perturb": self.N_perturb
+            "N_perturb": self.N_perturb,
+            "posy_therm_1": self.pos_therm[0][0], "posx_therm_1": self.pos_therm[0][1],
+            "posy_therm_2": self.pos_therm[1][0], "posx_therm_2": self.pos_therm[1][1],
+            "posy_therm_3": self.pos_therm[2][0], "posx_therm_3": self.pos_therm[2][1]
         }.items()}
 
         # Initier les entrées par rapport aux perturbations
-        for i in range(1, int(self.N_perturb)):
-            self.variables[f"P_add_{i}"] = tk.DoubleVar(value=self.P_add[i])
-            self.variables[f"posx_add_{i}"] = tk.DoubleVar(value=self.pos_add[i][1])
-            self.variables[f"posy_add_{i}"] = tk.DoubleVar(value=self.pos_add[i][0])
-            self.variables[f"dimx_add_{i}"] = tk.DoubleVar(value=self.dim_add[i][1])
-            self.variables[f"dimy_add_{i}"] = tk.DoubleVar(value=self.dim_add[i][0])
-            self.variables[f"delais_add_{i}"] = tk.DoubleVar(value=self.delais_add[i])
-            self.variables[f"fin_add_{i}"] = tk.DoubleVar(value=self.fin_add[i])
+        for i in range(1, len(self.P_add)+1):
+            j = i-1
+            self.variables[f"P_add_{i}"] = tk.DoubleVar(value=self.P_add[j])
+            self.variables[f"posx_add_{i}"] = tk.DoubleVar(value=self.pos_add[j][1])
+            self.variables[f"posy_add_{i}"] = tk.DoubleVar(value=self.pos_add[j][0])
+            self.variables[f"dimx_add_{i}"] = tk.DoubleVar(value=self.dim_add[j][1])
+            self.variables[f"dimy_add_{i}"] = tk.DoubleVar(value=self.dim_add[j][0])
+            self.variables[f"delais_add_{i}"] = tk.DoubleVar(value=self.temps_add[j][0])
+            self.variables[f"fin_add_{i}"] = tk.DoubleVar(value=self.temps_add[j][0])
 
         # Initialisation l'interface!
         self.main()
@@ -201,7 +206,8 @@ class Interface:
             "puissance_add": [1],
             "position_add": [[1,1]], # [[y,x], [y,x]...]
             "dimensions_add": [[1,1]], # [[y,x], [y,x]...]
-            "temps_add": [[0,10]]
+            "temps_add": [[0,10]],
+            "position_thermistances": [[1.5, 20.5], [6, 20.5], [1.03, 20.5]] # [y,x]
         }
     
 
@@ -251,44 +257,50 @@ class Interface:
         self.mat() # Paramètres du matériau de la plaque
         self.resolution() # Résolutions de la simulation de la plaque
         self.perturb() # Contrôle de la puissance déposée
+        self.thermistances() # Contrôle des thermistances
 
-        # Initialisation des boutons OK et Graphique
+        # Initialisation des boutons OK, Voir la plaque et Graphique
         self.etat_OK = ttk.Button(self.inter,text = 'OK', command = self.no_graphique)
-        self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew")
-        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=1, row=3, pady=5, sticky="ew")
+        self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew", columnspan=3)
+        ttk.Button(self.inter, text="Voir la plaque", command=self.graphique_plaque).grid(column=0, row=4, pady=5, sticky="ew", columnspan=3)  # Initialisation du graphique permettant de voir la position des perturbations
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=0, row=5, pady=5, sticky="ew", columnspan=3)
         
         # Initialisation du bouton Arrêt
         self.etat_arret = ttk.Button(self.inter,text = 'Arrêt', command = self.arret)
-        self.etat_arret.grid(column=0, row=3, pady=5, sticky="ew")
+        self.etat_arret.grid(column=0, row=5, pady=5, sticky="ew", columnspan=3)
         self.etat_arret.grid_remove()
 
         # Initialisation de la barre de progression
-        tk.Label(self.inter, text="Progression :").grid(column=0, row=4, padx=10, pady=5, sticky="ew")
+        tk.Label(self.inter, text="Progression :").grid(column=0, row=6, padx=10, pady=5, sticky="ew")
         self.progres = ttk.Progressbar(self.inter, orient="horizontal", length=100, mode="determinate")
-        self.progres.grid(column=1, row=4, padx=10, pady=5, sticky="ew")
+        self.progres.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
 
         # Initialise l'endroit où les erreurs s'afficherons
-        tk.Label(self.inter, text="Erreur : ").grid(column=0, row=5, padx=10, pady=5, sticky="ew")
+        tk.Label(self.inter, text="Erreur : ").grid(column=0, row=7, padx=10, pady=5, sticky="ew")
 
         # Création d'un dictionnaire pour stocker les messages d'erreurs
         self.var_messages = {
             "num": "Les variables entrées doivent être numériques",
-            "dim": "Les dimensions doivent être plus grandes que zéro",
+            "dim": "Les dimensions de la plaque doivent être plus grandes que zéro",
             "res": "Les résolutions doivent être plus grandes que zéro",
             "temps": "Le temps de simulation doit être plus grand que zéro",
             "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "P_actuateur": "La puissance de l'actuateur doit être entre -5 et 5 [W]",
             "pos_actuateur": "L'actuateur doit entièrement se situer sur la plaque",
+            "dim_actuateur": "Les dimensions de l'actuateur doivent être plus grandes que zéro",
             "temps_actuateur": "Le temps d'application de l'actuateur doit être entre 0 et la durée de la simulation",
             "N_perturb": "La quantité de perturbations doit être positive",
-            "delais_perturb": "Le temps d'application des perturbations doit être entre 0 et la durée de la simulation"
+            "delais_perturb": "Le temps d'application des perturbations doit être entre 0 et la durée de la simulation",
+            "fin_perturb": "Le temps d'arrêt des perturbations ne peut être plus petit que le temps d'application",
+            "pos_perturb": "Les perturbations doivent entièrement se situer sur la plaque",
+            "dim_perturb": "Les dimensions des perturbations doivent être plus grandes que zéro"
         }
 
         # Création d'un dictionnaire pour créer des Labels
         self.var_labels = {}
         for key, message in self.var_messages.items():
             label = tk.Label(self.inter, text=message)
-            label.grid(column=1, row=5, padx=10, pady=5, sticky="ew")
+            label.grid(column=1, row=6, padx=10, pady=5, sticky="ew")
             label.grid_remove() # Cacher l'erreur
             self.var_labels[key] = label
 
@@ -321,7 +333,6 @@ class Interface:
         self.entry(self.frame, "Position en y de l'actuateur [cm]", "act_posy", 2, 3) 
         self.entry(self.frame, "Longueur en x de l'actuateur [cm]", "act_grosx", 2, 4) # Grosseur de l'actuateur
         self.entry(self.frame, "Longueur en y de l'actuateur [cm]", "act_grosy", 2, 5) 
-
 
 
     def plaque(self):
@@ -406,7 +417,7 @@ class Interface:
         # Initialisation des entrées
         self.label_R = ttk.Label(self.perturb_frame, text="Résistance de perturbation")
         self.label_R.grid(column=0, row=0, padx=5, pady=5, sticky='new')
-        self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0, 1) # Résistance de perturbation
+        self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0, 1)
         self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 0, 2)
         self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 0, 3)
 
@@ -420,8 +431,36 @@ class Interface:
         self.bouton_OK = ttk.Button(self.perturb_frame,text = 'OK', command = self.perturbations)
         self.bouton_OK.grid(column=0, row=5, pady=5, columnspan=2,)
 
-        # Initialisation du graphique permettant de voir la position des perturbations
-        ttk.Button(self.perturb_frame, text="Voir la plaque", command=self.graphique_plaque).grid(row=6, column=0, columnspan=2, pady=5)
+    
+    def thermistances(self):
+        """
+        Description :
+        Créer le sixième onglet de l'interface, permettant
+            le contrôle des thermistances
+
+        Arguments : -
+
+        Retourne : -
+        """
+        # Initialisation de l'onglet Contrôle des thermistances
+        self.therm_frame = ttk.Frame(self.tabs, padding=10)
+        self.therm_frame.grid()
+        self.tabs.add(self.therm_frame, text="Contrôle des thermistances")
+
+        # 1ere thermistance
+        tk.Label(self.therm_frame, text="Première thermistance").grid(column=0, row=0, padx=5, pady=5, columnspan=2)
+        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_1", 0, 1) 
+        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_1", 0, 2)
+
+        # 2e thermistance
+        tk.Label(self.therm_frame, text="Deuxième thermistance").grid(column=2, row=0, padx=5, pady=5, columnspan=2)
+        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_2", 2, 1) 
+        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_2", 2, 2)
+
+        # 3e thermistance
+        tk.Label(self.therm_frame, text="Troisième thermistance").grid(column=4, row=0, padx=5, pady=5, columnspan=2)
+        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_3", 4, 1) 
+        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_3", 4, 2)
 
 
     def sauvegarder_json(self):
@@ -445,6 +484,23 @@ class Interface:
         with open(new_nom, 'w') as f:
             json.dump(self.data_fait, f, indent=4)
 
+    
+    def condition_respectee(self, condition, error_key):
+        """
+        Description :
+        Vérifie la condition et affiche le message d'erreur associé si non vérifiée
+
+        Arguments : -
+
+        Retourne :
+        True si la condition est respectée
+        False si la condition n'est pas respectée
+        """
+        if not condition:
+            self.var_labels[error_key].grid()
+            return False
+        return True
+    
 
     def submit(self):
         """
@@ -458,8 +514,8 @@ class Interface:
         Retourne : -
         """
         # Enlève les anciens messages d'erreurs
-        for key, message in self.var_messages.items():
-            self.var_labels[key].grid_remove()
+        for label in self.var_labels.values():
+            label.grid_remove()
         
         # Sauvegarder les variables selon les modifications de l'utilisateur dans l'interface
         try:
@@ -468,12 +524,21 @@ class Interface:
             self.T_amb=self.variables["T_amb"].get()
             self.P=self.variables["P"].get()
             self.t_simul=self.variables["t_simul"].get()
-            self.actuateur_pos=[self.variables["act_posy"].get(), self.variables["act_posx"].get()] # ????
-            self.actuateur_gros=[self.variables["act_grosy"].get(), self.variables["act_grosx"].get()]
+            self.actuateur_pos=[
+                self.variables["act_posy"].get(),
+                self.variables["act_posx"].get()
+                ] 
+            self.actuateur_gros=[
+                self.variables["act_grosy"].get(),
+                self.variables["act_grosx"].get()
+                ]
             self.t_actuateur=self.variables["act_t"].get()
 
             # Dimensions de la plaque
-            self.dim= [self.variables["dimy"].get(), self.variables["dimx"].get()] # [y,x]
+            self.dim= [
+                self.variables["dimy"].get(),
+                self.variables["dimx"].get()
+                ] # [y,x]
             self.e=self.variables["e"].get() 
 
             # Paramètres du matériau de la plaque
@@ -488,6 +553,7 @@ class Interface:
             self.dt=self.variables["dt"].get()
 
             # Contrôle des perturbations
+            self.N_perturb = self.variables["N_perturb"].get()
             self.R_depo=self.variables["R_depo"].get()
             self.R_delais=self.variables["R_delais"].get()
             self.R_fin=self.variables["R_fin"].get()
@@ -498,135 +564,162 @@ class Interface:
             self.temps_add = []
             for i in range(1, int(self.N_perturb)+1):
                 self.P_add.append(self.variables[f"P_add_{i}"].get())
-                self.pos_add.append([self.variables[f"posy_add_{i}"].get(), self.variables[f"posx_add_{i}"].get()]) # [y,x]
-                self.dim_add.append([self.variables[f"dimy_add_{i}"].get(), self.variables[f"dimx_add_{i}"].get()]) # [y,x]
-                self.temps_add.append([self.variables[f"delais_add_{i}"].get(), self.variables[f"fin_add_{i}"].get()]) # [début, fin]
+                self.pos_add.append([
+                    self.variables[f"posy_add_{i}"].get(),
+                     self.variables[f"posx_add_{i}"].get()
+                     ]) # [y,x]
+                self.dim_add.append([
+                    self.variables[f"dimy_add_{i}"].get(),
+                    self.variables[f"dimx_add_{i}"].get()
+                    ]) # [y,x]
+                self.temps_add.append([
+                    self.variables[f"delais_add_{i}"].get(),
+                    self.variables[f"fin_add_{i}"].get()
+                    ]) # [début, fin]
 
-            # les dimensions entrées doivent être plus grandes que zéro
-            if any(d <= 0 for d in (self.dim[0], self.dim[1], self.e)):
-                self.var_labels["dim"].grid()
-                return False
-            
-            # les résolutions entrées doivent être plus grandes que zéro
-            elif any(r <= 0 for r in (self.dx, self.dy, self.dt)):
-                self.var_labels["res"].grid()
-                return False
-            
-            # les paramètres du matériau entrés doivent être plus grands que zéro
-            elif any(p <= 0 for p in (self.h, self.rho, self.cp, self.k)):
-                self.var_labels["par"].grid()
-                return False
-            
-            # le temps de simulation entré doit être plus grand que zéro
-            elif self.t_simul <= 0:
-                self.var_labels["temps"].grid()
-                return False
-            
-            # la puissance de l'actuateur entrée doit être entre -5 et 5 W
-            elif self.P < -5 or self.P > 5:
-                self.var_labels["P_actuateur"].grid()
-                return False
-            
-            # l'actuateur doit se trouver sur la plaque
-            act_y = self.actuateur_pos[0]+self.actuateur_gros[0]
-            act_x = self.actuateur_pos[1]+self.actuateur_gros[1]
-            if act_y < 0 or act_y > self.dim[0] or act_x < 0 or act_x > self.dim[1]:
-                self.var_labels["pos_actuateur"].grid()
-                return False
-            
-            # le temps d'application de l'actuateur doit être positif et plus petit que la durée de la simulation
-            elif self.t_actuateur < 0 or self.t_actuateur > self.t_simul:
-                self.var_labels["temps_actuateur"].grid()
-                return False
-            
-            # le temps d'application des perturbations doit être positif et plus petit que la durée de la simulation
-            elif self.R_delais < 0 or self.R_delais > self.t_simul:
-                self.var_labels["delais_perturb"].grid()
-                return False
-            elif self.R_fin < 0 or self.R_fin > self.t_simul:
-                self.var_labels["delais_perturb"].grid()
-                return False
-            
-            for i in range(1, int(self.N_perturb)+1):
-                if self.temps_add[i][0] < 0 or self.temps_add[i][0] > self.t_simul:
-                    self.var_labels["delais_perturb"].grid()
-                    return False
-                elif self.temps_add[i][1] < 0 or self.temps_add[i][1] > self.t_simul:
-                    self.var_labels["delais_perturb"].grid()
-                    return False
-
+            # Contrôle des thermistances
+            self.pos_therm=[
+                [self.variables["posy_therm_1"].get(), self.variables["posx_therm_1"].get()],
+                [self.variables["posy_therm_2"].get(), self.variables["posx_therm_2"].get()],
+                [self.variables["posy_therm_3"].get(), self.variables["posx_therm_3"].get()]
+                ]
         except:
-            # Si les variables entrées ne sont pas numériques
             self.var_labels["num"].grid()
             return False
-        else:
-            # Quantité d'itérations
-            self.saut = round(( self.t_simul / (10 * self.dt))**(1/2))
-            self.N = 10 * self.saut
 
-            # Sauvegarde des données mises à jour dans le JSON
-            self.data_fait = {
-                "dimensions": self.dim, # [y,x]
-                "epaisseur": self.e,
-                "resolution_x": self.dx,
-                "resolution_y": self.dy,
-                "resolution_t": self.dt,
-                "temps_simulation": self.t_simul, # [s]
-                "T_plaque": self.T_plaque,
-                "T_ambiante": self.T_amb,
-                "densite": self.rho,
-                "cap_calorifique": self.cp,
-                "conduc_thermique": self.k,
-                "coef_convection": self.h,
-                "puissance_actuateur": self.P,
-                "position_actuateur": self.actuateur_pos,
-                "grosseur_actuateur": self.actuateur_gros,
-                "temps_actuateur": self.t_actuateur,
-                "puissance_R": self.R_depo,
-                "delais_R": self.R_delais,
-                "fin_R": self.R_fin,
-                "N_perturb": self.N_perturb,
-                "puissance_add": self.P_add,
-                "position_add": self.pos_add, # [y,x]
-                "dimensions_add": self.dim_add, # [y,x]
-                "temps_add": self.temps_add # [début, fin]
-            }
-            self.sauvegarder_json()
+        # les dimensions entrées doivent être plus grandes que zéro
+        if not self.condition_respectee(all(val > 0 for val in (self.dim[0], self.dim[1], self.e)), "dim"):
+            return False
+            
+        # les résolutions entrées doivent être plus grandes que zéro
+        if not self.condition_respectee(all(r > 0 for r in (self.dx, self.dy, self.dt)), "res"):
+            return False
+            
+        # les paramètres du matériau entrés doivent être plus grands que zéro
+        if not self.condition_respectee(all(p > 0 for p in (self.h, self.rho, self.cp, self.k)), "par"):
+            return False
+            
+        # le temps de simulation entré doit être plus grand que zéro
+        if not self.condition_respectee(self.t_simul > 0, "temps"):
+            return False
+            
+        # la puissance de l'actuateur entrée doit être entre -5 et 5 W
+        if not self.condition_respectee(-5 <= self.P <= 5, "P_actuateur"):
+            return False
+            
+        # l'actuateur doit se trouver sur la plaque
+        act_y = self.actuateur_pos[0]+self.actuateur_gros[0]
+        act_x = self.actuateur_pos[1]+self.actuateur_gros[1]
+        if not self.condition_respectee(0 <= act_y <= self.dim[0] and 0 <= act_x <= self.dim[1], "pos_actuateur"):
+            return False
+        
+        # les dimensions de l'actuateur doivent être plus grandes que zéro
+        if not self.condition_respectee(0 < self.actuateur_gros[0] and 0 < self.actuateur_gros[1], "dim_actuateur"):
+            return False
+        
+        # le temps d'application de l'actuateur doit être positif et plus petit que la durée de la simulation
+        if not self.condition_respectee(0 <= self.t_actuateur <= self.t_simul, "temps_actuateur"):
+            return False
+            
+        # le temps d'application des perturbations doit être positif et plus petit que la durée de la simulation
+        # le temps d'arrêt des perturbations ne peut être plus petit que le temps d'application
+        # les perturbations doivent se trouver sur la plaque
+        # les dimensions des perturbations doivent être plus grandes que zéro
 
-            # Créer une variable perturbation pour gérer les perturbations dans la simulation
-            # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
-            perturbations=[
-                [((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)), self.R_depo, (0.6, 0.3), (self.R_delais, self.R_fin)], # Résistance de perturbation
-                ]
-            for i in range(int(self.N_perturb)):
-                perturbations.append([
-                    (self.pos_add[i][1], self.pos_add[i][0]), # (y,x)
-                    self.P_add[i],
-                    (self.dim_add[i][1], self.dim_add[i][0]), # (y,x)
-                    (self.temps_add[i][0], self.temps_add[i][1]) # (début, fin)
-                    ])
+        # résistance de perturbation
+        if not self.condition_respectee(0 <= self.R_delais <= self.t_simul, "delais_perturb"):
+            return False
+        if not self.condition_respectee(0 <= self.R_fin <= self.t_simul, "delais_perturb"):
+            return False
+        if not self.condition_respectee(self.R_fin >= self.R_delais, "fin_perturb"):
+            return False
+            
+        # perturbations
+        for i in range(int(self.N_perturb)):
+            perturb_y = self.pos_add[i][0] + self.dim_add[i][0]
+            perturb_x = self.pos_add[i][1] + self.dim_add[i][1]
 
-            # Initialise la simulation
-            self.Ma_plaque = mega_simulation.Plaque(
-                dimensions=(self.dim[0], self.dim[1]), # (y,x)
-                epaisseur=self.e,
-                resolution_x=self.dx,
-                resolution_y=self.dy,
-                resolution_t=self.dt,
-                t_simul=self.t_simul,
-                T_plaque=self.T_plaque,
-                T_ambiante=self.T_amb,
-                densite=self.rho,
-                cap_calorifique=self.cp,
-                conduc_thermique=self.k,
-                coef_convection=self.h,
-                puissance_actuateur=self.P,
-                position_actuateur=(self.actuateur_pos[0], self.actuateur_pos[1]),
-                grosseur_actuateur=(self.actuateur_gros[0], self.actuateur_gros[1]),
-                temps_actuateur=self.t_actuateur,
-                perturbations=perturbations
-                )
+            if not self.condition_respectee(0 <= self.temps_add[i][0] <= self.t_simul, "delais_perturb"):
+                return False
+            if not self.condition_respectee(0 <= self.temps_add[i][1] <= self.t_simul, "delais_perturb"):
+                return False
+            if not self.condition_respectee(self.temps_add[i][1] >= self.temps_add[i][0], "fin_perturb"):
+                return False
+            if not self.condition_respectee(0 <= perturb_y <= self.dim[0] and 0 <= perturb_x <= self.dim[1], "pos_perturb"):
+                return False
+            if not self.condition_respectee(0 < self.dim_add[i][0] and 0 < self.dim_add[i][1], "dim_perturb"):
+                return False
 
+        # Quantité d'itérations
+        self.saut = round(( self.t_simul / (10 * self.dt))**(1/2))
+        self.N = 10 * self.saut
+
+        # Sauvegarde des données mises à jour dans le JSON
+        self.data_fait = {
+            "dimensions": self.dim, # [y,x]
+            "epaisseur": self.e,
+            "resolution_x": self.dx,
+            "resolution_y": self.dy,
+            "resolution_t": self.dt,
+            "temps_simulation": self.t_simul, # [s]
+            "T_plaque": self.T_plaque,
+            "T_ambiante": self.T_amb,
+            "densite": self.rho,
+            "cap_calorifique": self.cp,
+            "conduc_thermique": self.k,
+            "coef_convection": self.h,
+            "puissance_actuateur": self.P,
+            "position_actuateur": self.actuateur_pos,
+            "grosseur_actuateur": self.actuateur_gros,
+            "temps_actuateur": self.t_actuateur,
+            "puissance_R": self.R_depo,
+            "delais_R": self.R_delais,
+            "fin_R": self.R_fin,
+            "N_perturb": self.N_perturb,
+            "puissance_add": self.P_add,
+            "position_add": self.pos_add, # [y,x]
+            "dimensions_add": self.dim_add, # [y,x]
+            "temps_add": self.temps_add, # [début, fin]
+            "position_thermistances": self.pos_therm
+        }
+        self.sauvegarder_json()
+
+        # Créer une variable perturbation pour gérer les perturbations dans la simulation
+        # position du coin inférieur droit (y,x), P, (longueur, largeur), (t_debut, t_fin) en cm
+        perturbations=[[
+            ((0.015+0.021-0.003), ((self.dim[1]/200)-0.0015)),
+              self.R_depo,
+              (0.6, 0.3),
+              (self.R_delais, self.R_fin)
+              ]] # Résistance de perturbation
+        for i in range(int(self.N_perturb)):
+            perturbations.append([
+                (self.pos_add[i][1], self.pos_add[i][0]), # (y,x)
+                self.P_add[i],
+                (self.dim_add[i][1], self.dim_add[i][0]), # (y,x)
+                (self.temps_add[i][0], self.temps_add[i][1]) # (début, fin)
+                ])
+
+        # Initialise la simulation
+        self.Ma_plaque = mega_simulation.Plaque(
+            dimensions=(self.dim[0], self.dim[1]), # (y,x)
+            epaisseur=self.e,
+            resolution_x=self.dx,
+            resolution_y=self.dy,
+            resolution_t=self.dt,
+            t_simul=self.t_simul,
+            T_plaque=self.T_plaque,
+            T_ambiante=self.T_amb,
+            densite=self.rho,
+            cap_calorifique=self.cp,
+            conduc_thermique=self.k,
+            coef_convection=self.h,
+            puissance_actuateur=self.P,
+            position_actuateur=(self.actuateur_pos[0], self.actuateur_pos[1]),
+            grosseur_actuateur=(self.actuateur_gros[0], self.actuateur_gros[1]),
+            temps_actuateur=self.t_actuateur,
+            perturbations=perturbations
+            )
 
     def no_graphique(self):
         """
@@ -793,18 +886,14 @@ class Interface:
         ]
 
         # Affichage de la légende et des titres des axes
-        axy.legend(handles=legend_elements, bbox_to_anchor=(1.85, 1))
-        axy.set_xlabel("Position en x (cm)")
-        axy.set_ylabel("Position en y (cm)")
+        axy.legend(handles=legend_elements, bbox_to_anchor=(-0.2, 1))
+        axy.set_xlabel("Position en x (mm)")
+        axy.set_ylabel("Position en y (mm)")
 
         # Intégration à l'interface
         self.canvas = FigureCanvasTkAgg(figy, master=self.inter)
         self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=0, column=5, rowspan=5)
-
-        # Le graphique est bien placé dans l'interface
-        self.perturb_frame.grid_rowconfigure(0, weight=1)
-        self.perturb_frame.grid_columnconfigure(0, weight=1)
+        self.canvas.get_tk_widget().grid(row=0, column=5)
 
 
     def perturbations(self):
@@ -826,6 +915,7 @@ class Interface:
             return
         elif self.N_perturb == 0:
             return
+        self.var_labels["N_perturb"].grid_remove()
         
         # Enlever le bouton OK et la possibilité d'ajouter des perturbations
         self.bouton_OK.grid_remove()
@@ -879,16 +969,12 @@ class Interface:
 
         # Faire un menu des perturbations
         self.tab_selector = ttk.Combobox(self.perturb_frame)
-        self.tab_selector.grid(column=0, row=4, pady=5)
+        self.tab_selector.grid(column=0, row=6, pady=5)
         self.tab_selector["values"] = self.perturb_noms
 
         # Faire un menu déroulant
         self.tab_selector.current(0)
         self.tab_selector.bind("<<ComboboxSelected>>", self.changer_tab)
-
-        # Cacher les perturbations sauf la première
-        # self.perturb_tabs.grid_remove()
-        # self.perturb_frames[0].grid()
 
 
     def changer_tab(self, event=None):
@@ -900,18 +986,8 @@ class Interface:
 
         Retourne : -
         """
-        # self.perturb_tabs.grid()
-
         selected_tab = self.tab_selector.get()
         tab_index = list(self.perturb_noms).index(selected_tab)
-
-        # Cache toutes les frames
-        # for i, frame in enumerate(self.perturb_frames):
-        #     if i != tab_index:
-        #         frame.grid_forget()
-
-        # Affiche la frame correspondant à l'onglet sélectionné
-        # self.perturb_frames[tab_index].grid()
 
         # Sélectionner l'onglet
         self.perturb_tabs.select(tab_index)
