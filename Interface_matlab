@@ -528,6 +528,10 @@ classdef Interface_matlab < matlab.apps.AppBase
                 set(app.courantFLabel, 'Visible', 'off');
                 set(app.courantFField, 'Visible', 'off');
             else
+                % On enleve la 2e temperature desiree
+                assignin('base', 'temp_add', true);
+                app.toggleDesiree()
+
                 % Si la boucle est fermée, on l'ouvre
                 assignin('base', 'boucleouverte', true); % Mise à jour de la variable dans l'espace de travail
                 app.BoucleButton.Text = "ouverte"; % Met à jour le texte du bouton
@@ -556,7 +560,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                 app.PwmButton.BackgroundColor = [0, 1, 0]; % Change la couleur du bouton en vert
         
                 % Désactiver le bloc PWM dans Simulink en le mettant en mode "Commented"
-                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1', 'Commented', 'through');
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator', 'Commented', 'through');
             else
                 % Si le PWM est désactivé, on l'active
                 assignin('base', 'pwm_ouvert', true); % Mise à jour de la variable dans l'espace de travail
@@ -564,7 +568,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                 app.PwmButton.BackgroundColor = [1, 1, 0]; % Change la couleur du bouton en jaune
         
                 % Activer le bloc PWM dans Simulink en enlevant le commentaire
-                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1', 'Commented', 'off');
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator', 'Commented', 'off');
             end
         end
 
@@ -585,6 +589,10 @@ classdef Interface_matlab < matlab.apps.AppBase
                 set(app.Temps_addiLabel, 'Visible', 'off');
                 set(app.Temps_addiField, 'Visible', 'off');
             else
+                % On ferme la boucle
+                assignin('base', 'boucleouverte', true);
+                app.toggleBoucle()
+
                 assignin('base', 'temp_add', true);
 
                 % Pour que la 2e s'applique a un temps par defaut
