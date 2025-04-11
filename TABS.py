@@ -255,7 +255,7 @@ class Interface:
         # Initialisation des onglets
         self.tabs = ttk.Notebook(self.inter)
         self.tabs.grid(column=0, row=0, rowspan=2, sticky="nsew", columnspan=2)
-        self.tabs.config(width=int(self.screen_width * 0.5), height=int(self.screen_height * 0.4))
+        self.tabs.config(width=int(self.screen_width * 0.5), height=int(self.screen_height * 0.5))
 
         # Initialisation des différents onglets
         self.controle_frame() # Contrôle de base
@@ -398,7 +398,7 @@ class Interface:
 
         # Initialisation des entrées
         self.label_R = ttk.Label(self.perturb_frame, text="Résistance de perturbation")
-        self.label_R.grid(column=0, row=0, padx=5, pady=5, sticky='new')
+        self.label_R.grid(column=0, row=0, padx=5, pady=5, sticky='new', columnspan=2)
         self.entry(self.perturb_frame, "Puissance déposée avec la résistance [W]", "R_depo", 0, 1)
         self.entry(self.perturb_frame, "Délais avant l'application [s]", "R_delais", 0, 2)
         self.entry(self.perturb_frame, "Délais avant la fin de l'application [s]", "R_fin", 0, 3)
