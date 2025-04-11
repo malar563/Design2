@@ -28,7 +28,7 @@ ax1.xaxis.set_tick_params(labelsize=15)
 ax1.yaxis.set_tick_params(labelsize=15)
 plt.legend(fontsize=15)
 plt.tight_layout()
-plt.show()
+# plt.show()
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -47,6 +47,12 @@ fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_20_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_30_degre.csv"
 # fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\arduino_data_marylise2.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_100_degre.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_-30_degre.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_echelon_officiel.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_perturbation_23_Validation.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_perturbation_30_Validation.csv"
+fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_perturbation_officiel.csv"
 
 fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"#Pour rouler vite
 fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Python_25_degre.csv"
@@ -55,10 +61,19 @@ fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\P
 # fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Simul_30_degre.csv"
 
 fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab_25_degre.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab_100.csv"
+# fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Matlab-30.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\ferme_30.csv"
+# fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\ferme_20.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\ferme20-23.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\perturb23_matlab.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\perturb30_matlab.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\perturb27_matlab.csv"
 
 
-data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
-# data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
+
+# data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
+data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
 data_sim = pd.read_csv(fich_sim)
 data_matl = pd.read_csv(fich_matl)
 column_names = data.columns
@@ -85,15 +100,16 @@ t_mat=data_matl['Temps']
 Th1_mat=data_matl['Temperature_a_lactuateur']-data_matl['Temperature_a_lactuateur'][0]
 Th2_mat=data_matl['Temperature_au_milieu']-data_matl['Temperature_au_milieu'][0]
 Th3_mat=data_matl['Temperature_au_laser']-data_matl['Temperature_au_laser'][0]
+Th3p_mat=data_matl['Temperature_predit_au_laser']-data_matl['Temperature_predit_au_laser'][0]
 
 # # Test_25_degre
-plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
-plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
-plt.plot(data["Temps"][614:]-data["Temps"][614],data["T3"][614:]-data["T3"][614], color="blue")
-t=data["Temps"][614:]-data["Temps"][614]
-Th1=data["T1"][614:]-data["T1"][614]
-Th2=data["T2"][614:]-data["T2"][614]
-Th3=data["T3"][614:]-data["T3"][614]
+# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T1"][614:]-data["T1"][614], color="blue", label="Prototype")
+# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T2"][614:]-data["T2"][614], color="blue")
+# plt.plot(data["Temps"][614:]-data["Temps"][614],data["T3"][614:]-data["T3"][614], color="blue")
+# t=data["Temps"][614:]-data["Temps"][614]
+# Th1=data["T1"][614:]-data["T1"][614]
+# Th2=data["T2"][614:]-data["T2"][614]
+# Th3=data["T3"][614:]-data["T3"][614]
 # # Test_25_degre_perturbation
 # plt.plot(data["Temps"][116:]-data["Temps"][116],data["T1"][116:]-data["T1"][116], color="blue", label="Prototype")
 # plt.plot(data["Temps"][116:]-data["Temps"][116],data["T2"][116:]-data["T2"][116], color="blue")
@@ -122,6 +138,74 @@ Th3=data["T3"][614:]-data["T3"][614]
 # Th1=data["T1"][468:]-data["T1"][468]
 # Th2=data["T2"][468:]-data["T2"][468]
 # Th3=data["T3"][468:]-data["T3"][468]
+# # # Test_-30degre
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T1"][13:]-data["T1"][13], color="blue", label="Prototype")
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T2"][13:]-data["T2"][13], color="blue")
+# plt.plot(data["Temps"][13:]-data["Temps"][13],data["T3"][13:]-data["T3"][13], color="blue")
+# t=data["Temps"][13:]-data["Temps"][13]
+# Th1=data["T1"][13:]-data["T1"][13]
+# Th2=data["T2"][13:]-data["T2"][13]
+# Th3=data["T3"][13:]-data["T3"][13]
+# # Test_100degre
+# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T1"][10:]-data["T1"][10], color="blue", label="Prototype")
+# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T2"][10:]-data["T2"][10], color="blue")
+# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T3"][10:]-data["T3"][10], color="blue")
+# t=data["Temps"][10:]-data["Temps"][10]
+# Th1=data["T1"][10:]-data["T1"][10]
+# Th2=data["T2"][10:]-data["T2"][10]
+# Th3=data["T3"][10:]-data["T3"][10]
+# # Test_25to30degre ferme
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T1"][295:493]-data["T1"][295], color="blue", label="Prototype")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T2"][295:493]-data["T2"][295], color="blue")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T3"][295:493]-data["T3"][295], color="blue")
+# t=data["Temps"][295:493]-data["Temps"][295]
+# Th1=data["T1"][295:493]-data["T1"][295]
+# Th2=data["T2"][295:493]-data["T2"][295]
+# Th3=data["T3"][295:493]-data["T3"][295]
+# Th3p=data["T3 estimée"][295:493]-data["T3 estimée"][295]
+# # Test_30to20 degre ferme
+# t=data["Temps"][494:695]-data["Temps"][494]
+# Th1=data["T1"][494:695]-data["T1"][494]
+# Th2=data["T2"][494:695]-data["T2"][494]
+# Th3=data["T3"][494:695]-data["T3"][494]
+# Th3p=data["T3 estimée"][494:695]-data["T3 estimée"][494]
+# # Test_20to23degre ferme
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T1"][295:493]-data["T1"][295], color="blue", label="Prototype")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T2"][295:493]-data["T2"][295], color="blue")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T3"][295:493]-data["T3"][295], color="blue")
+# t=data["Temps"][696:]-data["Temps"][696]
+# Th1=data["T1"][696:]-data["T1"][696]
+# Th2=data["T2"][696:]-data["T2"][696]
+# Th3=data["T3"][696:]-data["T3"][696]
+# Th3p=data["T3 estimée"][696:]-data["T3 estimée"][696]
+# # Test_perturbation Test_perturbation_23_Validation
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T1"][295:493]-data["T1"][295], color="blue", label="Prototype")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T2"][295:493]-data["T2"][295], color="blue")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T3"][295:493]-data["T3"][295], color="blue")
+# t=data["Temps"][263:]-data["Temps"][263]
+# Th1=data["T1"][263:]-data["T1"][263]
+# Th2=data["T2"][263:]-data["T2"][263]
+# Th3=data["T3"][263:]-data["T3"][263]
+# Th3p=data["T3 estimÃ©e"][263:]-data["T3 estimÃ©e"][263]
+# # Test_perturbation Test_perturbation_23_Validation
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T1"][295:493]-data["T1"][295], color="blue", label="Prototype")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T2"][295:493]-data["T2"][295], color="blue")
+# plt.plot(data["Temps"][295:493]-data["Temps"][295],data["T3"][295:493]-data["T3"][295], color="blue")
+# t=data["Temps"][249:]-data["Temps"][249]
+# Th1=data["T1"][249:]-data["T1"][249]
+# Th2=data["T2"][249:]-data["T2"][249]
+# Th3=data["T3"][249:]-data["T3"][249]
+# Th3p=data["T3 estimÃ©e"][249:]-data["T3 estimÃ©e"][249]
+# # Test_perturbationofficiel
+# plt.plot(data["Temps"][295:]-data["Temps"][295],data["T1"][295:]-data["T1"][295], color="blue", label="Prototype")
+# plt.plot(data["Temps"][295:]-data["Temps"][295],data["T2"][295:]-data["T2"][295], color="blue")
+# plt.plot(data["Temps"][295:]-data["Temps"][295],data["T3"][295:]-data["T3"][295], color="blue")
+t=data["Temps"][263:]-data["Temps"][263]
+Th1=data["T1"][263:]-data["T1"][263]
+Th2=data["T2"][263:]-data["T2"][263]
+Th3=data["T3"][263:]-data["T3"][263]
+Th3p=data["T3 estimée"][263:]-data["T3 estimée"][263]
+
 
 plt.xlabel("Temps (s)")
 plt.ylabel("Variation de température (°C)")
@@ -131,44 +215,49 @@ plt.show()
 
 
 
-def trace(t, Th1, Th2, Th3, pt_op):
+def trace(t, Th1, Th2, Th3, Th3p, pt_op):
     plt.plot(t, Th1+pt_op, color="gold", label="Thermistance 1")
     plt.plot(t, Th2+pt_op, color="darkorange", label="Thermistance 2")
     plt.plot(t, Th3+pt_op, color="red", label="Thermistance 3")
+    plt.plot(t, Th3p+pt_op, color="black", label="Température estimée à 3")
     plt.xlabel("Temps (s)")
-    plt.ylabel("Variation de température (°C)")
+    plt.ylabel("Température (°C)")
     plt.legend()
     plt.show()
 
-trace(t_py, Th1_py, Th2_py, Th3_py, 24.5)
-trace(t_mat, Th1_mat, Th2_mat, Th3_mat, 24.5)
+# trace(t_py, Th1_py, Th2_py, Th3_py, 24.5)
+trace(t_mat, Th1_mat, Th2_mat, Th3_mat, Th3p_mat, 25)
 
 
 # Faire une liste de liste : 1ere liste = simulation, 2e liste = prototype
-liste_rep = [[t_py, Th1_py, Th2_py, Th3_py],[t, Th1, Th2, Th3]]
-liste_rep = [[t_mat, Th1_mat, Th2_mat, Th3_mat],[t, Th1, Th2, Th3]]
+# liste_rep = [[t_py, Th1_py, Th2_py, Th3_py],[t, Th1, Th2, Th3]]
+liste_rep = [[t_mat, Th1_mat, Th2_mat, Th3_mat, Th3p_mat],[t, Th1, Th2, Th3, Th3p]]
 
 from scipy.interpolate import CubicSpline
+
 
 def compare_echelon(liste_rep, pt_op):
     ax1 = plt.subplot(211)
     ax2= plt.subplot(212, sharex=ax1)
 
-    ax1.plot(liste_rep[0][0], liste_rep[0][1], color="blue", label="Thermistance 1")
-    ax1.plot(liste_rep[0][0], liste_rep[0][2], color="green", label="Thermistance 2")
-    ax1.plot(liste_rep[0][0], liste_rep[0][3], color="red", label="Thermistance 3")
+    ax1.plot(liste_rep[0][0], liste_rep[0][1]+pt_op, color="blue", label="Thermistance 1")
+    ax1.plot(liste_rep[0][0], liste_rep[0][2]+pt_op, color="green", label="Thermistance 2")
+    ax1.plot(liste_rep[0][0], liste_rep[0][3]+pt_op, color="red", label="Thermistance 3")
+    ax1.plot(liste_rep[0][0], liste_rep[0][4]+pt_op, color="black", label="Température de T3 estimée")
 
-    ax1.plot(liste_rep[1][0], liste_rep[1][1], color="blue", linestyle="dotted", linewidth=3)
-    ax1.plot(liste_rep[1][0], liste_rep[1][2], color="green", linestyle="dotted", linewidth=3)
-    ax1.plot(liste_rep[1][0], liste_rep[1][3], color="red", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][1]+pt_op, color="blue", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][2]+pt_op, color="green", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][3]+pt_op, color="red", linestyle="dotted", linewidth=3)
+    ax1.plot(liste_rep[1][0], liste_rep[1][4]+pt_op, color="black", linestyle="dotted", linewidth=3)
 
     # ax1.plot(t, cooling_law(t, params[0], params[1], params[2])-273.15, color="red", linestyle="dotted", linewidth=3, label="curve_fit")
-    ax1.set_ylabel("Variation de température [°C]")
-    ax1.legend()
-
+    ax1.set_ylabel("Température [°C]")
+    ax1.legend(fontsize=8)
 
     spline_sim0 = CubicSpline(liste_rep[0][0],liste_rep[0][3]+pt_op)
+    spline_sim1 = CubicSpline(liste_rep[0][0],liste_rep[0][1]+pt_op)
     ax2.plot(liste_rep[1][0],((liste_rep[1][3]+pt_op)-(spline_sim0(liste_rep[1][0])))/(liste_rep[1][3]+pt_op)*100, color="black", label="Erreur")
+    # ax2.plot(liste_rep[1][0],((liste_rep[1][1]+pt_op)-(spline_sim1(liste_rep[1][0])))/(liste_rep[1][1]+pt_op)*100, color="black", label="Erreur")
     ax2.axhline(0, 0, 1400, color="red", linewidth=2, linestyle="--")
     ax2.set_ylabel("Pourcentage d'écart à T3 [%]")
     ax2.set_xlabel("Temps [s]")
@@ -176,9 +265,34 @@ def compare_echelon(liste_rep, pt_op):
 
     plt.show()
 
-compare_echelon(liste_rep, 24.5)
+compare_echelon(liste_rep, 25)
 
+def check_echelon(liste_rep, pt_op):
+    # ax1 = plt.subplot(211)
+    # ax2= plt.subplot(212, sharex=ax1)
 
+    plt.plot(liste_rep[0][0], liste_rep[0][1]+pt_op, color="blue", label="Thermistance 1")
+    plt.plot(liste_rep[0][0], liste_rep[0][2]+pt_op, color="green", label="Thermistance 2")
+    plt.plot(liste_rep[0][0], liste_rep[0][3]+pt_op, color="red", label="Thermistance 3")
+
+    plt.plot(liste_rep[1][0], liste_rep[1][1]+pt_op, color="blue", linestyle="dotted", linewidth=3)
+    plt.plot(liste_rep[1][0], liste_rep[1][2]+pt_op, color="green", linestyle="dotted", linewidth=3)
+    plt.plot(liste_rep[1][0], liste_rep[1][3]+pt_op, color="red", linestyle="dotted", linewidth=3)
+
+    # ax1.plot(t, cooling_law(t, params[0], params[1], params[2])-273.15, color="red", linestyle="dotted", linewidth=3, label="curve_fit")
+    plt.ylabel("Température [°C]")
+    plt.legend()
+
+    # spline_sim0 = CubicSpline(liste_rep[0][0],liste_rep[0][3]+pt_op)
+    # ax2.plot(liste_rep[1][0],((liste_rep[1][3]+pt_op)-(spline_sim0(liste_rep[1][0])))/(liste_rep[1][3]+pt_op)*100, color="black", label="Erreur")
+    # ax2.axhline(0, 0, 1400, color="red", linewidth=2, linestyle="--")
+    # ax2.set_ylabel("Pourcentage d'écart à T3 [%]")
+    plt.xlabel("Temps [s]")
+    plt.legend()
+
+    plt.show()
+
+# check_echelon(liste_rep, 30)
 
 
 

@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 
 
 # VÉRIFIER LA VARIANCE
-fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\variance0025.csv"
+fich_matl = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\variance0075.csv"
 data_matl = pd.read_csv(fich_matl)
 
 ##Matlab
@@ -52,12 +52,12 @@ plt.show()
 
 fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_-30_degre.csv"
 fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_consigne_100_degre.csv"
-fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_echelon_froid_20_degré.csv"
+# fich = r"C:\Users\maryl\Documents\Universite\Session_4\design2\rep_echelon\Test_echelon_froid_20_degré.csv"
 fich_sim = r"C:\Users\maryl\Documents\Universite\Session_4\design2\Design2\output.csv"
 
 
-# data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
-data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
+data = pd.read_csv(fich, encoding="latin1", sep=";") #pour tests 25 perturb30
+# data = pd.read_csv(fich, encoding="latin1", sep=",") #pour tests 20
 # data = pd.read_csv(fich, sep=';', encoding="latin1")
 data_sim = pd.read_csv(fich_sim)
 column_names = data.columns
@@ -75,13 +75,13 @@ t_py=data_sim["0"]
 # plt.plot(data["Temps"][13:]-data["Temps"][13],data["T2"][13:]-data["T2"][13], color="blue")
 # plt.plot(data["Temps"][13:]-data["Temps"][13],data["T3"][13:]-data["T3"][13], color="blue")
 # # # Test_100degre
-# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T1"][10:]-data["T1"][10], color="blue", label="Prototype")
-# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T2"][10:]-data["T2"][10], color="blue")
-# plt.plot(data["Temps"][10:]-data["Temps"][10],data["T3"][10:]-data["T3"][10], color="blue")
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T1"][10:]-data["T1"][10], color="blue", label="Prototype")
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T2"][10:]-data["T2"][10], color="blue")
+plt.plot(data["Temps"][10:]-data["Temps"][10],data["T3"][10:]-data["T3"][10], color="blue")
 # # # Test_20degre froid
-plt.plot(data["Temps"][137:]-data["Temps"][137],data["T1"][137:]-data["T1"][137], color="blue", label="Prototype")
-plt.plot(data["Temps"][137:]-data["Temps"][137],data["T2"][137:]-data["T2"][137], color="blue")
-plt.plot(data["Temps"][137:]-data["Temps"][137],data["T3"][137:]-data["T3"][137], color="blue")
+# plt.plot(data["Temps"][137:]-data["Temps"][137],data["T1"][137:]-data["T1"][137], color="blue", label="Prototype")
+# plt.plot(data["Temps"][137:]-data["Temps"][137],data["T2"][137:]-data["T2"][137], color="blue")
+# plt.plot(data["Temps"][137:]-data["Temps"][137],data["T3"][137:]-data["T3"][137], color="blue")
 
 
 
