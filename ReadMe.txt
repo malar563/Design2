@@ -1,6 +1,6 @@
 SIMULATEUR Simulink
 
-Ouvrir seulement le fichier INTERFACE.py et le rouler.
+Ouvrir seulement le fichier Lancer_simulink.m et le rouler.
 L'interface s'affichera.
 
 

@@ -443,6 +443,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             end
             simStatus = get_param(app.Nom_du_fichier_simulink, 'SimulationStatus');
             if strcmp(simStatus, 'stopped')
+                stop(app.SimulationTimer);
 
                 app.StatusLabel.Text = "\'Etat : Arr\^et";
                 app.StatusLabel.Interpreter = 'latex';
