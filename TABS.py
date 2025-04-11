@@ -254,26 +254,24 @@ class Interface:
         """
         # Initialisation des onglets
         self.tabs = ttk.Notebook(self.inter)
-        self.tabs.grid(column=0, row=0, rowspan=2, columnspan=2, sticky="nsew")
+        self.tabs.grid(column=0, row=0, rowspan=2, sticky="nsew", columnspan=2)
         self.tabs.config(width=int(self.screen_width * 0.5), height=int(self.screen_height * 0.4))
 
         # Initialisation des différents onglets
         self.controle_frame() # Contrôle de base
-        self.plaque() # Dimensions de la plaque
-        self.mat() # Paramètres du matériau de la plaque
-        self.resolution() # Résolutions de la simulation de la plaque
+        self.plaque() # Paramètres de la plaque
         self.perturb() # Contrôle de la puissance déposée
         self.thermistances() # Contrôle des thermistances
 
         # Initialisation des boutons OK, Voir la plaque et Graphique
         self.etat_OK = ttk.Button(self.inter,text = 'Enregistrer un CSV', command = self.no_graphique)
-        self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew", columnspan=3)
-        ttk.Button(self.inter, text="Voir la plaque", command=self.graphique_plaque).grid(column=0, row=4, pady=5, sticky="ew", columnspan=3)  # Initialisation du graphique permettant de voir la position des perturbations
-        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=0, row=5, pady=5, sticky="ew", columnspan=3)
+        self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew", columnspan=2)
+        ttk.Button(self.inter, text="Voir la plaque", command=self.graphique_plaque).grid(column=0, row=4, pady=5, sticky="ew", columnspan=2)  # Initialisation du graphique permettant de voir la position des perturbations
+        ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=0, row=5, pady=5, sticky="ew", columnspan=2)
         
         # Initialisation du bouton Arrêt
         self.etat_arret = ttk.Button(self.inter,text = 'Arrêt', command = self.arret)
-        self.etat_arret.grid(column=0, row=5, pady=5, sticky="ew", columnspan=3)
+        self.etat_arret.grid(column=0, row=5, pady=5, sticky="ew", columnspan=2)
         self.etat_arret.grid_remove()
 
         # Initialisation de la barre de progression
@@ -326,17 +324,21 @@ class Interface:
         self.frame = ttk.Frame(self.tabs, padding=10)
         self.frame.grid()
         self.tabs.add(self.frame, text="Contrôle de base")
+        
 
         # Initialisation des entrées 
-        self.entry(self.frame, "Température initiale de la plaque [°C]", "T_plaque", 0, 0) # Température initiale de la plaque
-        self.entry(self.frame, "Température ambiante [°C]", "T_amb", 0, 1) # Température ambiante
-        self.entry(self.frame, "Durée de la simulation [s]", "t_simul", 0, 2) # Durée de la simulation
-        self.entry(self.frame, "Puissance appliquée à l'actuateur [W]", "P", 2, 0) # Puissance appliquée à l'actuateur
-        self.entry(self.frame, "Temps d'application de l'actuateur [s]", "act_t", 2, 1) # Temps d'application de l'actuateur
-        self.entry(self.frame, "Position en x de l'actuateur [cm]", "act_posx", 2, 2) # Position de l'actuateur
-        self.entry(self.frame, "Position en y de l'actuateur [cm]", "act_posy", 2, 3) 
-        self.entry(self.frame, "Longueur en x de l'actuateur [cm]", "act_grosx", 2, 4) # Grosseur de l'actuateur
-        self.entry(self.frame, "Longueur en y de l'actuateur [cm]", "act_grosy", 2, 5) 
+        tk.Label(self.frame, text="Contrôle de la simulation").grid(column=0, row=0, padx=5, pady=5, columnspan=2)
+        self.entry(self.frame, "Température initiale de la plaque [°C]", "T_plaque", 0, 1) # Température initiale de la plaque
+        self.entry(self.frame, "Température ambiante [°C]", "T_amb", 0, 2) # Température ambiante
+        self.entry(self.frame, "Durée de la simulation [s]", "t_simul", 0, 3) # Durée de la simulation
+
+        tk.Label(self.frame, text="Paramètres de l'actuateur").grid(column=2, row=0, padx=5, pady=5, columnspan=2)
+        self.entry(self.frame, "Puissance appliquée à l'actuateur [W]", "P", 2, 1) # Puissance appliquée à l'actuateur
+        self.entry(self.frame, "Temps d'application de l'actuateur [s]", "act_t", 2, 2) # Temps d'application de l'actuateur
+        self.entry(self.frame, "Position en x de l'actuateur [cm]", "act_posx", 2, 3) # Position de l'actuateur
+        self.entry(self.frame, "Position en y de l'actuateur [cm]", "act_posy", 2, 4) 
+        self.entry(self.frame, "Longueur en x de l'actuateur [cm]", "act_grosx", 2, 5) # Grosseur de l'actuateur
+        self.entry(self.frame, "Longueur en y de l'actuateur [cm]", "act_grosy", 2, 6) 
 
 
     def plaque(self):
@@ -349,58 +351,34 @@ class Interface:
 
         Retourne : -
         """
-        # Initialisation de l'onglet Dimensions de la plaque
+        # Initialisation de l'onglet Paramètres de la plaque
         self.plaque_frame = ttk.Frame(self.tabs, padding=10)
         self.plaque_frame.grid()
-        self.tabs.add(self.plaque_frame, text="Dimensions de la plaque")
+        self.tabs.add(self.plaque_frame, text="Paramètres de la plaque")
+
+        # Dimensions de la plaque
+        tk.Label(self.plaque_frame, text="Dimensions de la plaque").grid(column=0, row=0, padx=5, pady=5, columnspan=2)
 
         # Initialisation des entrées
-        self.entry(self.plaque_frame, "Longueur en x de la plaque [cm]", "dimx", 0, 0) # Dimensions de la plaque
-        self.entry(self.plaque_frame, "Longueur en y de la plaque [cm]", "dimy", 0, 1)
-        self.entry(self.plaque_frame, "Épaisseur de la plaque [cm]", "e", 0, 2) # Épaisseur de la plaque
+        self.entry(self.plaque_frame, "Longueur en x de la plaque [cm]", "dimx", 0, 1) # Dimensions de la plaque
+        self.entry(self.plaque_frame, "Longueur en y de la plaque [cm]", "dimy", 0, 2)
+        self.entry(self.plaque_frame, "Épaisseur de la plaque [cm]", "e", 0, 3) # Épaisseur de la plaque
 
-
-    def mat(self):
-        """
-        Description :
-        Créer le troisième onglet de l'interface, permettant
-            le contrôle des paramètres du matériau de la plaque
-
-        Arguments : -
-
-        Retourne : -
-        """
-        # Initialisation de l'onglet Paramètres du matériau de la plaque
-        self.mat_frame = ttk.Frame(self.tabs, padding=10)
-        self.mat_frame.grid()
-        self.tabs.add(self.mat_frame, text="Paramètres du matériau de la plaque")
+        # Résolution de la simulation de la plaque
+        tk.Label(self.plaque_frame, text="Résolution de la simulation de la plaque").grid(column=0, row=5, padx=5, pady=5, columnspan=2)
 
         # Initialisation des entrées
-        self.entry(self.mat_frame, "Densité du matériau [kg / m³]", "rho", 0, 0) # Densité du matériau
-        self.entry(self.mat_frame, "Capacité calorifique du matériau [J / kg.K]", "cp", 0, 1) # Capacité calorifique du matériau
-        self.entry(self.mat_frame, "Conductivité thermique du matériau [W / m.K]", "k", 0, 2) # Conductivité thermique du matériau
-        self.entry(self.mat_frame, "Coefficient de convection du matériau [W / m².K]", "h", 0, 3) # Coefficient de convection
+        self.entry(self.plaque_frame, "Résolution en x [cm]", "dx", 0, 6) # Résolutions de longueur
+        self.entry(self.plaque_frame, "Résolution en y [cm]", "dy", 0, 7)
 
-
-    def resolution(self):
-        """
-        Description :
-        Créer le quatrième onglet de l'interface, permettant
-            le contrôle des paramètres de résolution de la plaque
-
-        Arguments : -
-
-        Retourne : -
-        """
-        # Initialisation de l'onglet Résolution de la simulation de la plaque
-        self.reso_frame = ttk.Frame(self.tabs, padding=10)
-        self.reso_frame.grid()
-        self.tabs.add(self.reso_frame, text="Résolution de la simulation de la plaque")
+        # Paramètres du matériau de la plaque
+        tk.Label(self.plaque_frame, text="Paramètres du matériau de la plaque").grid(column=2, row=0, padx=5, pady=5, columnspan=2)
 
         # Initialisation des entrées
-        self.entry(self.reso_frame, "Résolution en x [cm]", "dx", 0, 0) # Résolutions de longueur
-        self.entry(self.reso_frame, "Résolution en y [cm]", "dy", 0, 1)
-        # self.entry(self.reso_frame, "Résolution en temps [s]", "dt", 0, 2) # Résolution de temps
+        self.entry(self.plaque_frame, "Densité du matériau [kg / m³]", "rho", 2, 1) # Densité du matériau
+        self.entry(self.plaque_frame, "Capacité calorifique du matériau [J / kg.K]", "cp", 2, 2) # Capacité calorifique du matériau
+        self.entry(self.plaque_frame, "Conductivité thermique du matériau [W / m.K]", "k", 2, 3) # Conductivité thermique du matériau
+        self.entry(self.plaque_frame, "Coefficient de convection du matériau [W / m².K]", "h", 2, 4) # Coefficient de convection
 
 
     def perturb(self):
@@ -457,14 +435,14 @@ class Interface:
         self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_1", 0, 2)
 
         # 2e thermistance
-        tk.Label(self.therm_frame, text="Deuxième thermistance").grid(column=2, row=0, padx=5, pady=5, columnspan=2)
-        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_2", 2, 1) 
-        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_2", 2, 2)
+        tk.Label(self.therm_frame, text="Deuxième thermistance").grid(column=0, row=4, padx=5, pady=5, columnspan=2)
+        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_2", 0, 5) 
+        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_2", 0, 6)
 
         # 3e thermistance
-        tk.Label(self.therm_frame, text="Troisième thermistance").grid(column=4, row=0, padx=5, pady=5, columnspan=2)
-        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_3", 4, 1) 
-        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_3", 4, 2)
+        tk.Label(self.therm_frame, text="Troisième thermistance").grid(column=0, row=8, padx=5, pady=5, columnspan=2)
+        self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_3", 0, 9) 
+        self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_3", 0, 10)
 
 
     def sauvegarder_json(self):
@@ -726,7 +704,8 @@ class Interface:
             position_actuateur=(self.actuateur_pos[0], self.actuateur_pos[1]),
             grosseur_actuateur=(self.actuateur_gros[0], self.actuateur_gros[1]),
             temps_actuateur=self.t_actuateur,
-            perturbations=perturbations
+            perturbations=perturbations,
+            position_thermistances=self.pos_therm
             )
 
     def no_graphique(self):
