@@ -287,7 +287,7 @@ class Interface:
             "num": "Les variables entrées doivent être numériques",
             "dim": "Les dimensions de la plaque doivent être plus grandes que zéro",
             "res": "Les résolutions doivent être entre 0.1 cm et les dimensions de la résistance de perturbation (x=0.3 et y=0.6) cm",
-            "temps": "Le temps de simulation doit être plus grand que zéro",
+            "temps": "Le temps de simulation doit être plus grand que 60 s",
             "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "P_actuateur": "La puissance de l'actuateur doit être entre -5 et 5 [W]",
             "pos_actuateur": "L'actuateur doit entièrement se situer sur la plaque",
