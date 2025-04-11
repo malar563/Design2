@@ -74,7 +74,7 @@ class Interface:
         self.dx = self.data_lu.get("resolution_x", 0.15) # doit être entre [0.1, dim plaque]
         self.dy = self.data_lu.get("resolution_y", 0.1) # doit être entre [0.1, dim plaque]
         self.dt = self.data_lu.get("resolution_t", None) # doit être plus grand que zéro
-        self.t_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que zéro
+        self.t_simul = self.data_lu.get("temps_simulation", 600) # [s] doit être plus grand que 60 s
         self.T_plaque = self.data_lu.get("T_plaque", 25.0)
         self.T_amb = self.data_lu.get("T_ambiante", 25.0)
         self.rho = self.data_lu.get("densite", 2700) # doit être plus grand que zéro
@@ -287,7 +287,7 @@ class Interface:
             "num": "Les variables entrées doivent être numériques",
             "dim": "Les dimensions de la plaque doivent être plus grandes que zéro",
             "res": "Les résolutions doivent être entre 0.1 cm et les dimensions de la résistance de perturbation (x=0.3 et y=0.6) cm",
-            "temps": "Le temps de simulation doit être plus grand que zéro",
+            "temps": "Le temps de simulation doit être plus grand que 60 s",
             "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "P_actuateur": "La puissance de l'actuateur doit être entre -5 et 5 [W]",
             "pos_actuateur": "L'actuateur doit entièrement se situer sur la plaque",
@@ -614,8 +614,8 @@ class Interface:
         if not self.condition_respectee(all(p > 0 for p in (self.h, self.rho, self.cp, self.k)), "par"):
             return False
             
-        # le temps de simulation entré doit être plus grand que zéro
-        if not self.condition_respectee(self.t_simul > 0, "temps"):
+        # le temps de simulation entré doit être plus grand que 60 s
+        if not self.condition_respectee(self.t_simul > 60, "temps"):
             return False
             
         # la puissance de l'actuateur entrée doit être entre -5 et 5 W
