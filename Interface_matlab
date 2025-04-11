@@ -71,6 +71,8 @@ classdef Interface_matlab < matlab.apps.AppBase
         courantField matlab.ui.control.NumericEditField
         courantFLabel matlab.ui.control.Label
         courantFField matlab.ui.control.NumericEditField
+        courantTLabel matlab.ui.control.Label
+        courantTField matlab.ui.control.NumericEditField
 
 
         % SECTION REGULATEUR
@@ -270,7 +272,9 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'courant_initiale', courant_initiale);
             courant_finale = 1;
             assignin('base', 'courant_finale', courant_finale);
-            
+            courant_timer = 10;
+            assignin('base', 'courant_timer', courant_timer);
+
 
             % SECTION REGULATEUR
             % Gain
@@ -528,6 +532,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 set(app.courantField, 'Visible', 'off');
                 set(app.courantFLabel, 'Visible', 'off');
                 set(app.courantFField, 'Visible', 'off');
+                set(app.courantTLabel, 'Visible', 'off');
+                set(app.courantTField, 'Visible', 'off');
             else
                 % On enleve la 2e temperature desiree
                 assignin('base', 'temp_add', true);
@@ -548,6 +554,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 set(app.courantField, 'Visible', 'on');
                 set(app.courantFLabel, 'Visible', 'on');
                 set(app.courantFField, 'Visible', 'on');
+                set(app.courantTLabel, 'Visible', 'on');
+                set(app.courantTField, 'Visible', 'on');
             end
         end
     
@@ -1071,10 +1079,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.courantField = fielddy(app, t_plaque, "courant_initiale", [10 170 140 30], 'numeric');
             app.courantFLabel = labelly(app, t_plaque, "Courant final entrant dans l'actuateur [A]", [10 140 240 20]);
             app.courantFField = fielddy(app, t_plaque, "courant_finale", [10 110 140 30], 'numeric');
+            app.courantTLabel = labelly(app, t_plaque, "Temps d'application du courant [s]", [10 80 240 20]);
+            app.courantTField = fielddy(app, t_plaque, "courant_timer", [10 50 140 30], 'numeric');
             set(app.courantFLabel, 'Visible', 'off');
             set(app.courantFField, 'Visible', 'off');
             set(app.courantLabel, 'Visible', 'off');
             set(app.courantField, 'Visible', 'off');
+            set(app.courantTLabel, 'Visible', 'off');
+            set(app.courantTField, 'Visible', 'off');
 
 
             % SECTION REGULATEUR
