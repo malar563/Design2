@@ -1,4 +1,4 @@
-classdef interface_matlab < matlab.apps.AppBase
+classdef Interface_matlab < matlab.apps.AppBase
     
 
     properties (Access = public)
@@ -23,6 +23,35 @@ classdef interface_matlab < matlab.apps.AppBase
         % Controle PWM
         PwmLabel             matlab.ui.control.Label
         PwmButton            matlab.ui.control.Button
+
+
+        %Enregistrer un CSV
+        CSVLabel             matlab.ui.control.Label
+        CSVButton            matlab.ui.control.Button
+        
+        
+        %Importer un CSV
+        CSVFigure            matlab.ui.Figure
+        CSV_importLabel      matlab.ui.control.Label
+        CSV_nomLabel         matlab.ui.control.Label
+        CSV_importButton     matlab.ui.control.Button
+        CSV_importField      matlab.ui.control.EditField
+
+
+
+        % Deuxieme temperature demandee
+
+        Temp_addLabel        matlab.ui.control.Label
+        Temp_addButton       matlab.ui.control.Button
+        Temp_addiLabel       matlab.ui.control.Label
+        Temp_addiField       matlab.ui.control.NumericEditField
+        Temps_addiLabel      matlab.ui.control.Label
+        Temps_addiField      matlab.ui.control.NumericEditField
+
+
+        %Graphique de base dans l'interface de base
+
+        UIAxes               matlab.ui.control.UIAxes
 
 
         % SECTION PLAQUE
@@ -153,30 +182,8 @@ classdef interface_matlab < matlab.apps.AppBase
         ProportionT2Label    matlab.ui.control.Label
         ProportionT2field    matlab.ui.control.NumericEditField
 
-
-        
-        
-        
-        
-        
-        
-        
-        UIAxes               matlab.ui.control.UIAxes
-        Temp_addLabel        matlab.ui.control.Label
-        Temp_addButton       matlab.ui.control.Button
-        Temp_addiLabel       matlab.ui.control.Label
-        Temp_addiField       matlab.ui.control.NumericEditField
-        Temps_addiLabel       matlab.ui.control.Label
-        Temps_addiField       matlab.ui.control.NumericEditField
-        CSVLabel             matlab.ui.control.Label
-        CSVButton            matlab.ui.control.Button
-        CSVFigure            matlab.ui.Figure
-        CSV_importLabel      matlab.ui.control.Label
-        CSV_nomLabel         matlab.ui.control.Label
-        CSV_importButton     matlab.ui.control.Button
-        CSV_importField      matlab.ui.control.EditField
-        ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version67"; 
+        % Nom du fichier
+        Nom_du_fichier_simulink            string = "simulateur_matlab_version67"; 
     end
 
     properties (Access = private)
@@ -185,14 +192,14 @@ classdef interface_matlab < matlab.apps.AppBase
 
     methods (Access = private)
         function startSimulation(app)
-            % Définir la bonne variance
+            % D�finir la bonne variance
             if evalin('base','finalTemp') >= 22
                 assignin('base','variance', 0.0025);
             else
                 assignin('base','variance', 0.0081);
             end
 
-            % Définir le temps d'echantillonnage du PWM
+            % D�finir le temps d'echantillonnage du PWM
             if evalin('base','bit_dac') > 10
                 assignin('base','samplingTimePWM', 10);
             elseif evalin('base','bit_dac') < 4
@@ -202,9 +209,9 @@ classdef interface_matlab < matlab.apps.AppBase
             end
 
             % Active le simulink
-            load_system(app.ModelName);
-            assignin('base', "temps_debut", tic);
-            set_param(app.ModelName, 'SimulationCommand', 'start');
+            load_system(app.Nom_du_fichier_simulink);
+            %assignin('base', "temps_debut", tic);
+            set_param(app.Nom_du_fichier_simulink, 'SimulationCommand', 'start');
             app.StatusLabel.Text = "\'Etat : En cours";
             app.StatusLabel.Interpreter = 'latex';
             
@@ -215,19 +222,6 @@ classdef interface_matlab < matlab.apps.AppBase
             start(app.SimulationTimer);
         end
         
-        %function stopSimulation(app)
-            % Arrte la simulation lorsque le timer finit????
-            %if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
-           %     %stop(app.SimulationTimer);
-                %delete(app.SimulationTimer);
-            %end
-            %app.StatusLabel.Text = 'Etat : Arret';
-            %app.StatusLabel.Interpreter = 'Latex'; 
-            %drawnow;
-            %pause(0.1);
-            %app.updatePlot();
-        %end
-
         function Initialisation(app)
             % Initialise en boucle ferme, active ou non le PWM et
             % initialise avec seulement une temp desiree
@@ -236,10 +230,12 @@ classdef interface_matlab < matlab.apps.AppBase
             assignin('base', 'temp_add', false);
             
             % Initialise les variables du Simulink
-            temps_debut = 0;
-            assignin('base', "temps_debut", temps_debut);
-            temps_fin = 0;
-            assignin('base', "temps_fin", temps_fin);
+
+            %
+            %temps_debut = 0;
+            %assignin('base', "temps_debut", temps_debut);
+            %temps_fin = 0;
+            %assignin('base', "temps_fin", temps_fin);
             temps = 1000;
             assignin('base', "temps", temps);
             initialTemp = 23;
@@ -321,7 +317,7 @@ classdef interface_matlab < matlab.apps.AppBase
 
             
 
-            set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
+            set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented','through')
             assignin('base', 'appInstance', app);
         end
 
@@ -392,7 +388,7 @@ classdef interface_matlab < matlab.apps.AppBase
                 legend(app.UIAxes, "Temprature T_3", "Temprature T_3 prdit", 'Interpreter', 'tex');
                 hold(app.UIAxes, 'off');
             end
-            simStatus = get_param(app.ModelName, 'SimulationStatus');
+            simStatus = get_param(app.Nom_du_fichier_simulink, 'SimulationStatus');
             if strcmp(simStatus, 'stopped')
                
                 %if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
@@ -488,12 +484,12 @@ classdef interface_matlab < matlab.apps.AppBase
                 assignin('base', 'pwm_ouvert', false);
                 app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
                 app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
-                set_param(app.ModelName+'/PWM/PWM Generator1','Commented','through')
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented','through')
             else
                 assignin('base', 'pwm_ouvert', true);
                 app.PwmButton.Text = "activ"+char(233);
                 app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
-                set_param(app.ModelName+'/PWM/PWM Generator1','Commented', 'off')
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented', 'off')
             end
         end
 
@@ -743,7 +739,7 @@ classdef interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Courant � l'entr�e du TEC",'Interpreter','latex');
+                    title(ax, "Courant  l'entre du TEC",'Interpreter','latex');
                     xlabel(ax, 'Temps [s]','Interpreter','latex');
                     ylabel(ax, "Courant [A]",'Interpreter','latex');
                     grid(ax, 'on');
@@ -794,8 +790,8 @@ classdef interface_matlab < matlab.apps.AppBase
                 end
                 
             case 8 % Temperature T1
-                if evalin('base', 'exist("temperature1", "var")')
-                    regulateur = evalin('base', 'temperature1');
+                if evalin('base', 'exist("temperature1_sortie", "var")')
+                    regulateur = evalin('base', 'temperature1_sortie');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -808,8 +804,8 @@ classdef interface_matlab < matlab.apps.AppBase
                 end
                 
             case 9 % Temperature 2
-                if evalin('base', 'exist("temperature2", "var")')
-                    regulateur = evalin('base', 'temperature2');
+                if evalin('base', 'exist("temperature2_sortie", "var")')
+                    regulateur = evalin('base', 'temperature2_sortie');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -909,15 +905,13 @@ classdef interface_matlab < matlab.apps.AppBase
     end 
 
     methods (Access = public)
-        function app = interface_matlab()
+        function app = Interface_matlab()
             % Initialise les variables
             app.Initialisation()
 
             % Initialise l'interface
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1400 350]);
-            app.ErrorLabel = uilabel(app.UIFigure, 'Position', [50 320 400 30], ...
-                'Text', '', 'FontColor', [1 0 0]);
-             tabs = uitabgroup(app.UIFigure, 'Position', [500 30 850 250]);
+            tabs = uitabgroup(app.UIFigure, 'Position', [500 30 850 250]);
 
 
             % Bouton de dmarrage
