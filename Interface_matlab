@@ -24,23 +24,18 @@ classdef Interface_matlab < matlab.apps.AppBase
         PwmLabel             matlab.ui.control.Label
         PwmButton            matlab.ui.control.Button
 
-
-        %Enregistrer un CSV
+        % Enregistrer un CSV
         CSVLabel             matlab.ui.control.Label
         CSVButton            matlab.ui.control.Button
         
-        
-        %Importer un CSV
+        % Importer un CSV
         CSVFigure            matlab.ui.Figure
         CSV_importLabel      matlab.ui.control.Label
         CSV_nomLabel         matlab.ui.control.Label
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
 
-
-
         % Deuxieme temperature demandee
-
         Temp_addLabel        matlab.ui.control.Label
         Temp_addButton       matlab.ui.control.Button
         Temp_addiLabel       matlab.ui.control.Label
@@ -48,9 +43,7 @@ classdef Interface_matlab < matlab.apps.AppBase
         Temps_addiLabel      matlab.ui.control.Label
         Temps_addiField      matlab.ui.control.NumericEditField
 
-
-        %Graphique de base dans l'interface de base
-
+        % Graphique de base dans l'interface
         UIAxes               matlab.ui.control.UIAxes
 
 
@@ -73,9 +66,11 @@ classdef Interface_matlab < matlab.apps.AppBase
 
 
         % SECTION PLAQUE (boucle ouverte)
-        % Commande en Amperes (pas une puissance)
-        PuissancefermerLabel matlab.ui.control.Label
-        PuissancefermerField matlab.ui.control.NumericEditField
+        % Commande en Amperes 
+        courantLabel matlab.ui.control.Label
+        courantField matlab.ui.control.NumericEditField
+        courantFLabel matlab.ui.control.Label
+        courantFField matlab.ui.control.NumericEditField
 
 
         % SECTION REGULATEUR
@@ -183,12 +178,13 @@ classdef Interface_matlab < matlab.apps.AppBase
         ProportionT2field    matlab.ui.control.NumericEditField
 
         % Nom du fichier
-        Nom_du_fichier_simulink            string = "simulateur_matlab_version67"; 
+        Nom_du_fichier_simulink            string = "simulateur_matlab_version74"; 
     end
 
     properties (Access = private)
         SimulationTimer timer
     end
+
 
     methods (Access = private)
         function startSimulation(app)
@@ -201,7 +197,7 @@ classdef Interface_matlab < matlab.apps.AppBase
 
             % D�finir le temps d'echantillonnage du PWM
             if evalin('base','bit_dac') > 10
-                assignin('base','samplingTimePWM', 10);
+                assignin('base','samplingTimePWM', 16);
             elseif evalin('base','bit_dac') < 4
                 assignin('base','samplingTimePWM', 4);
             else
@@ -221,79 +217,141 @@ classdef Interface_matlab < matlab.apps.AppBase
                 'TimerFcn', @(~,~)app.updatePlot());
             start(app.SimulationTimer);
         end
-        
+
+
         function Initialisation(app)
-            % Initialise en boucle ferme, active ou non le PWM et
-            % initialise avec seulement une temp desiree
-            assignin('base', 'boucleouverte', false);
-            assignin('base' , 'pwm_ouvert', false);
-            assignin('base', 'temp_add', false);
-            
             % Initialise les variables du Simulink
 
-            %
-            %temps_debut = 0;
-            %assignin('base', "temps_debut", temps_debut);
-            %temps_fin = 0;
-            %assignin('base', "temps_fin", temps_fin);
-            temps = 1000;
-            assignin('base', "temps", temps);
+            % SECTION INTERFACE
+            % Initialise en boucle fermee
+            assignin('base', 'boucleouverte', false);
+
+            % Initialise PWM desactive
+            assignin('base' , 'pwm_ouvert', false);
+            set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator','Commented','through')
+            assignin('base', 'appInstance', app);
+
+            % Initialise avec seulement une temperature desiree
+            assignin('base', 'temp_add', false);
+
+            % Importer CSV
+            Nom_import = "NomDuCSV";
+            assignin('base', 'NomDuCSV', Nom_import);
+
+
+            % SECTION PLAQUE
+            % Temperature initiale
             initialTemp = 23;
             assignin('base', 'initialTemp', initialTemp);
+
+            % Temperature desiree
             finalTemp = 25;
             assignin('base', 'finalTemp', finalTemp);
+
+            % 2e temperature desiree
             final_final = 19;
             assignin('base', 'final_final', final_final);
-            final_temps = 1000;
-            assignin('base', 'final_temps', final_temps);
+
+            % Temps d'echantillonnage
             samplingTime = 3;
             assignin('base', 'samplingTime', samplingTime);
-            initialPower = 0;
-            assignin('base', 'initialPower', initialPower);
-            finalPower = 0;
-            assignin('base', 'finalPower', finalPower);
-            initialTime = 0;
-            assignin('base', 'initialTime', initialTime);
+
+            % Temps de simulation
+            temps = 1000;
+            assignin('base', "temps", temps);
+
+            % Temps d'application de la 2e temperature desiree
+            final_temps = 1000;
+            assignin('base', 'final_temps', final_temps);
+
+
+            % SECTION PLAQUE (boucle ouverte)
+            courant_initiale = 0;
+            assignin('base', 'courant_initiale', courant_initiale);
+            courant_finale = 1;
+            assignin('base', 'courant_finale', courant_finale);
+            
+
+            % SECTION REGULATEUR
+            % Gain
             gainReg = 0.1;
             assignin('base', 'gainReg', gainReg);
+
+            % Cte de temps
             tempsReg = 130;
             assignin('base', 'tempsReg', tempsReg);
-            Puissancefermer = 0;
-            assignin('base', 'Puissancefermer', Puissancefermer);
-            Gain_perturbation = 6.1526;
-            assignin('base', 'Gain_perturbation', Gain_perturbation);
-            Gain_perturbationT2 = 5.5789;
-            assignin('base', 'Gain_perturbationT2', Gain_perturbationT2);
+
+
+            % SECTION R DE PERTURBATION
+            % Puissance initiale
+            initialPower = 0;
+            assignin('base', 'initialPower', initialPower);
+
+            % Puissance finale
+            finalPower = 0;
+            assignin('base', 'finalPower', finalPower);
+
+            % Temps d'application
+            initialTime = 0;
+            assignin('base', 'initialTime', initialTime);
+
+            
+            % SECTION FONCTIONS DE TRANSFERT PLAQUE
+            % Gain
             Gain_T1 = 8.192;
             assignin('base', 'Gain_T1', Gain_T1);
             Gain_T2 = 0.745;
             assignin('base', 'Gain_T2', Gain_T2);
             Gain_T3 = 0.854;
             assignin('base', 'Gain_T3', Gain_T3);
-            Cte_perturbation = 150.4664;
-            assignin('base', 'Cte_perturbation', Cte_perturbation);
-            Cte_perturbationT2 = 150.3737;
-            assignin('base', 'Cte_perturbationT2', Cte_perturbationT2);
+
+            % Cte de temps
             Cte_T1 = 90.126;
             assignin('base', 'Cte_T1', Cte_T1);
             Cte_T2 = 38.431;
             assignin('base', 'Cte_T2', Cte_T2);
             Cte_T3 = 20.268;
             assignin('base', 'Cte_T3', Cte_T3);
+
+
+            % SECTION FONCTIONS DE TRANSFERT PERTURBATION
+            % Gain
+            Gain_perturbation = 6.1526;
+            assignin('base', 'Gain_perturbation', Gain_perturbation);
+            Gain_perturbationT2 = 5.5789;
+            assignin('base', 'Gain_perturbationT2', Gain_perturbationT2);
+
+            % Cte de temps
+            Cte_perturbation = 150.4664;
+            assignin('base', 'Cte_perturbation', Cte_perturbation);
+            Cte_perturbationT2 = 150.3737;
+            assignin('base', 'Cte_perturbationT2', Cte_perturbationT2);
+
+
+            % SECTION NOMBRE DE BITS
             bit_dac = 10;
             assignin('base', 'bit_dac', bit_dac);
             bit_adc = 10;
             assignin('base', 'bit_adc', bit_adc);
+
+
+            % SECTION THERMISTANCES
             R_0 = 10000;
             assignin('base', 'R_0', R_0);
             T_0 = 298.15;
             assignin('base', 'T_0', T_0);
             B = 3984;
             assignin('base', 'B', B);
+
+
+            % SECTION AMPLI DIFF
             ampli_diff = 3.075;
             assignin('base', 'ampli_diff', ampli_diff);
             plus_petite = 1.735;
             assignin('base', 'plus_petite', plus_petite);
+
+
+            % SECTION CIRCUIT DE SORTIE
             Gain_circuit_sortie = 0.24801;
             assignin('base', 'Gain_circuit_sortie', Gain_circuit_sortie);
             V_ref = 2.521;
@@ -302,24 +360,18 @@ classdef Interface_matlab < matlab.apps.AppBase
             assignin('base', 'Gain_puissance', Gain_puissance);
             Cte_filtre = 0.00944;
             assignin('base', 'Cte_filtre', Cte_filtre);
+
+
+            % SECTION PROPORTION
             ProportionT2 = 1;
             assignin('base', 'ProportionT2', ProportionT2);
 
 
-            Nom_import = "NomDuCSV";
-            assignin('base', 'NomDuCSV', Nom_import);
-
+            % Initialise la variable variance
             variance = 0.0025;
             assignin('base', 'variance', variance);
-
-            
-            
-
-            
-
-            set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented','through')
-            assignin('base', 'appInstance', app);
         end
+
 
         function set_Graphique(app)
             % Ouvre une nouvelle fenetre avec les graphiques
@@ -364,14 +416,15 @@ classdef Interface_matlab < matlab.apps.AppBase
             end
         end
 
+
         function updatePlot(app)
 
             cla(app.UIAxes);
 
             % Imprime le graphique de base
 
-            if evalin('base', 'exist("temperature3", "var")')  
-                Data = evalin('base', "temperature3");
+            if evalin('base', 'exist("Temperature_simulation", "var")')  
+                Data = evalin('base', "Temperature_simulation");
                 time = Data.Time;
                 temp = Data.Data;
                 Data_predit = evalin('base', 'Temperature_predit');
@@ -385,17 +438,12 @@ classdef Interface_matlab < matlab.apps.AppBase
                 xlabel(app.UIAxes, 'Temps [s]','Interpreter','latex');
                 ylabel(app.UIAxes, "Temp\'erature [$^\circ$C]",'Interpreter','latex');
                 grid(app.UIAxes, 'on');
-                legend(app.UIAxes, "Temprature T_3", "Temprature T_3 prdit", 'Interpreter', 'tex');
+                legend(app.UIAxes, "Temp"+char(233)+"rature T_3", "Temp"+char(233)+"rature T_3 pr"+char(233)+"dit", 'Interpreter', 'tex');
                 hold(app.UIAxes, 'off');
             end
             simStatus = get_param(app.Nom_du_fichier_simulink, 'SimulationStatus');
             if strcmp(simStatus, 'stopped')
-               
-                %if ~isempty(app.SimulationTimer) && isvalid(app.SimulationTimer)
-                    %stop(app.SimulationTimer);
-                    %delete(app.SimulationTimer);
-                %end
-        
+
                 app.StatusLabel.Text = "\'Etat : Arr\^et";
                 app.StatusLabel.Interpreter = 'latex';
                 drawnow;
@@ -404,94 +452,122 @@ classdef Interface_matlab < matlab.apps.AppBase
         
         function Faire_csv(app)
             try
-                Temperature3 = evalin('base', "Temperature_simulation");
-                temperature2 = evalin('base', 'temperature2_sortie');
-                temperature1 = evalin('base', 'temperature1_sortie');
-                Temperature3_predit = evalin('base', 'Temperature_predit');
-
+                % Récupération des variables de l'espace de travail de base
+                Temperature3 = evalin('base', "Temperature_simulation"); % Température mesurée au laser
+                temperature2 = evalin('base', 'temperature2_sortie'); % Température au milieu du système
+                temperature1 = evalin('base', 'temperature1_sortie'); % Température à l'actuateur
+                Temperature3_predit = evalin('base', 'Temperature_predit'); % Température prédite au laser
+        
+                % Création d'une table contenant les données récupérées
                 nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
                     'VariableNames', { ...
-                    'Temps', ...
-                    'Temperature_au_laser', ...
-                    'Temperature_au_milieu', ...
-                    'Temperature_a_lactuateur', ...
-                    'Temperature_predit_au_laser' ...
+                    'Temps', ... % Colonne du temps
+                    'Temperature_au_laser', ... % Température mesurée au laser
+                    'Temperature_au_milieu', ... % Température au milieu
+                    'Temperature_a_lactuateur', ... % Température à l'actuateur
+                    'Temperature_predit_au_laser' ... % Température prédite au laser
                     });
-            
+        
+                % Génération d'un nom de fichier basé sur l'horodatage actuel
                 dt = datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss');
                 fichier = sprintf('%s.csv', char(dt));
-            
+        
+                % Écriture de la table dans un fichier CSV
                 writetable(nom_des_colones, fichier);
             catch
-                warning('Pas de valeurs enregistres', 'WARNING');
+                % En cas d'erreur, afficher un avertissement et quitter la fonction
+                warning(fichier, 'WARNING');
                 return;
             end
         end
 
+
         function Nom_csv(app)
-            % Crer une fentre
+            % Creer une fenetre
             app.CSVFigure = uifigure('Name', 'CSV', 'Position', [100 100 300 150]);
             
             % Texte
-            app.CSV_nomLabel = labelly_tab(app, app.CSVFigure, 'Nom du fichier .csv:', [50, 90, 200, 20]);
+            app.CSV_nomLabel = labelly(app, app.CSVFigure, 'Nom du fichier .csv:', [50, 90, 200, 20]);
             
-            % Entre
-            app.CSV_importField = fielddy_tab(app, app.CSVFigure, 'NomDuCSV', [50, 60, 200, 20], 'text');
+            % Entree
+            app.CSV_importField = fielddy(app, app.CSVFigure, 'NomDuCSV', [50, 60, 200, 20], 'text');
             
             % Bouton OK
-            app.CSVButton = buttonny_tab(app, app.CSVFigure, "OK", [50, 30, 200, 20], @(~,~)app.toggleOk());
+            app.CSVButton = buttonny(app, app.CSVFigure, "OK", [50, 30, 200, 20], @(~,~)app.toggleOk());
         end
     
+
         function toggleOk(app)
-            % Rcuprer l'entre de l'utilisateur
+            % Recuperer l'entree de l'utilisateur
             filename = app.CSV_importField.Value;
 
             % Calcul les fonctions de transfert
             app.trouver_fct_transfert(filename)
 
-            % Fermer la fentre
+            % Fermer la fenetre
             close(app.CSVFigure);
         end
 
+
         function toggleBoucle(app)
+            % Vérifie l'état actuel de la variable 'boucleouverte' dans l'espace de travail de base
             if evalin('base', 'boucleouverte') == true
-                assignin('base', 'boucleouverte', false);
-                app.BoucleButton.Text = "ferm"+char(233)+"e";
-                app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
-    
-                % Voir bonnes variables dans interface
+                % Si la boucle est ouverte, on la ferme
+                assignin('base', 'boucleouverte', false); % Mise à jour de la variable dans l'espace de travail
+                app.BoucleButton.Text = "ferm"+char(233)+"e"; % Met à jour le texte du bouton (affichage de "fermée")
+                app.BoucleButton.BackgroundColor = [0, 1, 0]; % Change la couleur du bouton en vert
+            
+                % Afficher la température finale et masquer la puissance fermée
+                set(app.InitialTempLabel, 'Visible', 'on');
+                set(app.InitialTempField, 'Visible', 'on');
                 set(app.FinalTempLabel, 'Visible', 'on');
                 set(app.FinalTempField, 'Visible', 'on');
-    
-                set(app.PuissancefermerLabel, 'Visible', 'off');
-                set(app.PuissancefermerField, 'Visible', 'off');
+        
+                set(app.courantLabel, 'Visible', 'off');
+                set(app.courantField, 'Visible', 'off');
+                set(app.courantFLabel, 'Visible', 'off');
+                set(app.courantFField, 'Visible', 'off');
             else
-                assignin('base', 'boucleouverte', true);
-                app.BoucleButton.Text = "ouverte";
-                app.BoucleButton.BackgroundColor = [1, 1, 0]; % Jaune
-    
-                % Voir bonnes variables dans interface
+                % Si la boucle est fermée, on l'ouvre
+                assignin('base', 'boucleouverte', true); % Mise à jour de la variable dans l'espace de travail
+                app.BoucleButton.Text = "ouverte"; % Met à jour le texte du bouton
+                app.BoucleButton.BackgroundColor = [1, 1, 0]; % Change la couleur du bouton en jaune
+            
+                % Masquer la température finale et afficher la puissance fermée
+                set(app.InitialTempLabel, 'Visible', 'off');
+                set(app.InitialTempField, 'Visible', 'off');
                 set(app.FinalTempLabel, 'Visible', 'off');
                 set(app.FinalTempField, 'Visible', 'off');
-    
-                set(app.PuissancefermerLabel, 'Visible', 'on');
-                set(app.PuissancefermerField, 'Visible', 'on');
+        
+                set(app.courantLabel, 'Visible', 'on');
+                set(app.courantField, 'Visible', 'on');
+                set(app.courantFLabel, 'Visible', 'on');
+                set(app.courantFField, 'Visible', 'on');
             end
         end
     
+
         function togglepwm(app)
+            % Vérifie l'état actuel de la variable 'pwm_ouvert' dans l'espace de travail de base
             if evalin('base', 'pwm_ouvert') == true
-                assignin('base', 'pwm_ouvert', false);
-                app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233);
-                app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
-                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented','through')
+                % Si le PWM est activé, on le désactive
+                assignin('base', 'pwm_ouvert', false); % Mise à jour de la variable dans l'espace de travail
+                app.PwmButton.Text = "d"+char(233)+"sactiv"+char(233); % Met à jour le texte du bouton (affichage de "désactivé")
+                app.PwmButton.BackgroundColor = [0, 1, 0]; % Change la couleur du bouton en vert
+        
+                % Désactiver le bloc PWM dans Simulink en le mettant en mode "Commented"
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1', 'Commented', 'through');
             else
-                assignin('base', 'pwm_ouvert', true);
-                app.PwmButton.Text = "activ"+char(233);
-                app.PwmButton.BackgroundColor = [1, 1, 0]; % Jaune
-                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1','Commented', 'off')
+                % Si le PWM est désactivé, on l'active
+                assignin('base', 'pwm_ouvert', true); % Mise à jour de la variable dans l'espace de travail
+                app.PwmButton.Text = "activ"+char(233); % Met à jour le texte du bouton (affichage de "activé")
+                app.PwmButton.BackgroundColor = [1, 1, 0]; % Change la couleur du bouton en jaune
+        
+                % Activer le bloc PWM dans Simulink en enlevant le commentaire
+                set_param(app.Nom_du_fichier_simulink+'/PWM/PWM Generator1', 'Commented', 'off');
             end
         end
+
 
         function toggleDesiree(app)
             if evalin('base', 'temp_add') == true
@@ -511,7 +587,7 @@ classdef Interface_matlab < matlab.apps.AppBase
             else
                 assignin('base', 'temp_add', true);
 
-                % Pour que la 2e s'applique  un temps par defaut
+                % Pour que la 2e s'applique a un temps par defaut
                 assignin('base', 'final_temps', 500);
                 app.Temps_addiField.Value = evalin('base', 'final_temps');
 
@@ -525,80 +601,68 @@ classdef Interface_matlab < matlab.apps.AppBase
             end
         end
     
-        function NomLabel = labelly(app, textLabel, Position)
-            NomLabel = uilabel(app.UIFigure, 'Text', textLabel);  
-            NomLabel.Position = Position;
-            NomLabel.Interpreter = 'latex';
-        end
-    
-        function NomButton = buttonny(app, textButton, Position, Fonction)
-            NomButton = uibutton(app.UIFigure, 'push', 'Text', textButton);
-            NomButton.Position = Position;
-            NomButton.ButtonPushedFcn = Fonction;
-        end
-    
-        function NomField = fielddy(app, valueField, Position)
-            NomField = uieditfield(app.UIFigure, 'numeric');
-            NomField.Position = Position;
-            NomField.Value = evalin('base', valueField);
-            NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
-        end
 
-        function NomLabel = labelly_tab(app, parent, textLabel, Position)
-            NomLabel = uilabel(parent,"Position",Position);
-            NomLabel.Text = textLabel;
-            NomLabel.Interpreter = "latex";
-        end
-
-        function NomButton = buttonny_tab(app, parent, textButton, Position, Fonction)
+        function NomButton = buttonny(app, parent, textButton, Position, Fonction)
+            % Creer un bouton
             NomButton = uibutton(parent, 'push', 'Text', textButton);
             NomButton.Position = Position;
             NomButton.ButtonPushedFcn = Fonction;
         end
+    
 
-        function NomField = fielddy_tab(app, parent, valueField, Position, type)
+        function NomField = fielddy(app, parent, valueField, Position, type)
+            % Creer une boite d'entree
             NomField = uieditfield(parent, type);
             NomField.Position = Position;
             NomField.Value = evalin('base', valueField);
             NomField.ValueChangedFcn = @(src, event) assignin('base', valueField, src.Value);
         end
 
+
+        function NomLabel = labelly(app, parent, textLabel, Position)
+            % Creer un label
+            NomLabel = uilabel(parent,"Position",Position);
+            NomLabel.Text = textLabel;
+            NomLabel.Interpreter = "latex";
+        end
+
+
         function trouver_fct_transfert(app, filename)
             % lire le CSV
             data = readmatrix([filename, '.csv']);
 
-            % extraire les donnes du CSV
+            % extraire les donnees du CSV
             t = data(2:end,1);
             u = data(2:end,2);
             y1 = data(2:end,3)-273.15;
             y2 = data(2:end,4)-273.15;
             y3 = data(2:end,5)-273.15;
             
-            % Retrait des points d'opration
+            % Retrait des points d'operation
             u_id = u - u(1);
             y_id1 = y1 - y1(1);
             y_id2 = y2 - y2(1);
             y_id3 = y3 - y3(1);
             
-            % Calcul des erreurs : Somme des erreurs au carr
+            % Calcul des erreurs : Somme des erreurs au carre
             % Version fonction de transfert du 1er ordre
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1]), entree, t) - sortie).^2);
-            % Fit des donnes exprimentales avec la tf identifie : covariance
+            % Fit des donnees experimentales avec la tf identifiee : covariance
             fonction_R2 = @(y_data, y_tf) 1 - sum((y_data - y_tf).^2) / sum((y_data - mean(y_data)).^2);
             
             % Estimation initiale [k, T]
             params_init = [1, 50];
             
             % Section P->T1
-            % Recherche des meilleurs paramtres grce  fminsearch
+            % Recherche des meilleurs parametres grace a fminsearch
             erreur_G1 = @(params) fonction_erreur(params, u_id, y_id1, t);
             params_G1 = fminsearch(erreur_G1, params_init);
-            % Rsultat
+            % Resultat
             k1 = params_G1(1);
             T1 = params_G1(2);
             % G1 = tf(k1, [T1, 1])
-            % Calcul de la sortie modle pour G1
+            % Calcul de la sortie modele pour G1
             % y_modele1 = lsim(G1, u_id, t);
             % R2 = fonction_R2(y_id1, y_modele1);
             % Changer les variables du simulateur
@@ -608,14 +672,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T1Field.Value = T1;
          
             % Section T1->T2
-            % Recherche des meilleurs paramtres grce  fminsearch
+            % Recherche des meilleurs parametres grace a fminsearch
             erreur_G2 = @(params) fonction_erreur(params, y_id1, y_id2, t);
             params_G2 = fminsearch(erreur_G2, params_init);
-            % Rsultat
+            % Resultat
             k2 = params_G2(1);
             T2 = params_G2(2);
             % G2 = tf(k2, [T2, 1])
-            % Calcul de la sortie modle pour G2
+            % Calcul de la sortie modele pour G2
             % y_modele2 = lsim(G2, y_id1, t);
             % R2 = fonction_R2(y_id2, y_modele2);
             % Changer les variables du simulateur
@@ -625,14 +689,14 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T2Field.Value = T2;
             
             % Section T2->T3
-            % Recherche des meilleurs paramtres grce  fminsearch
+            % Recherche des meilleurs parametres grace a fminsearch
             erreur_G3 = @(params) fonction_erreur(params, y_id2, y_id3, t);
             params_G3 = fminsearch(erreur_G3, params_init);
-            % Rsultat
+            % Resultat
             k3 = params_G3(1);
             T3 = params_G3(2);
             % G3 = tf(k3, [T3, 1])
-            % Calcul de la sortie modle pour G1
+            % Calcul de la sortie modele pour G1
             % y_modele3 = lsim(G3, y_id2, t);
             % R2 = fonction_R2(y_id3, y_modele3);
             % Changer les variables du simulateur
@@ -642,16 +706,16 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.Cte_temps_T3Field.Value = T3;
             
             % Section P->T3
-            % Calcul des erreurs : Somme des erreurs au carr
+            % Calcul des erreurs : Somme des erreurs au carre
             % Version fonction de transfert du 1er ordre AVEC retard
             fonction_erreur = @(params, entree, sortie, t) ...
                 sum((lsim(tf(params(1), [params(2), 1],'InputDelay',  abs(params(3))), entree, t) - sortie).^2);
             % Estimation initiale [k, T]
             params_init = [1, 50, 20];
-            % Recherche des meilleurs paramtres grce  fminsearch
+            % Recherche des meilleurs parametres grace a fminsearch
             erreur_Gtot = @(params) fonction_erreur(params, u_id, y_id3, t);
             params_Gtot = fminsearch(erreur_Gtot, params_init);
-            % Rsultat
+            % Resultat
             ktot = params_Gtot(1);
             Ttot = params_Gtot(2);
             ret = params_Gtot(3);
@@ -739,7 +803,7 @@ classdef Interface_matlab < matlab.apps.AppBase
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
-                    title(ax, "Courant  l'entre du TEC",'Interpreter','latex');
+                    title(ax, "Courant \`a l'entr\'ee du TEC",'Interpreter','latex');
                     xlabel(ax, 'Temps [s]','Interpreter','latex');
                     ylabel(ax, "Courant [A]",'Interpreter','latex');
                     grid(ax, 'on');
@@ -748,8 +812,8 @@ classdef Interface_matlab < matlab.apps.AppBase
                 end
 
             case 5 % Sortie Ampli
-                if evalin('base', 'exist("Courant_TEC", "var")')
-                    regulateur = evalin('base', 'Courant_TEC');
+                if evalin('base', 'exist("courant_TEC", "var")')
+                    regulateur = evalin('base', 'courant_TEC');
                     y = regulateur.Data;
                     x = regulateur.Time;
                     plot(ax, x, y, 'b', 'LineWidth', 2);
@@ -913,39 +977,38 @@ classdef Interface_matlab < matlab.apps.AppBase
             app.UIFigure = uifigure('Name', 'Controle Simulink', 'Position', [100 100 1400 350]);
             tabs = uitabgroup(app.UIFigure, 'Position', [500 30 850 250]);
 
-
-            % Bouton de dmarrage
-            app.StartLabel = labelly(app, "D\'emarrer", [50 300 100 30]);
-            app.StartButton = buttonny(app, "X", [20 300 30 30], @(~,~)app.startSimulation());
+            % Bouton de demarrage
+            app.StartLabel = labelly(app, app.UIFigure, "D\'emarrer", [50 300 100 30]);
+            app.StartButton = buttonny(app, app.UIFigure, "X", [20 300 30 30], @(~,~)app.startSimulation());
             
-            % tat du systme
-            app.StatusLabel = labelly(app, "\'Etat : Arr\^et", [120 300 150 30]);
+            % Etat du systeme
+            app.StatusLabel = labelly(app, app.UIFigure, "\'Etat : Arr\^et", [120 300 150 30]);
 
-            % Bouton pour graphiques supplmentaires
-            app.GraphiqueLabel = labelly(app, "Graphiques suppl\'ementaires", [215 300 200 30]);
-            app.GraphiqueButton = buttonny(app, "X", [380 300 30 30], @(~,~)app.set_Graphique());
+            % Bouton pour graphiques supplementaires
+            app.GraphiqueLabel = labelly(app, app.UIFigure, "Graphiques suppl\'ementaires", [215 300 200 30]);
+            app.GraphiqueButton = buttonny(app, app.UIFigure, "X", [380 300 30 30], @(~,~)app.set_Graphique());
 
-            % Bouton pour contrle de la boucle
-            app.BoucleLabel = labelly(app, "La boucle est ", [430 300 200 30]);
-            app.BoucleButton = buttonny(app, "ferm"+char(233)+"e", [510 300 60 30], @(~,~)app.toggleBoucle());
+            % Bouton pour controle de la boucle
+            app.BoucleLabel = labelly(app, app.UIFigure, "La boucle est ", [430 300 200 30]);
+            app.BoucleButton = buttonny(app, app.UIFigure, "ferm"+char(233)+"e", [510 300 60 30], @(~,~)app.toggleBoucle());
             app.BoucleButton.BackgroundColor = [0, 1, 0]; % Vert
 
-            % Bouton pour contrle du PWM
-            app.PwmLabel = labelly(app, "Le PWM est ", [600 300 200 30]);
-            app.PwmButton = buttonny(app, "d"+char(233)+"sactiv"+char(233), [675 300 60 30], @(~,~)app.togglepwm());
+            % Bouton pour controle du PWM
+            app.PwmLabel = labelly(app, app.UIFigure, "Le PWM est ", [600 300 200 30]);
+            app.PwmButton = buttonny(app, app.UIFigure, "d"+char(233)+"sactiv"+char(233), [675 300 60 30], @(~,~)app.togglepwm());
             app.PwmButton.BackgroundColor = [0, 1, 0]; % Vert
 
             % Bouton pour enregistrer un csv
-            app.CSVLabel = labelly(app, "Enregistrer un CSV", [760 300 200 30]);
-            app.CSVButton = buttonny(app, "X", [875 300 30 30], @(~,~)app.Faire_csv());
+            app.CSVLabel = labelly(app, app.UIFigure, "Enregistrer un CSV", [760 300 200 30]);
+            app.CSVButton = buttonny(app, app.UIFigure, "X", [875 300 30 30], @(~,~)app.Faire_csv());
 
             % Bouton pour importer un csv
-            app.CSV_importLabel = labelly(app, "Importer un CSV", [935 300 200 30]);
-            app.CSV_importButton = buttonny(app, "X", [1040 300 30 30], @(~,~)app.Nom_csv());
+            app.CSV_importLabel = labelly(app, app.UIFigure, "Importer un CSV", [935 300 200 30]);
+            app.CSV_importButton = buttonny(app, app.UIFigure, "X", [1040 300 30 30], @(~,~)app.Nom_csv());
 
             % Bouton pour ajouter une 2e temperature desiree
-            app.Temp_addLabel = labelly(app, "Ajouter une autre temp\'erature d\'esir\'ee", [1100 300 300 30]);
-            app.Temp_addButton = buttonny(app, "X", [1320 300 30 30], @(~,~)app.toggleDesiree());
+            app.Temp_addLabel = labelly(app, app.UIFigure, "Ajouter une autre temp\'erature d\'esir\'ee", [1100 300 300 30]);
+            app.Temp_addButton = buttonny(app, app.UIFigure, "X", [1320 300 30 30], @(~,~)app.toggleDesiree());
 
             % Graphique
             app.UIAxes = uiaxes(app.UIFigure, 'Position', [20 70 460 200]);
@@ -954,12 +1017,12 @@ classdef Interface_matlab < matlab.apps.AppBase
             ylabel(app.UIAxes, 'Temperature [$^\circ$C]','Interpreter','latex');
 
 
-            % SECTION PLAQUE (boucle ferme)
+            % SECTION PLAQUE (boucle fermee)
             t_plaque = uitab(tabs,"Title","Plaque");
 
-            % Temprature ambiante
-            app.InitialTempLabel = labelly_tab(app, t_plaque, "Temp\'erature ambiante [$^\circ$C]", [10 200 160 20]);
-            app.InitialTempField = fielddy_tab(app, t_plaque, "initialTemp", [10 170 140 30], 'numeric');
+            % Temperature ambiante
+            app.InitialTempLabel = labelly(app, t_plaque, "Temp\'erature ambiante [$^\circ$C]", [10 200 160 20]);
+            app.InitialTempField = fielddy(app, t_plaque, "initialTemp", [10 170 140 30], 'numeric');
             app.InitialTempField.ValueChangedFcn = @(src,event) eval( ...
                 "if src.Value < 10 || src.Value > 30, " + ...
                 "src.Value = evalin('base','initialTemp'); " + ...
@@ -968,26 +1031,26 @@ classdef Interface_matlab < matlab.apps.AppBase
                  "end");
 
             % Temperature desiree
-            app.FinalTempLabel = labelly_tab(app, t_plaque, "Temp\'erature d\'esir\'ee [$^\circ$C]", [10 140 150 20]);
-            app.FinalTempField = fielddy_tab(app, t_plaque, "finalTemp", [10 110 140 30], 'numeric');
+            app.FinalTempLabel = labelly(app, t_plaque, "Temp\'erature d\'esir\'ee [$^\circ$C]", [10 140 150 20]);
+            app.FinalTempField = fielddy(app, t_plaque, "finalTemp", [10 110 140 30], 'numeric');
 
             % 2e temperature desiree
-            app.Temp_addiLabel = labelly_tab(app, t_plaque, "Deuxi"+char(232)+"me temp\'erature d\'esir\'ee [$^\circ$C]", [10 80 200 20]);
-            app.Temp_addiField = fielddy_tab(app, t_plaque, "final_final", [10 50 140 30], 'numeric');
+            app.Temp_addiLabel = labelly(app, t_plaque, "Deuxi"+char(232)+"me temp\'erature d\'esir\'ee [$^\circ$C]", [10 80 200 20]);
+            app.Temp_addiField = fielddy(app, t_plaque, "final_final", [10 50 140 30], 'numeric');
             set(app.Temp_addiLabel, 'Visible', 'off');
             set(app.Temp_addiField, 'Visible', 'off');
 
-            % Temps d'chantillonnage
-            app.SamplingTimeLabel = labelly_tab(app, t_plaque, "Temps d'\'echantillonnage [s]", [300 200 160 20]);
-            app.SamplingTimeField = fielddy_tab(app, t_plaque, "samplingTime", [300 170 140 30], 'numeric');
+            % Temps d'echantillonnage
+            app.SamplingTimeLabel = labelly(app, t_plaque, "Temps d'\'echantillonnage [s]", [300 200 160 20]);
+            app.SamplingTimeField = fielddy(app, t_plaque, "samplingTime", [300 170 140 30], 'numeric');
 
             % Temps de simulation
-            app.tempsLabel = labelly_tab(app, t_plaque, "Temps de simulation [s]", [300 140 150 20]);
-            app.tempsField = fielddy_tab(app, t_plaque, "temps", [300 110 140 30], 'numeric');
+            app.tempsLabel = labelly(app, t_plaque, "Temps de simulation [s]", [300 140 150 20]);
+            app.tempsField = fielddy(app, t_plaque, "temps", [300 110 140 30], 'numeric');
 
             % Temps d'application de la 2e temperature
-            app.Temps_addiLabel = labelly_tab(app, t_plaque, "Temps lorsque la deuxi"+char(232)+"me temp\'erature est d\'esir\'ee [s]", [300 80 310 20]);
-            app.Temps_addiField = fielddy_tab(app, t_plaque, "final_temps", [300 50 140 30], 'numeric');
+            app.Temps_addiLabel = labelly(app, t_plaque, "Temps lorsque la deuxi"+char(232)+"me temp\'erature est d\'esir\'ee [s]", [300 80 310 20]);
+            app.Temps_addiField = fielddy(app, t_plaque, "final_temps", [300 50 140 30], 'numeric');
             set(app.Temps_addiLabel, 'Visible', 'off');
             set(app.Temps_addiField, 'Visible', 'off');
 
@@ -995,127 +1058,131 @@ classdef Interface_matlab < matlab.apps.AppBase
             % SECTION PLAQUE (boucle ouverte)
 
             % Commande en Amperes (pas une puissance)
-            app.PuissancefermerLabel = labelly_tab(app, t_plaque, "Courant entrant dans l'actuateur [A]", [10 140 210 20]);
-            app.PuissancefermerField = fielddy_tab(app, t_plaque, "Puissancefermer", [10 110 140 30], 'numeric');
-            set(app.PuissancefermerLabel, 'Visible', 'off');
-            set(app.PuissancefermerField, 'Visible', 'off');
+            app.courantLabel = labelly(app, t_plaque, "Courant initial entrant dans l'actuateur [A]", [10 200 240 20]);
+            app.courantField = fielddy(app, t_plaque, "courant_initiale", [10 170 140 30], 'numeric');
+            app.courantFLabel = labelly(app, t_plaque, "Courant final entrant dans l'actuateur [A]", [10 140 240 20]);
+            app.courantFField = fielddy(app, t_plaque, "courant_finale", [10 110 140 30], 'numeric');
+            set(app.courantFLabel, 'Visible', 'off');
+            set(app.courantFField, 'Visible', 'off');
+            set(app.courantLabel, 'Visible', 'off');
+            set(app.courantField, 'Visible', 'off');
 
 
-            % SECTION RGULATEUR
+            % SECTION REGULATEUR
             t_reg = uitab(tabs,"Title","R"+char(233)+"gulateur");
             
-            % Gain du rgualteur
-            app.GainRegLabel = labelly_tab(app, t_reg, "Gain [-]", [10 200 150 20]);
-            app.GainRegField = fielddy_tab(app, t_reg, "gainReg", [10 170 140 30], 'numeric');
+            % Gain du regualteur
+            app.GainRegLabel = labelly(app, t_reg, "Gain [-]", [10 200 150 20]);
+            app.GainRegField = fielddy(app, t_reg, "gainReg", [10 170 140 30], 'numeric');
 
-            % Constante de temps du rgulateur
-            app.TempsRegLabel = labelly_tab(app, t_reg, "Constante de temps [s]", [10 140 150 20]);
-            app.TempsRegField = fielddy_tab(app, t_reg, "tempsReg", [10 110 140 30], 'numeric');
+            % Constante de temps du regulateur
+            app.TempsRegLabel = labelly(app, t_reg, "Constante de temps [s]", [10 140 150 20]);
+            app.TempsRegField = fielddy(app, t_reg, "tempsReg", [10 110 140 30], 'numeric');
 
             
             % SECTION RESISTANCE DE PERTURBATION
             t_resistance = uitab(tabs,"Title","R"+char(233)+"sistance de perturbation");
 
             % Puissance initiale
-            app.InitialPowerLabel = labelly_tab(app, t_resistance, "Puissance initiale [W]", [10 200 150 20]);
-            app.InitialPowerField = fielddy_tab(app, t_resistance, "initialPower", [10 170 140 30], 'numeric');
+            app.InitialPowerLabel = labelly(app, t_resistance, "Puissance initiale [W]", [10 200 150 20]);
+            app.InitialPowerField = fielddy(app, t_resistance, "initialPower", [10 170 140 30], 'numeric');
 
             % Puissance finale
-            app.FinalPowerLabel = labelly_tab(app, t_resistance, "Puissance finale [W]", [10 140 150 20]);
-            app.FinalPowerField = fielddy_tab(app, t_resistance, "finalPower", [10 110 140 30], 'numeric');
+            app.FinalPowerLabel = labelly(app, t_resistance, "Puissance finale [W]", [10 140 150 20]);
+            app.FinalPowerField = fielddy(app, t_resistance, "finalPower", [10 110 140 30], 'numeric');
 
-            % Temps de dmarrage
-            app.InitialTimeLabel = labelly_tab(app, t_resistance, "Temps de d\'emarrage [s]", [10 80 160 20]);
-            app.InitialTimeField = fielddy_tab(app, t_resistance, "initialTime", [10 50 140 30], 'numeric');
+            % Temps de demarrage
+            app.InitialTimeLabel = labelly(app, t_resistance, "Temps de d\'emarrage [s]", [10 80 160 20]);
+            app.InitialTimeField = fielddy(app, t_resistance, "initialTime", [10 50 140 30], 'numeric');
            
             
             % SECTION FONCTIONS DE TRANSFERT DE LA PLAQUE
             t_plaque_fct = uitab(tabs, "Title", "Fonctions de transfert de la plaque");
 
             % Constantes de temps de la plaque
-            app.Cte_temps_T1Label = labelly_tab(app, t_plaque_fct, 'Constante de temps pour T1 [s]',[10 200 180 20]);
-            app.Cte_temps_T1Field = fielddy_tab(app, t_plaque_fct, "Cte_T1", [10 170 140 30], 'numeric');
-            app.Cte_temps_T2Label = labelly_tab(app, t_plaque_fct, 'Constante de temps pour T2 [s]',[10 140 180 20]);
-            app.Cte_temps_T2Field = fielddy_tab(app, t_plaque_fct, "Cte_T2", [10 110 140 30], 'numeric');  
-            app.Cte_temps_T3Label = labelly_tab(app, t_plaque_fct, 'Constante de temps pour T3 [s]',[10 80 180 20]);   
-            app.Cte_temps_T3Field = fielddy_tab(app, t_plaque_fct, "Cte_T3", [10 50 140 30], 'numeric');   
+            app.Cte_temps_T1Label = labelly(app, t_plaque_fct, 'Constante de temps pour T1 [s]',[10 200 180 20]);
+            app.Cte_temps_T1Field = fielddy(app, t_plaque_fct, "Cte_T1", [10 170 140 30], 'numeric');
+            app.Cte_temps_T2Label = labelly(app, t_plaque_fct, 'Constante de temps pour T2 [s]',[10 140 180 20]);
+            app.Cte_temps_T2Field = fielddy(app, t_plaque_fct, "Cte_T2", [10 110 140 30], 'numeric');  
+            app.Cte_temps_T3Label = labelly(app, t_plaque_fct, 'Constante de temps pour T3 [s]',[10 80 180 20]);   
+            app.Cte_temps_T3Field = fielddy(app, t_plaque_fct, "Cte_T3", [10 50 140 30], 'numeric');   
 
             %Gains de la plaque
-            app.Gain_T1Label = labelly_tab(app, t_plaque_fct, 'Gain pour T1 [-]',[300 200 180 20]);        
-            app.Gain_T1Field = fielddy_tab(app, t_plaque_fct, "Gain_T1", [300 170 140 30], 'numeric'); 
-            app.Gain_T2Label = labelly_tab(app, t_plaque_fct, 'Gain pour T2 [-]',[300 140 180 20]);
-            app.Gain_T2Field = fielddy_tab(app, t_plaque_fct, "Gain_T2", [300 110 140 30], 'numeric');       
-            app.Gain_T3Label = labelly_tab(app, t_plaque_fct, 'Gain pour T3 [-]',[300 80 180 20]);      
-            app.Gain_T3Field = fielddy_tab(app, t_plaque_fct, "Gain_T3", [300 50 140 30], 'numeric');  
+            app.Gain_T1Label = labelly(app, t_plaque_fct, 'Gain pour T1 [-]',[300 200 180 20]);        
+            app.Gain_T1Field = fielddy(app, t_plaque_fct, "Gain_T1", [300 170 140 30], 'numeric'); 
+            app.Gain_T2Label = labelly(app, t_plaque_fct, 'Gain pour T2 [-]',[300 140 180 20]);
+            app.Gain_T2Field = fielddy(app, t_plaque_fct, "Gain_T2", [300 110 140 30], 'numeric');       
+            app.Gain_T3Label = labelly(app, t_plaque_fct, 'Gain pour T3 [-]',[300 80 180 20]);      
+            app.Gain_T3Field = fielddy(app, t_plaque_fct, "Gain_T3", [300 50 140 30], 'numeric');  
 
             
             % SECTION FONCTIONS DE TRANSFERT DE LA PERTURBATION
             t_perturb_plaque = uitab(tabs, "Title", "Fonctions de transfert de la perturbation");
 
             % Constantes de temps de la perturbation
-            app.Cte_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Constante de temps pour T1 [s]',[10 200 180 20]);
-            app.Cte_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Cte_perturbation", [10 170 140 30], 'numeric');
-            app.Cte_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Constante de temps pour T2 [s]',[10 140 180 20]);   
-            app.Cte_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Cte_perturbationT2", [10 110 140 30], 'numeric');
+            app.Cte_perturbT1Label = labelly(app, t_perturb_plaque, 'Constante de temps pour T1 [s]',[10 200 180 20]);
+            app.Cte_perturbT1Field = fielddy(app, t_perturb_plaque, "Cte_perturbation", [10 170 140 30], 'numeric');
+            app.Cte_perturbT2Label = labelly(app, t_perturb_plaque, 'Constante de temps pour T2 [s]',[10 140 180 20]);   
+            app.Cte_perturbT2Field = fielddy(app, t_perturb_plaque, "Cte_perturbationT2", [10 110 140 30], 'numeric');
             
             % Gains de la perturbation
-            app.Gain_perturbT1Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T1 [-]',[300 200 180 20]); 
-            app.Gain_perturbT1Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbation", [300 170 140 30], 'numeric'); 
-            app.Gain_perturbT2Label = labelly_tab(app, t_perturb_plaque, 'Gain pour T2 [-]',[300 140 180 20]);
-            app.Gain_perturbT2Field = fielddy_tab(app, t_perturb_plaque, "Gain_perturbationT2", [300 110 140 30], 'numeric');
+            app.Gain_perturbT1Label = labelly(app, t_perturb_plaque, 'Gain pour T1 [-]',[300 200 180 20]); 
+            app.Gain_perturbT1Field = fielddy(app, t_perturb_plaque, "Gain_perturbation", [300 170 140 30], 'numeric'); 
+            app.Gain_perturbT2Label = labelly(app, t_perturb_plaque, 'Gain pour T2 [-]',[300 140 180 20]);
+            app.Gain_perturbT2Field = fielddy(app, t_perturb_plaque, "Gain_perturbationT2", [300 110 140 30], 'numeric');
 
 
             % SECTION NOMBRE DE BITS
             t_bit = uitab(tabs, "Title", "Nombre de bits");
             
             % Nombre de bit pour le DAC et ADC
-            app.Bit_dacLabel = labelly_tab(app, t_bit, 'Nombre de bits du DAC [-]',[10 200 300 20]);
-            app.Bit_dacField = fielddy_tab(app, t_bit, "bit_dac", [10 170 140 30], 'numeric');
-            app.Bit_adcLabel = labelly_tab(app, t_bit, 'Nombre de bits du ADC [-]',[10 140 300 20]);        
-            app.Bit_adcField = fielddy_tab(app, t_bit, "bit_adc", [10 110 140 30], 'numeric');
+            app.Bit_dacLabel = labelly(app, t_bit, 'Nombre de bits du DAC [-]',[10 200 300 20]);
+            app.Bit_dacField = fielddy(app, t_bit, "bit_dac", [10 170 140 30], 'numeric');
+            app.Bit_adcLabel = labelly(app, t_bit, 'Nombre de bits du ADC [-]',[10 140 300 20]);        
+            app.Bit_adcField = fielddy(app, t_bit, "bit_adc", [10 110 140 30], 'numeric');
 
 
             % SECTION PARAMETRES DES THERMISTANCES
             t_thermistance = uitab(tabs, "Title", "Param"+char(232)+"tres des thermistances");
 
-            % Paramtre des thermistances
-            app.R_0Label = labelly_tab(app, t_thermistance, "R\'esistance de r\'ef\'erence [Ohm]",[10 200 300 20]);       
-            app.R_0Field = fielddy_tab(app, t_thermistance, "R_0", [10 170 140 30], 'numeric');           
-            app.P_0Label = labelly_tab(app, t_thermistance, "Temp\'erature de r\'ef\'erence [$^\circ$C]",[10 140 300 20]);          
-            app.P_0Field = fielddy_tab(app, t_thermistance, "T_0", [10 110 140 30], 'numeric');     
-            app.BLabel  = labelly_tab(app, t_thermistance, 'Valeur de la constante Beta [K]',[10 80 300 20]);  
-            app.BField  = fielddy_tab(app, t_thermistance, "B", [10 50 140 30], 'numeric');  
+            % Parametre des thermistances
+            app.R_0Label = labelly(app, t_thermistance, "R\'esistance de r\'ef\'erence [Ohm]",[10 200 300 20]);       
+            app.R_0Field = fielddy(app, t_thermistance, "R_0", [10 170 140 30], 'numeric');           
+            app.P_0Label = labelly(app, t_thermistance, "Temp\'erature de r\'ef\'erence [$^\circ$C]",[10 140 300 20]);          
+            app.P_0Field = fielddy(app, t_thermistance, "T_0", [10 110 140 30], 'numeric');     
+            app.BLabel  = labelly(app, t_thermistance, 'Valeur de la constante Beta [K]',[10 80 300 20]);  
+            app.BField  = fielddy(app, t_thermistance, "B", [10 50 140 30], 'numeric');  
 
 
-            % SECTION PARAMTRES DE L'AMPLIFICATEUR DIFFERENTIEL
+            % SECTION PARAMETRES DE L'AMPLIFICATEUR DIFFERENTIEL
             t_ampli = uitab(tabs, "Title", "Param"+char(232)+"tres de l'amplificateur diff"+char(233)+"rentiel");
 
-            % Paramtre de l'amplificateur diffrentiel
-            app.Ampli_diffLabel = labelly_tab(app, t_ampli, "Gain ampli diff\'erentiel [-]",[10 200 300 20]);      
-            app.Ampli_diffField = fielddy_tab(app, t_ampli, "ampli_diff", [10 170 140 30], 'numeric');  
-            app.Plus_petiteLabel  = labelly_tab(app, t_ampli, "Offset de l'ampli diff\'erentiel [-]", [10 140 300 30]); 
-            app.Plus_petitefield   = fielddy_tab(app, t_ampli, "plus_petite", [10 110 140 30], 'numeric');    
+            % Parametre de l'amplificateur differentiel
+            app.Ampli_diffLabel = labelly(app, t_ampli, "Gain ampli diff\'erentiel [-]",[10 200 300 20]);      
+            app.Ampli_diffField = fielddy(app, t_ampli, "ampli_diff", [10 170 140 30], 'numeric');  
+            app.Plus_petiteLabel  = labelly(app, t_ampli, "Offset de l'ampli diff\'erentiel [-]", [10 140 300 30]); 
+            app.Plus_petitefield   = fielddy(app, t_ampli, "plus_petite", [10 110 140 30], 'numeric');    
 
 
             % SECTION PARAMETRES DU CIRCUIT DE SORTIE DE LARDUINO
             t_filtre  = uitab(tabs, "Title", "Param"+char(232)+"tres du circuit de sortie de l'Arduino");
 
-            % Paramtre du filtre  la sortie de l'Arduino
-            app.Gain_filtreLabel = labelly_tab(app, t_filtre, 'Gain du circuit de sortie [-]',[10 200 300 20]);    
-            app.Gain_filtrefield = fielddy_tab(app, t_filtre, "Gain_circuit_sortie", [10 170 140 30], 'numeric');    
-            app.V_refLabel = labelly_tab(app, t_filtre, "Tension de r\'ef\'erence [V]",[10 140 300 20]);          
-            app.V_reffield = fielddy_tab(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');
-            app.Gain_puissanceLabel = labelly_tab(app, t_filtre, "Gain de l'amplificateur de puissance [-]",[300 200 300 20]);          
-            app.Gain_puissanceField = fielddy_tab(app, t_filtre, "Gain_puissance", [300 170 140 30], 'numeric');  
-            app.Cte_filtreLabel = labelly_tab(app, t_filtre, 'Constante de temps du filtre [s]',[300 140 300 20]);     
-            app.Cte_filtrefield = fielddy_tab(app, t_filtre, "Cte_filtre", [300 110 140 30], 'numeric');        
+            % Parametre du filtre a la sortie de l'Arduino
+            app.Gain_filtreLabel = labelly(app, t_filtre, 'Gain du circuit de sortie [-]',[10 200 300 20]);    
+            app.Gain_filtrefield = fielddy(app, t_filtre, "Gain_circuit_sortie", [10 170 140 30], 'numeric');    
+            app.V_refLabel = labelly(app, t_filtre, "Tension de r\'ef\'erence [V]",[10 140 300 20]);          
+            app.V_reffield = fielddy(app, t_filtre, "V_ref", [10 110 140 30], 'numeric');
+            app.Gain_puissanceLabel = labelly(app, t_filtre, "Gain de l'amplificateur de puissance [-]",[300 200 300 20]);          
+            app.Gain_puissanceField = fielddy(app, t_filtre, "Gain_puissance", [300 170 140 30], 'numeric');  
+            app.Cte_filtreLabel = labelly(app, t_filtre, 'Constante de temps du filtre [s]',[300 140 300 20]);     
+            app.Cte_filtrefield = fielddy(app, t_filtre, "Cte_filtre", [300 110 140 30], 'numeric');        
 
 
             % SECTION CONTROLE DES PROPORTIONS
             t_proportion = uitab(tabs, "Title", "Proportion pour la temp"+char(233)+"rature pr"+char(233)+"dit");
             
-            app.ProportionT2Label = labelly_tab(app, t_proportion, "Influence de la deuxi"+ char(232)+"me temp\'erature [\%]",[10 200 300 20]);  
-            app.ProportionT2field = fielddy_tab(app, t_proportion, "ProportionT2", [10 170 140 30], 'numeric');
+            app.ProportionT2Label = labelly(app, t_proportion, "Influence de la deuxi"+ char(232)+"me temp\'erature [\%]",[10 200 300 20]);  
+            app.ProportionT2field = fielddy(app, t_proportion, "ProportionT2", [10 170 140 30], 'numeric');
             app.ProportionT2field.ValueChangedFcn = @(src,event) eval( ...
                 "if src.Value < 0 || src.Value > 1, " + ...
                 "src.Value = evalin('base','ProportionT2'); " + ...

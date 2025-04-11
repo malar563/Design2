@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # pour faire jouer la simulation 
-import mega_simulation
+import SIMULATEUR
 
 # pour afficher un graphique
 import numpy as np
@@ -687,7 +687,7 @@ class Interface:
                 ])
 
         # Initialise la simulation
-        self.Ma_plaque = mega_simulation.Plaque(
+        self.Ma_plaque = SIMULATEUR.Plaque(
             dimensions=(self.dim[0], self.dim[1]), # (y,x)
             epaisseur=self.e,
             resolution_x=self.dx,

@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # pour faire jouer la simulation
-import mega_simulation
+import SIMULATEUR
 
 
 class Interface:
@@ -252,7 +252,7 @@ class Interface:
             "longueur_puissance": [self.T_lon[0], self.T_lon[1]] # [y,x]
         }
         self.sauvegarder_json()
-        self.Ma_plaque = mega_simulation.Plaque(
+        self.Ma_plaque = SIMULATEUR.Plaque(
             dimensions=(self.dim[0], self.dim[1]), # (y,x)
             epaisseur=self.e,
             resolution_x=self.dx,
