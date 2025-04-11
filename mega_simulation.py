@@ -74,13 +74,9 @@ class Plaque:
         self.temps = 0 # Temps écoulé depuis le début de la simulation (s)
 
         # Position des thermistances par défaut
-        self.pos_thermi1 = (int(0.015/self.dy), int(self.dim[1]/2 / self.dx)) # En y=1.5cm, centré en x
-        self.pos_thermi2 = (int(0.06/self.dy), int(self.dim[1]/2 / self.dx)) # En y=6cm, centré en x
-        self.pos_thermi3 = (int(0.104/self.dy), int(self.dim[1]/2 / self.dx)) # En y=(11.6-1.2)cm, centré en x
-        if position_thermistances is not None: # Changement de position des thermistances si spécifié
-            self.pos_thermi1 = (int(position_thermistances[0][0]/(self.dy*100)), int(position_thermistances[0][1]/(self.dx*100)))
-            self.pos_thermi2 = (int(position_thermistances[1][0]/(self.dy*100)), int(position_thermistances[1][1]/(self.dx*100)))
-            self.pos_thermi3 = (int(position_thermistances[2][0]/(self.dy*100)), int(position_thermistances[2][1]/(self.dx*100)))
+        self.pos_thermi1 = (int(position_thermistances[0][0]/(self.dy*100)), int(position_thermistances[0][1]/(self.dx*100)))
+        self.pos_thermi2 = (int(position_thermistances[1][0]/(self.dy*100)), int(position_thermistances[1][1]/(self.dx*100)))
+        self.pos_thermi3 = (int(position_thermistances[2][0]/(self.dy*100)), int(position_thermistances[2][1]/(self.dx*100)))
         
         # Initialisation de la grille de température (matrice remplie avec la température initiale)
         self.grille = self.T_plaque*np.ones((int(self.dim[0]/self.dy), int(self.dim[1]/self.dx))) 

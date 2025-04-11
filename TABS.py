@@ -266,7 +266,7 @@ class Interface:
         self.thermistances() # Contrôle des thermistances
 
         # Initialisation des boutons OK, Voir la plaque et Graphique
-        self.etat_OK = ttk.Button(self.inter,text = 'OK', command = self.no_graphique)
+        self.etat_OK = ttk.Button(self.inter,text = 'Enregistrer un CSV', command = self.no_graphique)
         self.etat_OK.grid(column=0, row=3, pady=5, sticky="ew", columnspan=3)
         ttk.Button(self.inter, text="Voir la plaque", command=self.graphique_plaque).grid(column=0, row=4, pady=5, sticky="ew", columnspan=3)  # Initialisation du graphique permettant de voir la position des perturbations
         ttk.Button(self.inter,text = 'Graphique', command = self.yes_graphique).grid(column=0, row=5, pady=5, sticky="ew", columnspan=3)

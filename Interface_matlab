@@ -176,7 +176,7 @@ classdef interface_matlab < matlab.apps.AppBase
         CSV_importButton     matlab.ui.control.Button
         CSV_importField      matlab.ui.control.EditField
         ErrorLabel           matlab.ui.control.Label
-        ModelName            string = "simulateur_matlab_version66"; 
+        ModelName            string = "simulateur_matlab_version67"; 
     end
 
     properties (Access = private)
@@ -268,21 +268,21 @@ classdef interface_matlab < matlab.apps.AppBase
             assignin('base', 'Gain_perturbation', Gain_perturbation);
             Gain_perturbationT2 = 5.5789;
             assignin('base', 'Gain_perturbationT2', Gain_perturbationT2);
-            Gain_T1 = 7.5151;
+            Gain_T1 = 8.192;
             assignin('base', 'Gain_T1', Gain_T1);
-            Gain_T2 = 0.70588;
+            Gain_T2 = 0.745;
             assignin('base', 'Gain_T2', Gain_T2);
-            Gain_T3 = 0.9307;
+            Gain_T3 = 0.854;
             assignin('base', 'Gain_T3', Gain_T3);
             Cte_perturbation = 150.4664;
             assignin('base', 'Cte_perturbation', Cte_perturbation);
             Cte_perturbationT2 = 150.3737;
             assignin('base', 'Cte_perturbationT2', Cte_perturbationT2);
-            Cte_T1 = 109.21;
+            Cte_T1 = 90.126;
             assignin('base', 'Cte_T1', Cte_T1);
-            Cte_T2 = 44.90345;
+            Cte_T2 = 38.431;
             assignin('base', 'Cte_T2', Cte_T2);
-            Cte_T3 = 21.9298;
+            Cte_T3 = 20.268;
             assignin('base', 'Cte_T3', Cte_T3);
             bit_dac = 10;
             assignin('base', 'bit_dac', bit_dac);
@@ -1072,7 +1072,7 @@ classdef interface_matlab < matlab.apps.AppBase
 
 
             % SECTION NOMBRE DE BITS
-            t_bit = uitab(tabs, "Title", "Nombres de bit");
+            t_bit = uitab(tabs, "Title", "Nombre de bits");
             
             % Nombre de bit pour le DAC et ADC
             app.Bit_dacLabel = labelly_tab(app, t_bit, 'Nombre de bits du DAC [-]',[10 200 300 20]);
