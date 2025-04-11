@@ -284,9 +284,9 @@ classdef interface_matlab < matlab.apps.AppBase
             assignin('base', 'Cte_T2', Cte_T2);
             Cte_T3 = 21.9298;
             assignin('base', 'Cte_T3', Cte_T3);
-            bit_dac = 1024;
+            bit_dac = 10;
             assignin('base', 'bit_dac', bit_dac);
-            bit_adc = 1024;
+            bit_adc = 10;
             assignin('base', 'bit_adc', bit_adc);
             R_0 = 10000;
             assignin('base', 'R_0', R_0);
