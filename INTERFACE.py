@@ -283,19 +283,22 @@ class Interface:
         # Création d'un dictionnaire pour stocker les messages d'erreurs
         self.var_messages = {
             "num": "Les variables entrées doivent être numériques",
-            "dim": "Les dimensions de la plaque doivent être plus grandes que zéro",
+            "dim": "Les dimensions de la plaque doivent être plus grandes que zéro et plus petites que 1000 fois les résolutions",
             "res": "Les résolutions doivent être entre 0.1 cm et les dimensions de la résistance de perturbation (x=0.3 et y=0.6) cm",
             "temps": "Le temps de simulation doit être plus grand que 60 s",
             "par": "Les paramètres du matériau doivent être plus grands que zéro",
             "P_actuateur": "La puissance de l'actuateur doit être entre -5 et 5 [W]",
             "pos_actuateur": "L'actuateur doit entièrement se situer sur la plaque",
+            "res_actuateur": "Les dimensions de l'actuateur doivent être supérieures aux résolutions de la plaque",
             "dim_actuateur": "Les dimensions de l'actuateur doivent être plus grandes que zéro",
             "temps_actuateur": "Le temps d'application de l'actuateur doit être entre 0 et la durée de la simulation",
             "N_perturb": "La quantité de perturbations doit être positive",
             "delais_perturb": "Le temps d'application des perturbations doit être entre 0 et la durée de la simulation",
             "fin_perturb": "Le temps d'arrêt des perturbations ne peut être plus petit que le temps d'application",
             "pos_perturb": "Les perturbations doivent entièrement se situer sur la plaque",
-            "dim_perturb": "Les dimensions des perturbations doivent être plus grandes que zéro"
+            "dim_perturb": "Les dimensions des perturbations doivent être plus grandes que zéro",
+            "res_perturb": "Les dimensions des perturbations doivent être supérieures aux résolutions de la plaque",
+            "pos_therm": "Les thermistances doivent entièrement se situer sur la plaque",
         }
 
         # Création d'un dictionnaire pour créer des Labels
@@ -430,17 +433,17 @@ class Interface:
         self.tabs.add(self.therm_frame, text="Contrôle des thermistances")
 
         # 1ere thermistance
-        tk.Label(self.therm_frame, text="Première thermistance").grid(column=0, row=0, padx=5, pady=5, columnspan=2)
+        tk.Label(self.therm_frame, text="Thermistance à l'actuateur").grid(column=0, row=0, padx=5, pady=5, columnspan=2)
         self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_1", 0, 1) 
         self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_1", 0, 2)
 
         # 2e thermistance
-        tk.Label(self.therm_frame, text="Deuxième thermistance").grid(column=0, row=4, padx=5, pady=5, columnspan=2)
+        tk.Label(self.therm_frame, text="Thermistance au milieu").grid(column=0, row=4, padx=5, pady=5, columnspan=2)
         self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_2", 0, 5) 
         self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_2", 0, 6)
 
         # 3e thermistance
-        tk.Label(self.therm_frame, text="Troisième thermistance").grid(column=0, row=8, padx=5, pady=5, columnspan=2)
+        tk.Label(self.therm_frame, text="Thermistance au laser").grid(column=0, row=8, padx=5, pady=5, columnspan=2)
         self.entry(self.therm_frame, "Position en x de la thermistance", "posx_therm_3", 0, 9) 
         self.entry(self.therm_frame, "Position en y de la thermistance", "posy_therm_3", 0, 10)
 
@@ -578,8 +581,10 @@ class Interface:
               (self.R_delais, self.R_fin)
               ]] # Résistance de perturbation
 
-        # les dimensions entrées doivent être plus grandes que zéro
-        if not self.condition_respectee(all(val > 0 for val in (self.dim[0], self.dim[1], self.e)), "dim"):
+        # les dimensions entrées doivent être plus grandes que zéro et plus petites que 1000*résolutions
+        if not self.condition_respectee(all(0 < val for val in (self.dim[0], self.dim[1], self.e)), "dim"):
+            return False
+        if not self.condition_respectee(self.dim[0] <= 1000*self.dy and self.dim[1] <= 1000*self.dx, "dim"):
             return False
             
         # les résolutions entrées doivent être plus grandes que zéro et plus petites que la R de perturbation
@@ -600,7 +605,8 @@ class Interface:
         if not self.condition_respectee(-5 <= self.P <= 5, "P_actuateur"):
             return False
             
-        # l'actuateur doit se trouver sur la plaque
+        # l'actuateur doit se trouver sur la plaque et
+        # ses dimensions doivent être plus grandes que la résolution de la plaque
         act_y_pos = self.actuateur_pos[0]+self.actuateur_gros[0]
         act_y_neg = self.actuateur_pos[0]-self.actuateur_gros[0]
         act_x_pos = self.actuateur_pos[1]+self.actuateur_gros[1]
@@ -608,6 +614,8 @@ class Interface:
         if not self.condition_respectee(0 <= act_y_pos <= self.dim[0] and 0 <= act_x_pos <= self.dim[1], "pos_actuateur"):
             return False
         elif not self.condition_respectee(0 <= act_y_neg <= self.dim[0] and 0 <= act_x_neg <= self.dim[1], "pos_actuateur"):
+            return False
+        elif not self.condition_respectee(self.dy <= self.actuateur_gros[0] and self.dx <= self.actuateur_gros[1], "res_actuateur"):
             return False
         
         # les dimensions de l'actuateur doivent être plus grandes que zéro
@@ -621,7 +629,7 @@ class Interface:
         # le temps d'application des perturbations doit être positif et plus petit que la durée de la simulation
         # le temps d'arrêt des perturbations ne peut être plus petit que le temps d'application
         # les perturbations doivent se trouver sur la plaque
-        # les dimensions des perturbations doivent être plus grandes que zéro
+        # les dimensions des perturbations doivent être plus grandes que la résolution de la plaque
 
         # résistance de perturbation
         if not self.condition_respectee(0 <= self.R_delais <= self.t_simul, "delais_perturb"):
@@ -640,15 +648,22 @@ class Interface:
 
             if not self.condition_respectee(0 <= self.temps_add[i][0] <= self.t_simul, "delais_perturb"):
                 return False
-            if not self.condition_respectee(0 <= self.temps_add[i][1] <= self.t_simul, "delais_perturb"):
+            elif not self.condition_respectee(0 <= self.temps_add[i][1] <= self.t_simul, "delais_perturb"):
                 return False
-            if not self.condition_respectee(self.temps_add[i][1] >= self.temps_add[i][0], "fin_perturb"):
+            elif not self.condition_respectee(self.temps_add[i][1] >= self.temps_add[i][0], "fin_perturb"):
                 return False
-            if not self.condition_respectee(0 <= perturb_y_pos <= self.dim[0] and 0 <= perturb_x_pos <= self.dim[1], "pos_perturb"):
+            elif not self.condition_respectee(0 <= perturb_y_pos <= self.dim[0] and 0 <= perturb_x_pos <= self.dim[1], "pos_perturb"):
                 return False
-            if not self.condition_respectee(0 <= perturb_y_neg <= self.dim[0] and 0 <= perturb_x_neg <= self.dim[1], "pos_perturb"):
+            elif not self.condition_respectee(0 <= perturb_y_neg <= self.dim[0] and 0 <= perturb_x_neg <= self.dim[1], "pos_perturb"):
                 return False
-            if not self.condition_respectee(0 < self.dim_add[i][0] and 0 < self.dim_add[i][1], "dim_perturb"):
+            elif not self.condition_respectee(0 < self.dim_add[i][0] and 0 < self.dim_add[i][1], "dim_perturb"):
+                return False
+            elif not self.condition_respectee(self.dy <= self.dim_add[i][0] and self.dx <= self.dim_add[i][1], "res_actuateur"):
+                return False
+
+        # les thermistances doivent se trouver sur la plaque  
+        for i in self.pos_therm:
+            if not self.condition_respectee(0 <= i[0] <= self.dim[0] and 0 <= i[1] <= self.dim[1], "pos_therm"):
                 return False
 
         # Quantité d'itérations
