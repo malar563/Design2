@@ -601,9 +601,13 @@ class Interface:
             return False
             
         # l'actuateur doit se trouver sur la plaque
-        act_y = self.actuateur_pos[0]+self.actuateur_gros[0]
-        act_x = self.actuateur_pos[1]+self.actuateur_gros[1]
-        if not self.condition_respectee(0 <= act_y <= self.dim[0] and 0 <= act_x <= self.dim[1], "pos_actuateur"):
+        act_y_pos = self.actuateur_pos[0]+self.actuateur_gros[0]
+        act_y_neg = self.actuateur_pos[0]-self.actuateur_gros[0]
+        act_x_pos = self.actuateur_pos[1]+self.actuateur_gros[1]
+        act_x_neg = self.actuateur_pos[1]-self.actuateur_gros[1]
+        if not self.condition_respectee(0 <= act_y_pos <= self.dim[0] and 0 <= act_x_pos <= self.dim[1], "pos_actuateur"):
+            return False
+        elif not self.condition_respectee(0 <= act_y_neg <= self.dim[0] and 0 <= act_x_neg <= self.dim[1], "pos_actuateur"):
             return False
         
         # les dimensions de l'actuateur doivent être plus grandes que zéro
@@ -629,8 +633,10 @@ class Interface:
             
         # perturbations
         for i in range(int(self.N_perturb)):
-            perturb_y = self.pos_add[i][0] + self.dim_add[i][0]
-            perturb_x = self.pos_add[i][1] + self.dim_add[i][1]
+            perturb_y_pos = self.pos_add[i][0] + self.dim_add[i][0]
+            perturb_y_neg = self.pos_add[i][0] - self.dim_add[i][0]
+            perturb_x_pos = self.pos_add[i][1] + self.dim_add[i][1]
+            perturb_x_neg = self.pos_add[i][1] - self.dim_add[i][1]
 
             if not self.condition_respectee(0 <= self.temps_add[i][0] <= self.t_simul, "delais_perturb"):
                 return False
@@ -638,7 +644,9 @@ class Interface:
                 return False
             if not self.condition_respectee(self.temps_add[i][1] >= self.temps_add[i][0], "fin_perturb"):
                 return False
-            if not self.condition_respectee(0 <= perturb_y <= self.dim[0] and 0 <= perturb_x <= self.dim[1], "pos_perturb"):
+            if not self.condition_respectee(0 <= perturb_y_pos <= self.dim[0] and 0 <= perturb_x_pos <= self.dim[1], "pos_perturb"):
+                return False
+            if not self.condition_respectee(0 <= perturb_y_neg <= self.dim[0] and 0 <= perturb_x_neg <= self.dim[1], "pos_perturb"):
                 return False
             if not self.condition_respectee(0 < self.dim_add[i][0] and 0 < self.dim_add[i][1], "dim_perturb"):
                 return False
