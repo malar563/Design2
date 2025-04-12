@@ -255,7 +255,7 @@ class Interface:
         # Initialisation des onglets
         self.tabs = ttk.Notebook(self.inter)
         self.tabs.grid(column=0, row=0, rowspan=2, sticky="nsew", columnspan=2)
-        self.tabs.config(width=int(self.screen_width * 0.5), height=int(self.screen_height * 0.5))
+        self.tabs.config(width=int(self.screen_width * 0.6), height=int(self.screen_height * 0.5))
 
         # Initialisation des différents onglets
         self.controle_frame() # Contrôle de base
