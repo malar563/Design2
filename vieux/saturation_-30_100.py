@@ -40,12 +40,14 @@ params, _ = curve_fit(I_quadratique, I_associee, P_deposee)#, p0=p0
 a, b = params
 print("Coefficient a :", a)
 print("Coefficient b :", b)
+print("covariance", 3*np.sqrt(np.diag(_)))
 # Graphique
 x = np.linspace(-2,2,1000)
-plt.plot(x,I_quadratique(x, a, b), color="black", label = r"Évolution en $1/\sqrt{n}$")
-plt.plot(I_associee, P_deposee, color="r", label = "Écart-type des valeurs hautes")
-plt.xlabel("Nombre de données n")
-plt.ylabel("Écart-type (V)")
+plt.plot(x,I_quadratique(x, a, b), "r", label = "curve_fit")
+plt.plot(I_associee, P_deposee, "bo", label = "Données expérimentales")
+plt.xlabel("Différence de courant (A)")
+plt.ylabel("Différence de puissance thermique (W)")
+plt.text(0,-1,f"P = {round(a,5)} I² + {round(b,5)} I")
 plt.legend() 
 plt.show()
 
