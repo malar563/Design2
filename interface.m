@@ -465,15 +465,17 @@ classdef interface < matlab.apps.AppBase
                 temperature2 = evalin('base', 'temperature2_sortie'); % Température au milieu du système
                 temperature1 = evalin('base', 'temperature1_sortie'); % Température à l'actuateur
                 Temperature3_predit = evalin('base', 'Temperature_predit'); % Température prédite au laser
+                Reg = evalin('base', 'regulateur'); % Commande
         
                 % Création d'une table contenant les données récupérées
-                nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, ...
+                nom_des_colones = table(Temperature3.Time, Temperature3.Data, temperature2.Data, temperature1.Data, Temperature3_predit.Data, Reg.Data, ...
                     'VariableNames', { ...
                     'Temps', ... % Colonne du temps
                     'Temperature_au_laser', ... % Température mesurée au laser
                     'Temperature_au_milieu', ... % Température au milieu
                     'Temperature_a_lactuateur', ... % Température à l'actuateur
                     'Temperature_predit_au_laser' ... % Température prédite au laser
+                    'regulateur', ... % Commande
                     });
         
                 % Génération d'un nom de fichier basé sur l'horodatage actuel
