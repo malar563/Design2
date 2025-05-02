@@ -11,12 +11,12 @@ for degre in [19,25,30]:
     python[:,2:] -= 273.15
     
     ax1 = plt.subplot(111)
+    plt.plot(matlab[:,0], matlab[:,2], "-", color="blue", label="Thermistance 1")
+    plt.plot(matlab[:,0], matlab[:,3], "-", color="green", label="Thermistance 2")
     plt.plot(matlab[:,0], matlab[:,1], "-", color="red", label="Thermistance 3")
-    plt.plot(matlab[:,0], matlab[:,2], "-", color="green", label="Thermistance 2")
-    plt.plot(matlab[:,0], matlab[:,3], "-", color="blue", label="Thermistance 1")
     plt.plot(python[:,0], python[:,4], "--", color="red")
-    plt.plot(python[:,0], python[:,2], "--", color="green")
-    plt.plot(python[:,0], python[:,3], "--", color="blue")
+    plt.plot(python[:,0], python[:,3], "--", color="green")
+    plt.plot(python[:,0], python[:,2], "--", color="blue")
     plt.legend(fontsize=15)
     plt.xlabel(r"Temps [s]", fontsize=16)
     plt.ylabel(r"Température [$^\circ$C]", fontsize=16)
